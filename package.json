@@ -1,18 +1,23 @@
 {
   "name": "pedro-pathing-visualizer",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "main": "electron/main.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json"
+    "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
+    "electron:dev": "npm run build && electron .",
+    "dist": "npm run build && electron-builder"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.1",
     "@tsconfig/svelte": "^5.0.4",
     "autoprefixer": "^10.4.20",
+    "electron": "^39.2.3",
+    "electron-builder": "^24.9.1",
     "hotkeys-js": "^3.13.9",
     "postcss": "^8.4.41",
     "svelte": "^4.2.19",
@@ -25,8 +30,9 @@
   "dependencies": {
     "@types/d3": "^7.4.3",
     "@types/lodash": "^4.17.7",
-    "@vercel/analytics": "^1.5.0",
     "d3": "^7.9.0",
+    "express": "^4.18.2",
+    "get-port": "^7.0.0",
     "hotkeys-js": "^3.13.9",
     "lodash": "^4.17.21",
     "prettier": "^3.3.3",
@@ -35,5 +41,23 @@
     "svelte-copy": "^1.4.2",
     "svelte-highlight": "^7.7.0",
     "two.js": "^0.8.14"
+  },
+  "build": {
+    "appId": "com.pedropathing.visualizer",
+    "productName": "Pedro Pathing Visualizer",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": "dmg",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ]
   }
 }
