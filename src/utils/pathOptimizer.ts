@@ -7,6 +7,10 @@
  * 3. Smoothing paths to minimize sharp turns (turning is slow, driving is fast)
  */
 
+/// <reference types="../types.d.ts" />
+
+import { getCurvePoint } from './math';
+
 interface OptimizationResult {
   success: boolean;
   optimizedLines?: Line[];
@@ -185,21 +189,6 @@ function sampleBezierCurve(
   }
   
   return points;
-}
-
-/**
- * Implementation of De Casteljau's algorithm to get a point on a bezier curve
- */
-function getCurvePoint(t: number, points: BasePoint[]): BasePoint {
-  if (points.length === 1) return points[0];
-  const newpoints: BasePoint[] = [];
-  for (let i = 0, j = 1; j < points.length; i++, j++) {
-    newpoints[i] = {
-      x: points[i].x + (points[j].x - points[i].x) * t,
-      y: points[i].y + (points[j].y - points[i].y) * t
-    };
-  }
-  return getCurvePoint(t, newpoints);
 }
 
 /**
