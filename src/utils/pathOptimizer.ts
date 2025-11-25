@@ -327,7 +327,11 @@ function smoothPath(
       const currLength = Math.sqrt(currDir.x * currDir.x + currDir.y * currDir.y);
       
       // Calculate the angle between segments
-      const angle = Math.atan2(currDir.y, currDir.x) - Math.atan2(prevDir.y, prevDir.x);
+      let angle = Math.atan2(currDir.y, currDir.x) - Math.atan2(prevDir.y, prevDir.x);
+      
+      // Normalize angle to [-π, π] range
+      while (angle > Math.PI) angle -= 2 * Math.PI;
+      while (angle < -Math.PI) angle += 2 * Math.PI;
       
       // If there's a significant heading change, add control points to smooth it
       if (Math.abs(angle) > 0.1) { // ~5.7 degrees
@@ -366,6 +370,11 @@ function smoothPath(
       y: segment.end.y - segment.start.y
     };
     const lineLength = Math.sqrt(lineDir.x * lineDir.x + lineDir.y * lineDir.y);
+    
+    // Skip if start and end points are the same (zero-length segment)
+    if (lineLength < 1e-6) {
+      return optimized;
+    }
     
     // Project control point onto the line
     const t = ((optimized[0].x - segment.start.x) * lineDir.x + 
