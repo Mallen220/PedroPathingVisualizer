@@ -10,6 +10,8 @@
   import MathTools from "./lib/MathTools.svelte";
   import _ from "lodash";
   import { optimizeAllPaths, fpa } from './utils/optimization';
+    $: globalOptimizeAllPaths = () => optimizeAllPaths(startPoint, lines, shapes, settings);
+
 
   import {
     easeInOutQuad,
@@ -428,6 +430,27 @@
   let startTime: number | null = null;
   let previousTime: number | null = null;
 
+
+  async function handleOptimizeAllPaths() {
+    try {
+      console.log('Starting global optimization...');
+      const optimizedLines = await optimizeAllPaths(startPoint, lines, shapes, settings);
+      console.log('Optimization completed, updating lines:', optimizedLines);
+      
+      // This assignment triggers the reactive update
+      lines = optimizedLines;
+      
+      // Force a Two.js update to refresh the canvas
+      if (two) {
+        two.update();
+      }
+    } catch (error) {
+      console.error('Global optimization failed:', error);
+      alert(`❌ Global optimization failed: ${error.message}`);
+    }
+  }
+
+
   function animate(timestamp: number) {
     if (!startTime) {
       startTime = timestamp;
@@ -792,5 +815,6 @@ hotkeys('s', function(event, handler){
     bind:shapes
     {x}
     {y}
+    onOptimizeAllPaths={handleOptimizeAllPaths}
   />
 </div>

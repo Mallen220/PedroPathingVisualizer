@@ -1,7 +1,6 @@
 <script lang="ts">
   import _ from "lodash";
   import { getRandomColor } from "../utils";
-  import { optimizeAllPaths, fpa } from '../utils/optimization';
 
 
   export let percent: number;
@@ -17,6 +16,8 @@
   export let x: d3.ScaleLinear<number, number, number>;
   export let y: d3.ScaleLinear<number, number, number>;
   export let settings: FPASettings;
+  export let onOptimizeAllPaths: () => Promise<void>;
+
 
   export let shapes: Shape[];
 
@@ -518,7 +519,7 @@ With tangential heading, the heading follows the direction of the line."
     <button
       on:click={async () => {
         try {
-          await optimizeAllPaths();
+          await onOptimizeAllPaths();
         } catch (error) {
           console.error('Global optimization failed:', error);
           alert(`❌ Global optimization failed: ${error.message}`);

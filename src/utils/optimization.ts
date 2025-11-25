@@ -17,6 +17,7 @@ export async function optimizeAllPaths(
   settings: FPASettings
 ): Promise<Line[]> {
   console.log('Starting global path optimization...');
+  console.log('Input:', { startPoint, linesCount: lines.length, shapesCount: shapes.length });
   
   try {
     const optimizedLines: Line[] = [];
@@ -38,6 +39,7 @@ export async function optimizeAllPaths(
       currentStart = optimizedLine.endPoint;
     }
     
+    console.log('Optimization completed. Result:', optimizedLines);
     return optimizedLines;
     
   } catch (error) {
