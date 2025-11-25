@@ -80,51 +80,46 @@
     optimizationStatus = 'optimizing';
     optimizationMessage = 'Optimizing path...';
     
-    // Use setTimeout to allow UI to update
-    setTimeout(() => {
-      const result = optimizePath(startPoint, lines, shapes, settings);
+    const result = optimizePath(startPoint, lines, shapes, settings);
+    
+    if (result.success && result.optimizedLines) {
+      lines = result.optimizedLines;
+      optimizationStatus = 'success';
+      optimizationMessage = 'Path optimized successfully!';
       
-      if (result.success && result.optimizedLines) {
-        lines = result.optimizedLines;
-        optimizationStatus = 'success';
-        optimizationMessage = 'Path optimized successfully!';
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          if (optimizationStatus === 'success') {
-            optimizationStatus = 'idle';
-            optimizationMessage = '';
-          }
-        }, 3000);
-      } else {
-        optimizationStatus = 'error';
-        optimizationMessage = result.error || 'Optimization failed';
-      }
-    }, 100);
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        if (optimizationStatus === 'success') {
+          optimizationStatus = 'idle';
+          optimizationMessage = '';
+        }
+      }, 3000);
+    } else {
+      optimizationStatus = 'error';
+      optimizationMessage = result.error || 'Optimization failed';
+    }
   }
 
   function handleValidatePath() {
     optimizationStatus = 'optimizing';
     optimizationMessage = 'Validating path...';
     
-    setTimeout(() => {
-      const result = validatePath(startPoint, lines, shapes, settings);
+    const result = validatePath(startPoint, lines, shapes, settings);
+    
+    if (result.success) {
+      optimizationStatus = 'success';
+      optimizationMessage = 'Path is valid! No collisions detected.';
       
-      if (result.success) {
-        optimizationStatus = 'success';
-        optimizationMessage = 'Path is valid! No collisions detected.';
-        
-        setTimeout(() => {
-          if (optimizationStatus === 'success') {
-            optimizationStatus = 'idle';
-            optimizationMessage = '';
-          }
-        }, 3000);
-      } else {
-        optimizationStatus = 'error';
-        optimizationMessage = result.error || 'Path validation failed';
-      }
-    }, 100);
+      setTimeout(() => {
+        if (optimizationStatus === 'success') {
+          optimizationStatus = 'idle';
+          optimizationMessage = '';
+        }
+      }, 3000);
+    } else {
+      optimizationStatus = 'error';
+      optimizationMessage = result.error || 'Path validation failed';
+    }
   }
 
 </script>

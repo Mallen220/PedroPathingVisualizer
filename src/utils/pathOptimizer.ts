@@ -104,6 +104,7 @@ function rectangleIntersectsPolygon(
 
 /**
  * Get the four corners of a rotated rectangle
+ * Corners are in counter-clockwise order starting from bottom-left
  */
 function getRobotCorners(
   center: BasePoint,
@@ -116,19 +117,24 @@ function getRobotCorners(
   const cos = Math.cos(headingRad);
   const sin = Math.sin(headingRad);
   
+  // Apply rotation matrix: [x', y'] = [cos -sin; sin cos] * [x, y]
   return [
+    // Bottom-left corner (-halfWidth, -halfHeight)
     {
-      x: center.x + (-halfWidth * cos + halfHeight * sin),
-      y: center.y + (-halfWidth * sin - halfHeight * cos)
+      x: center.x + (-halfWidth * cos - (-halfHeight) * sin),
+      y: center.y + (-halfWidth * sin + (-halfHeight) * cos)
     },
+    // Bottom-right corner (halfWidth, -halfHeight)
     {
-      x: center.x + (halfWidth * cos + halfHeight * sin),
-      y: center.y + (halfWidth * sin - halfHeight * cos)
+      x: center.x + (halfWidth * cos - (-halfHeight) * sin),
+      y: center.y + (halfWidth * sin + (-halfHeight) * cos)
     },
+    // Top-right corner (halfWidth, halfHeight)
     {
       x: center.x + (halfWidth * cos - halfHeight * sin),
       y: center.y + (halfWidth * sin + halfHeight * cos)
     },
+    // Top-left corner (-halfWidth, halfHeight)
     {
       x: center.x + (-halfWidth * cos - halfHeight * sin),
       y: center.y + (-halfWidth * sin + halfHeight * cos)
@@ -323,6 +329,68 @@ function smoothPath(
 }
 
 /**
+ * Check all path segments for collisions
+ * Internal helper function used by both optimizePath and validatePath
+ */
+function checkPathCollisions(
+  startPoint: Point,
+  lines: Line[],
+  shapes: Shape[],
+  settings: FPASettings
+): { success: boolean; error?: string } {
+  let currentPoint = startPoint;
+  
+  // Sample density based on optimization quality (1-10)
+  const samplesPerSegment = Math.max(MIN_SAMPLES_PER_SEGMENT, settings.optimizationQuality * SAMPLES_QUALITY_MULTIPLIER);
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const segment: PathSegment = {
+      start: currentPoint,
+      end: line.endPoint,
+      controlPoints: line.controlPoints
+    };
+    
+    // Sample the path to check for collisions
+    const samples = line.controlPoints.length > 0
+      ? sampleBezierCurve(segment.start, segment.end, segment.controlPoints, samplesPerSegment)
+      : [segment.start, segment.end];
+    
+    // Check each sample point for collisions
+    for (let j = 0; j < samples.length; j++) {
+      const sample = samples[j];
+      const prevSample = j > 0 ? samples[j - 1] : segment.start;
+      const nextSample = j < samples.length - 1 ? samples[j + 1] : segment.end;
+      
+      // Calculate heading at this point
+      let heading = 0;
+      if (j === samples.length - 1) {
+        // Use endpoint heading with full interpolation (t=1)
+        heading = calculateHeading(line.endPoint, prevSample, segment.end, 1.0);
+      } else {
+        // Use tangent of path
+        const dx = nextSample.x - prevSample.x;
+        const dy = nextSample.y - prevSample.y;
+        heading = Math.atan2(dy, dx) * (180 / Math.PI);
+      }
+      
+      // Check for collision
+      if (checkCollision(sample, heading, settings, shapes)) {
+        return {
+          success: false,
+          error: `Path collision detected at segment ${i + 1}, point (${sample.x.toFixed(1)}, ${sample.y.toFixed(1)}). ` +
+                 `The robot would hit an obstacle or leave the field bounds.`
+        };
+      }
+    }
+    
+    currentPoint = line.endPoint;
+  }
+  
+  return { success: true };
+}
+
+/**
  * Main optimization function
  */
 export function optimizePath(
@@ -340,11 +408,17 @@ export function optimizePath(
       };
     }
     
+    // First check for collisions
+    const collisionCheck = checkPathCollisions(startPoint, lines, shapes, settings);
+    if (!collisionCheck.success) {
+      return {
+        success: false,
+        error: collisionCheck.error
+      };
+    }
+    
     const optimizedLines: Line[] = [];
     let currentPoint = startPoint;
-    
-    // Sample density based on optimization quality (1-10)
-    const samplesPerSegment = Math.max(MIN_SAMPLES_PER_SEGMENT, settings.optimizationQuality * SAMPLES_QUALITY_MULTIPLIER);
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -353,39 +427,6 @@ export function optimizePath(
         end: line.endPoint,
         controlPoints: line.controlPoints
       };
-      
-      // Sample the path to check for collisions
-      const samples = line.controlPoints.length > 0
-        ? sampleBezierCurve(segment.start, segment.end, segment.controlPoints, samplesPerSegment)
-        : [segment.start, segment.end];
-      
-      // Check each sample point for collisions
-      for (let j = 0; j < samples.length; j++) {
-        const sample = samples[j];
-        const prevSample = j > 0 ? samples[j - 1] : segment.start;
-        const nextSample = j < samples.length - 1 ? samples[j + 1] : segment.end;
-        
-        // Calculate heading at this point
-        let heading = 0;
-        if (j === samples.length - 1) {
-          // Use endpoint heading with full interpolation (t=1)
-          heading = calculateHeading(line.endPoint, prevSample, segment.end, 1.0);
-        } else {
-          // Use tangent of path
-          const dx = nextSample.x - prevSample.x;
-          const dy = nextSample.y - prevSample.y;
-          heading = Math.atan2(dy, dx) * (180 / Math.PI);
-        }
-        
-        // Check for collision
-        if (checkCollision(sample, heading, settings, shapes)) {
-          return {
-            success: false,
-            error: `Path collision detected at segment ${i + 1}, point (${sample.x.toFixed(1)}, ${sample.y.toFixed(1)}). ` +
-                   `The robot would hit an obstacle or leave the field bounds.`
-          };
-        }
-      }
       
       // Apply smoothing to control points
       const prevSegment = i > 0 ? {
@@ -427,11 +468,26 @@ export function validatePath(
   shapes: Shape[],
   settings: FPASettings
 ): OptimizationResult {
-  const result = optimizePath(startPoint, lines, shapes, settings);
-  
-  // Return validation result without the optimized lines
-  return {
-    success: result.success,
-    error: result.error
-  };
+  try {
+    // Validate input
+    if (!startPoint || !lines || lines.length === 0) {
+      return {
+        success: false,
+        error: "Invalid path: No waypoints defined"
+      };
+    }
+    
+    // Check for collisions without smoothing
+    const result = checkPathCollisions(startPoint, lines, shapes, settings);
+    
+    return {
+      success: result.success,
+      error: result.error
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
 }
