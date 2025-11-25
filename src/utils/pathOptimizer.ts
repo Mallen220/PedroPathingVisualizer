@@ -265,8 +265,8 @@ function checkCollision(
   shapes: Shape[]
 ): boolean {
   // Use actual robot dimensions for field bounds checking
-  const actualRobotWidth = settings.rWidth;
-  const actualRobotHeight = settings.rHeight;
+  const actualRobotWidth = settings.rWidth/2;
+  const actualRobotHeight = settings.rHeight/2;
   
   // Use expanded dimensions (with safety margin) for obstacle collision
   const expandedRobotWidth = settings.rWidth + settings.safetyMargin * 2;
