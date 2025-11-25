@@ -322,7 +322,7 @@
         </div>
         <div class={`h-[0.75px] w-full`} style={`background: ${line.color}`} />
         <div class="flex flex-col justify-start items-start">
-          <div class="font-light">End Point:</div>
+          <div class="font-light">Point Position:</div>
           <div class="flex flex-row justify-start items-center gap-2">
             <div class="font-extralight">X:</div>
             <input
