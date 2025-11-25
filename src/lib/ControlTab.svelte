@@ -409,14 +409,7 @@ With tangential heading, the heading follows the direction of the line."
                   lines = lines.map((l, i) => i === idx ? optimizedLine : l);
                 } catch (error) {
                   console.error('Optimization failed:', error);
-                  
-                  // Check if it's an offline error
-                  if (error.message && error.message.startsWith('OFFLINE:')) {
-                    const offlineMessage = error.message.replace('OFFLINE: ', '');
-                    alert(`🌐 ${offlineMessage}\n\nThe optimization feature requires an internet connection.`);
-                  } else {
-                    alert(`❌ Optimization failed: ${error.message}`);
-                  }
+                  alert(`❌ Optimization failed: ${error.message}`);
                 }
               }}
             >Optimize</button>

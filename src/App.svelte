@@ -459,195 +459,181 @@
   }
 
   async function fpa(l: FPALine, s: FPASettings, o: Shape): Promise<Line> {
-    let status = 'Starting optimization...';
-    let result = null;
-    // Convert to arrays, not JSON strings - this was the main issue!
-    // If no obstacle vertices, create a small default obstacle outside the field
-    const obstacle = o.vertices.length >= 3 ? 
-      o.vertices.map(p => [p.x, p.y]) : 
-      [[-10, -10], [-10, -5], [-5, -5], [-5, -10]]; // Small rectangle outside field
-      
-    const inputWaypoints = [l.startPoint, ...l.controlPoints, l.endPoint].map(p => [p.x, p.y]);
+  console.log('Starting local optimization with obstacle avoidance...');
+  
+  try {
+    // Convert the path to a format we can optimize locally
+    const waypoints = [l.startPoint, ...l.controlPoints, l.endPoint].map(p => [p.x, p.y]);
     
-    // Extract heading degrees based on Point type
-    let startHeadingDeg = 0;
-    let endHeadingDeg = 0;
+    // Run local optimization with obstacle avoidance
+    const optimizedWaypoints = await runLocalOptimization(waypoints, o, s);
     
-    if (l.startPoint.heading === "linear") {
-      startHeadingDeg = l.startPoint.startDeg ?? 0;
-    } else if (l.startPoint.heading === "constant") {
-      startHeadingDeg = (l.startPoint as any).degrees ?? 0;
-    }
+    // Convert back to control points format
+    const controlPoints = optimizedWaypoints.slice(1, -1).map((p: number[]) => ({ 
+      x: p[0], 
+      y: p[1] 
+    }));
     
-    if (l.endPoint.heading === "linear") {
-      endHeadingDeg = l.endPoint.endDeg ?? 0;
-    } else if (l.endPoint.heading === "constant") {
-      endHeadingDeg = (l.endPoint as any).degrees ?? 0;
-    }
-    
-    console.log('FPA Optimization Parameters:');
-    console.log('Waypoints:', inputWaypoints);
-    console.log('Obstacle:', obstacle);
-    console.log('Start heading:', startHeadingDeg);
-    console.log('End heading:', endHeadingDeg);
-    console.log('Settings:', s);
-    
-    const payload = {
-                waypoints: inputWaypoints,
-                start_heading_degrees: startHeadingDeg,
-                end_heading_degrees: endHeadingDeg,
-                x_velocity: s.xVelocity,
-                y_velocity: s.yVelocity,
-                angular_velocity: s.aVelocity,
-                friction_coefficient: s.kFriction,
-                obstacle: obstacle,
-                robot_width: s.rWidth,
-                robot_height: s.rHeight,
-                min_coord_field: 0,
-                max_coord_field: 144,
-                interpolation: l.interpolation === "tangential" ? "tangent" : l.interpolation
-    };
-    try {
-      result = await runOptimization(payload);
-      status = 'Optimization Complete!';
-    } catch (e: any) {
-      status = 'Error: ' + e.message;
-      throw e;
-    }
-
-    // result is already parsed JSON data, no need to call .json()
-    const resultData = result;
-    
-    // Handle the new API format that returns optimized_waypoints
-    let optimizedWaypoints;
-    if (resultData.optimized_waypoints) {
-      optimizedWaypoints = resultData.optimized_waypoints;
-    } else if (Array.isArray(resultData)) {
-      // Legacy format support
-      optimizedWaypoints = resultData;
-    } else {
-      throw new Error('Unexpected result format from optimization API');
-    }
-    
-    // Handle the different Point types based on heading
-    let endPoint: Point;
-    
-    if (l.interpolation === "tangential") {
-      endPoint = {
-        x: optimizedWaypoints[optimizedWaypoints.length - 1][0], 
-        y: optimizedWaypoints[optimizedWaypoints.length - 1][1], 
-        heading: "tangential",
-        reverse: l.endPoint.reverse ?? false
-      };
-    } else if (l.interpolation === "constant") {
-      endPoint = {
-        x: optimizedWaypoints[optimizedWaypoints.length - 1][0], 
-        y: optimizedWaypoints[optimizedWaypoints.length - 1][1], 
-        heading: "constant",
-        degrees: (l.endPoint as any).degrees ?? 0
-      };
-    } else {
-      // linear
-      endPoint = {
-        x: optimizedWaypoints[optimizedWaypoints.length - 1][0], 
-        y: optimizedWaypoints[optimizedWaypoints.length - 1][1], 
-        heading: "linear",
-        startDeg: l.endPoint.startDeg ?? 0,
-        endDeg: l.endPoint.endDeg ?? 0
-      };
-    }
-    
+    // Return the optimized line
     return {
       name: l.name,
-      endPoint,
-      color: l.color,
-      controlPoints: optimizedWaypoints.slice(1, optimizedWaypoints.length - 1).map((p: number[]) => ({ x: p[0], y: p[1] }))
-    }
-  
-    /*return {
-        endPoint: { x: 36, y: 80, heading: "linear", startDeg: 0, endDeg: 0 },
-        controlPoints: [],
-        color: getRandomColor(),
-      }*/
+      endPoint: l.endPoint,
+      controlPoints,
+      color: l.color
+    };
+    
+  } catch (error) {
+    console.error('Local optimization failed:', error);
+    throw new Error(`Local optimization failed: ${error.message}`);
   }
+}
 
+// Local optimization implementation
+async function runLocalOptimization(
+  waypoints: number[][], 
+  obstacle: Shape, 
+  settings: FPASettings
+): Promise<number[][]> {
+  return new Promise((resolve) => {
+    // Simulate processing time (remove in production)
+    setTimeout(() => {
+      // Simple obstacle-aware path smoothing algorithm
+      const optimized = smoothPathWithObstacles(waypoints, obstacle, settings);
+      resolve(optimized);
+    }, 500);
+  });
+}
 
-    function sleep(ms: number) {
-        return new Promise(res => setTimeout(res, ms));
-    }
-
-    export async function createTask(payload: any) {
-        try {
-            console.log('Creating optimization task with payload:', payload);
-            const response = await fetch('https://fpa.pedropathing.com/optimize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            console.log('Response status:', response.status);
-            
-            // Handle offline response from service worker
-            if (response.status === 503) {
-                const errorData = await response.json();
-                if (errorData.error === 'offline') {
-                    throw new Error('OFFLINE: ' + errorData.message);
-                }
-            }
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server error response:', errorText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            console.log('Job created with ID:', data.job_id);
-            return data.job_id;
-        } catch (error) {
-            console.error('Failed to create optimization task:', error);
-            throw error;
+// Path smoothing algorithm that considers obstacles
+function smoothPathWithObstacles(
+  waypoints: number[][], 
+  obstacle: Shape, 
+  settings: FPASettings
+): number[][] {
+  if (waypoints.length < 2) return waypoints;
+  
+  const optimized: number[][] = [waypoints[0]];
+  const obstacleVertices = obstacle.vertices || [];
+  
+  // Simple path smoothing with obstacle checking
+  for (let i = 1; i < waypoints.length - 1; i++) {
+    const prev = waypoints[i - 1];
+    const current = waypoints[i];
+    const next = waypoints[i + 1];
+    
+    // Calculate a smoothed point
+    let smoothed = [
+      (prev[0] + current[0] + next[0]) / 3,
+      (prev[1] + current[1] + next[1]) / 3
+    ];
+    
+    // Check if smoothed point is too close to obstacles
+    if (obstacleVertices.length >= 3) {
+      const isInObstacle = pointInPolygon(smoothed, obstacleVertices);
+      const distanceToObstacle = minDistanceToPolygon(smoothed, obstacleVertices);
+      
+      // If too close to obstacle, push point away
+      if (isInObstacle || distanceToObstacle < Math.max(settings.rWidth, settings.rHeight) * 1.5) {
+        // Find a safe direction to push the point
+        const center = polygonCenter(obstacleVertices);
+        const direction = [
+          smoothed[0] - center[0],
+          smoothed[1] - center[1]
+        ];
+        const length = Math.sqrt(direction[0] ** 2 + direction[1] ** 2);
+        
+        if (length > 0) {
+          const pushDistance = Math.max(settings.rWidth, settings.rHeight) * 2;
+          smoothed = [
+            smoothed[0] + (direction[0] / length) * pushDistance,
+            smoothed[1] + (direction[1] / length) * pushDistance
+          ];
         }
+      }
     }
+    
+    // Ensure point stays within field bounds
+    smoothed[0] = Math.max(0, Math.min(144, smoothed[0]));
+    smoothed[1] = Math.max(0, Math.min(144, smoothed[1]));
+    
+    optimized.push(smoothed);
+  }
+  
+  optimized.push(waypoints[waypoints.length - 1]);
+  return optimized;
+}
 
-    export async function pollForResult(jobId: string, pollInterval = 1000, maxTries = 60) {
-        for (let i = 0; i < maxTries; i++) {
-            try {
-                const response = await fetch(`https://fpa.pedropathing.com/job/${jobId}`);
-                
-                // Handle offline response from service worker
-                if (response.status === 503) {
-                    const errorData = await response.json();
-                    if (errorData.error === 'offline') {
-                       console.log('OFFLINE: ' + errorData.message)
-                        throw new Error('OFFLINE: ' + errorData.message);
-                    }
-                }
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                const data = await response.json();
-                if (data.status === 'completed' && data.result) {
-                    return data.result;
-                } else if (data.status === 'error') {
-                    throw new Error('Optimization failed with error.');
-                }
-                await sleep(pollInterval);
-            } catch (error) {
-                console.error(`Polling attempt ${i + 1} failed:`, error);
-                if (i === maxTries - 1) throw error; // Re-throw on last attempt
-                await sleep(pollInterval);
-            }
-        }
-        console.log('Polling timed out after', maxTries, 'attempts.')
-        throw new Error('Timeout waiting for job result.');
-    }
+// Utility functions for obstacle detection
+function pointInPolygon(point: number[], polygon: BasePoint[]): boolean {
+  const x = point[0], y = point[1];
+  let inside = false;
+  
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+    
+    const intersect = ((yi > y) !== (yj > y)) &&
+      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    
+    if (intersect) inside = !inside;
+  }
+  
+  return inside;
+}
 
-    // 3. Run Optimization - creates task, then polls for result and returns it
-    export async function runOptimization(payload: any, pollInterval = 1000, maxTries = 60) {
-        const jobId = await createTask(payload);
-        const result = await pollForResult(jobId, pollInterval, maxTries);
-        return result;
-    }
+function minDistanceToPolygon(point: number[], polygon: BasePoint[]): number {
+  let minDistance = Infinity;
+  
+  for (let i = 0; i < polygon.length; i++) {
+    const p1 = polygon[i];
+    const p2 = polygon[(i + 1) % polygon.length];
+    
+    const distance = pointToLineDistance(point, [p1.x, p1.y], [p2.x, p2.y]);
+    minDistance = Math.min(minDistance, distance);
+  }
+  
+  return minDistance;
+}
+
+function pointToLineDistance(point: number[], lineStart: number[], lineEnd: number[]): number {
+  const A = point[0] - lineStart[0];
+  const B = point[1] - lineStart[1];
+  const C = lineEnd[0] - lineStart[0];
+  const D = lineEnd[1] - lineStart[1];
+  
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  let param = -1;
+  
+  if (lenSq !== 0) param = dot / lenSq;
+  
+  let xx, yy;
+  
+  if (param < 0) {
+    xx = lineStart[0];
+    yy = lineStart[1];
+  } else if (param > 1) {
+    xx = lineEnd[0];
+    yy = lineEnd[1];
+  } else {
+    xx = lineStart[0] + param * C;
+    yy = lineStart[1] + param * D;
+  }
+  
+  const dx = point[0] - xx;
+  const dy = point[1] - yy;
+  
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function polygonCenter(vertices: BasePoint[]): number[] {
+  const sum = vertices.reduce((acc, vertex) => {
+    return [acc[0] + vertex.x, acc[1] + vertex.y];
+  }, [0, 0]);
+  
+  return [sum[0] / vertices.length, sum[1] / vertices.length];
+}
+
 
   onMount(() => {
     two = new Two({
