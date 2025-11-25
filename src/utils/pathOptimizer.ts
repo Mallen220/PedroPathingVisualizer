@@ -18,6 +18,10 @@ const SMOOTHING_SCALE = 10; // Scale factor for optimization quality to smoothin
 const SMOOTHING_MULTIPLIER = 0.1; // Base smoothing strength multiplier
 const MIN_SAMPLES_PER_SEGMENT = 10; // Minimum sampling points per path segment
 const SAMPLES_QUALITY_MULTIPLIER = 10; // Multiplier for optimization quality to sample count
+const MIN_SMOOTHING_ANGLE_RAD = 0.1; // Minimum angle change (in radians) to trigger smoothing (~5.7 degrees)
+const CONTROL_DISTANCE_FACTOR = 0.3; // Factor for control point distance from waypoint
+const MULTI_CONTROL_POINT_FACTOR = 0.5; // Additional factor for multiple control points
+const MIN_SEGMENT_LENGTH = 1e-6; // Minimum segment length to avoid division by zero
 
 interface OptimizationResult {
   success: boolean;
@@ -29,6 +33,13 @@ interface PathSegment {
   start: BasePoint;
   end: BasePoint;
   controlPoints: ControlPoint[];
+}
+
+/**
+ * Calculate the length of a 2D vector
+ */
+function vectorLength(vector: { x: number; y: number }): number {
+  return Math.sqrt(vector.x * vector.x + vector.y * vector.y);
 }
 
 /**
@@ -317,14 +328,14 @@ function smoothPath(
         x: prevSegment.end.x - prevSegment.start.x,
         y: prevSegment.end.y - prevSegment.start.y
       };
-      const prevLength = Math.sqrt(prevDir.x * prevDir.x + prevDir.y * prevDir.y);
+      const prevLength = vectorLength(prevDir);
       
       // Calculate the outgoing direction for current segment
       const currDir = {
         x: segment.end.x - segment.start.x,
         y: segment.end.y - segment.start.y
       };
-      const currLength = Math.sqrt(currDir.x * currDir.x + currDir.y * currDir.y);
+      const currLength = vectorLength(currDir);
       
       // Calculate the angle between segments
       let angle = Math.atan2(currDir.y, currDir.x) - Math.atan2(prevDir.y, prevDir.x);
@@ -334,9 +345,9 @@ function smoothPath(
       while (angle < -Math.PI) angle += 2 * Math.PI;
       
       // If there's a significant heading change, add control points to smooth it
-      if (Math.abs(angle) > 0.1) { // ~5.7 degrees
+      if (Math.abs(angle) > MIN_SMOOTHING_ANGLE_RAD) {
         const smoothingFactor = settings.optimizationQuality / SMOOTHING_SCALE;
-        const controlDist = Math.min(prevLength, currLength) * 0.3 * smoothingFactor;
+        const controlDist = Math.min(prevLength, currLength) * CONTROL_DISTANCE_FACTOR * smoothingFactor;
         
         // Add two control points for a smooth cubic bezier curve
         return [
@@ -369,10 +380,10 @@ function smoothPath(
       x: segment.end.x - segment.start.x,
       y: segment.end.y - segment.start.y
     };
-    const lineLength = Math.sqrt(lineDir.x * lineDir.x + lineDir.y * lineDir.y);
+    const lineLength = vectorLength(lineDir);
     
     // Skip if start and end points are the same (zero-length segment)
-    if (lineLength < 1e-6) {
+    if (lineLength < MIN_SEGMENT_LENGTH) {
       return optimized;
     }
     
@@ -404,7 +415,7 @@ function smoothPath(
       };
       
       // Move control point toward ideal position to reduce curvature sharpness
-      const factor = smoothingFactor * SMOOTHING_MULTIPLIER * 0.5;
+      const factor = smoothingFactor * SMOOTHING_MULTIPLIER * MULTI_CONTROL_POINT_FACTOR;
       optimized[i].x = optimized[i].x + (idealLinePos.x - optimized[i].x) * factor;
       optimized[i].y = optimized[i].y + (idealLinePos.y - optimized[i].y) * factor;
     }
