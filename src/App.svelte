@@ -71,6 +71,12 @@
   let lines: Line[] = getDefaultLines();
   let shapes: Shape[] = getDefaultShapes();
 
+  $: {
+    // Ensure arrays are reactive when items are added/removed
+    lines = lines;
+    shapes = shapes;
+  }
+
   // Two.js groups
   let lineGroup = new Two.Group();
   lineGroup.id = "line-group";
