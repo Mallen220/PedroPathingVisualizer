@@ -1,3 +1,7 @@
+## 1.1.4 (2025-12-01)
+
+- Fixed release logs
+
 ## 1.1.3 (2025-12-01)
 
 - Minor Fixes
