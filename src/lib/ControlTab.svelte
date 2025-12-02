@@ -584,6 +584,8 @@ With tangential heading, the heading follows the direction of the line."
                             }}
                           />
                         </div>
+                        <!-- Event delete Button -->
+
                         <button
                           on:click={() => removeEventMarker(idx, eventIdx)}
                           class="text-red-500 hover:text-red-600"
@@ -595,16 +597,18 @@ With tangential heading, the heading follows the direction of the line."
                             viewBox="0 0 24 24"
                             stroke-width={2}
                             class="size-4"
+                            stroke="red"
                           >
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
-                              d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                              d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                             />
                           </svg>
                         </button>
                       </div>
 
+                      <!-- Position Slider and text -->
                       <div class="flex items-center gap-2">
                         <span
                           class="text-xs text-neutral-600 dark:text-neutral-400"
@@ -615,16 +619,54 @@ With tangential heading, the heading follows the direction of the line."
                           min="0"
                           max="1"
                           step="0.01"
-                          bind:value={event.position}
+                          value={event.position}
                           class="flex-1 slider"
-                          on:input={() => {
-                            // Update the array to trigger reactivity
-                            line.eventMarkers = [...line.eventMarkers];
+                          on:input={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              event.position = value;
+                              line.eventMarkers = [...line.eventMarkers];
+                            }
                           }}
                         />
-                        <span class="text-xs font-medium w-10 text-right">
-                          {Math.round(event.position * 100)}%
-                        </span>
+                        <input
+                          type="number"
+                          value={event.position}
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          class="w-16 px-2 py-1 text-xs rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          on:input={(e) => {
+                            // Don't update immediately, just show the typed value
+                            // We'll validate on blur or Enter
+                          }}
+                          on:blur={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value < 0 || value > 1) {
+                              // Invalid - revert to current value
+                              e.target.value = event.position;
+                              return;
+                            }
+                            // Valid - update
+                            event.position = value;
+                            line.eventMarkers = [...line.eventMarkers];
+                          }}
+                          on:keydown={(e) => {
+                            if (e.key === "Enter") {
+                              const value = parseFloat(e.target.value);
+                              if (isNaN(value) || value < 0 || value > 1) {
+                                // Invalid - revert
+                                e.target.value = event.position;
+                                e.preventDefault();
+                                return;
+                              }
+                              // Valid - update
+                              event.position = value;
+                              line.eventMarkers = [...line.eventMarkers];
+                              e.target.blur(); // Trigger blur to update
+                            }
+                          }}
+                        />
                       </div>
 
                       <div
