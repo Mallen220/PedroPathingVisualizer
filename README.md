@@ -11,7 +11,7 @@ This repo is designed and maintained primarily on MacOS. While Windows and Linux
 
 
 
-### This project is currently undergoing rapid updates. Please check back regularly for bug fixes and new features. 
+> ### This project is currently undergoing rapid updates. Please check back regularly for bug fixes and new features. 
 
 ## ✨ Features
 
