@@ -69,7 +69,7 @@ const createWindow = () => {
   // Load the app from the local server
   mainWindow.loadURL(`http://localhost:${serverPort}`);
 
-  // Handle "Save As" dialog native behavior [cite: 672]
+  // Handle "Save As" dialog native behavior
   mainWindow.webContents.session.on(
     "will-download",
     (event, item, webContents) => {
@@ -100,7 +100,7 @@ app.on("ready", async () => {
   }, 3000);
 });
 
-// CRITICAL: Satisfies "when the project closes it should auto close" [cite: 647]
+// CRITICAL: Satisfies "when the project closes it should auto close"
 app.on("window-all-closed", () => {
   app.quit();
 });

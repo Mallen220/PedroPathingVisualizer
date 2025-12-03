@@ -22,7 +22,6 @@
   import { calculatePathTime, formatTime } from "../utils";
 
   export let loadFile: (evt: any) => any;
-  export let loadRobot: (evt: any) => any;
 
   export let startPoint: Point;
   export let lines: Line[];

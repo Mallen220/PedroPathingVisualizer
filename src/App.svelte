@@ -112,7 +112,7 @@
     .range([height || FIELD_SIZE, 0]);
 
   $: {
-    // UPDATED: Calculate robot state using the Timeline
+    // Calculate robot state using the Timeline
     if (timePrediction && timePrediction.timeline && lines.length > 0) {
       const state = calculateRobotState(
         percent,

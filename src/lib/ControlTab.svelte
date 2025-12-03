@@ -16,9 +16,7 @@
   export let y: d3.ScaleLinear<number, number, number>;
   export let settings: FPASettings;
   export let handleSeek: (percent: number) => void;
-  export let animationDuration: number;
   export let loopAnimation: boolean;
-  export let resetAnimation: () => void;
 
   export let shapes: Shape[];
 
@@ -116,7 +114,6 @@
     newLines.splice(index + 1, 0, newLine);
     lines = newLines;
 
-    // Also update the collapsed sections arrays to include the new line
     collapsedSections.lines.splice(index + 1, 0, false);
     collapsedSections.controlPoints.splice(index + 1, 0, true);
     collapsedEventMarkers.splice(index + 1, 0, false);
@@ -1152,10 +1149,6 @@ With tangential heading, the heading follows the direction of the line."
       title={loopAnimation ? "Disable Loop" : "Enable Loop"}
       on:click={() => {
         loopAnimation = !loopAnimation;
-        // Update animation controller if it exists
-        if (animationController) {
-          animationController.setLoop(loopAnimation);
-        }
       }}
       class:opacity-100={loopAnimation}
       class:opacity-50={!loopAnimation}
