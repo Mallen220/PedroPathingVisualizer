@@ -2,14 +2,16 @@
 
 A powerful, intuitive desktop application for visualizing and planning autonomous robot paths for FIRST Robotics Competition. Built with Electron and Svelte, this tool provides a modern alternative to traditional path planning software.
 
+This repo is designed and maintained primarily on MacOS. While Windows and Linux executables are created function as this is an electron app, they may become unexpectidly unstable. Please report platform issues as they are discovered. The best temporary fix is to revert to a previous version. 
+
+
 ![Version](https://img.shields.io/badge/version-1.1.6-blue.svg)
 ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
 ![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey.svg)
 
 
-This repo is designed and maintained primarily on MacOS. While Windows and Linux executables are created function as this is an electron app, they may become unexpectidly unstable. Please report platform issues as they are discovered. The best temporary fix is to rever should an issue arrise. 
 
-This project is currently undergoing rapid updates. Please check back regularly for bug fixes and new features. 
+#### This project is currently undergoing rapid updates. Please check back regularly for bug fixes and new features. 
 
 ## ✨ Features
 
