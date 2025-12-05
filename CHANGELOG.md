@@ -1,3 +1,7 @@
+## 1.2.0 (2025-12-05)
+
+- Added Events! (Experimental)
+
 ## 1.1.9 (2025-12-05)
 
 - Rehauled the settings menu. Selectable field option. See app verison in settings. Better navbar protractor placement.
