@@ -188,6 +188,7 @@
             >
               <div>
                 <label
+                  for="robot-width"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Robot Width (in)
@@ -196,6 +197,7 @@
                   </div>
                 </label>
                 <input
+                  id="robot-width"
                   type="number"
                   value={settings.rWidth}
                   min="1"
@@ -209,6 +211,7 @@
 
               <div>
                 <label
+                  for="robot-height"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Robot Height (in)
@@ -217,6 +220,7 @@
                   </div>
                 </label>
                 <input
+                  id="robot-height"
                   type="number"
                   value={settings.rHeight}
                   min="1"
@@ -230,6 +234,7 @@
 
               <div>
                 <label
+                  for="safety-margin"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Safety Margin (in)
@@ -238,6 +243,7 @@
                   </div>
                 </label>
                 <input
+                  id="safety-margin"
                   type="number"
                   value={settings.safetyMargin}
                   min="0"
@@ -302,11 +308,13 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label
+                    for="x-velocity"
                     class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                   >
-                    X Vel (in/s)
+                    X Velocity (in/s)
                   </label>
                   <input
+                    id="x-velocity"
                     type="number"
                     value={settings.xVelocity}
                     min="0"
@@ -319,11 +327,13 @@
 
                 <div>
                   <label
+                    for="y-velocity"
                     class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                   >
-                    Y Vel (in/s)
+                    Y Velocity (in/s)
                   </label>
                   <input
+                    id="y-velocity"
                     type="number"
                     value={settings.yVelocity}
                     min="0"
@@ -338,6 +348,7 @@
               <!-- Angular Velocity -->
               <div>
                 <label
+                  for="angular-velocity"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Angular Velocity (π rad/s)
@@ -346,6 +357,7 @@
                   </div>
                 </label>
                 <input
+                  id="angular-velocity"
                   type="number"
                   value={angularVelocityDisplay}
                   min="0"
@@ -358,11 +370,13 @@
               <!-- Velocity Limits -->
               <div>
                 <label
+                  for="max-velocity"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Max Velocity (in/s)
                 </label>
                 <input
+                  id="max-velocity"
                   type="number"
                   value={settings.maxVelocity}
                   min="0"
@@ -377,11 +391,13 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label
+                    for="max-acceleration"
                     class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                   >
-                    Max Accel (in/s²)
+                    Max Acceleration (in/s²)
                   </label>
                   <input
+                    id="max-acceleration"
                     type="number"
                     value={settings.maxAcceleration}
                     min="0"
@@ -394,11 +410,13 @@
 
                 <div>
                   <label
+                    for="max-deceleration"
                     class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                   >
-                    Max Decel (in/s²)
+                    Max Deceleration (in/s²)
                   </label>
                   <input
+                    id="max-deceleration"
                     type="number"
                     value={settings.maxDeceleration || settings.maxAcceleration}
                     min="0"
@@ -413,6 +431,7 @@
               <!-- Friction -->
               <div>
                 <label
+                  for="friction-coefficient"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Friction Coefficient
@@ -421,6 +440,7 @@
                   </div>
                 </label>
                 <input
+                  id="friction-coefficient"
                   type="number"
                   value={settings.kFriction}
                   min="0"
@@ -482,6 +502,7 @@
             >
               <div>
                 <label
+                  for="field-map-select"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Field Map
@@ -490,6 +511,7 @@
                   </div>
                 </label>
                 <select
+                  id="field-map-select"
                   bind:value={settings.fieldMap}
                   class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
