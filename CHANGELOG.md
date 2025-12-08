@@ -1,3 +1,7 @@
+## 1.2.2 (2025-12-08)
+
+- Moved theme selection to settings. Enhanced file manager fixing some users directories. Add file renaming support to FileManager. Quickfix: Improve heading initialization. 
+
 ## 1.2.1 (2025-12-06)
 
 - Quick Fix: Hard Block all Image/Field Dragging for a better interface.
