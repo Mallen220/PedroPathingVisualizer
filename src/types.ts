@@ -91,6 +91,7 @@ export interface Settings {
   fieldMap: string;
   robotImage?: string;
   theme: "light" | "dark" | "auto";
+  showGhostPaths?: boolean; // Show collision overlays via ghost paths
 }
 
 export interface Shape {

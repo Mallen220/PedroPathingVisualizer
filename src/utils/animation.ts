@@ -4,7 +4,8 @@ import {
   shortestRotation,
   radiansToDegrees,
 } from "./math";
-import type { Point, Line, TimelineEvent } from "../types";
+import { getRobotCorners } from "./geometry";
+import type { Point, Line, TimelineEvent, BasePoint } from "../types";
 import type { ScaleLinear } from "d3";
 
 export interface RobotState {
@@ -323,4 +324,116 @@ export function createAnimationController(
       return state.loop;
     },
   };
+}
+
+/**
+ * Generate ghost path points that trace the robot's body along its path
+ * Uses an "onion skin" approach - traces the robot outline at each point along the path
+ * and connects them to form the swept envelope
+ * @param startPoint - The starting point of the path
+ * @param lines - The path lines to trace
+ * @param robotWidth - Robot width in inches
+ * @param robotHeight - Robot height in inches
+ * @param samples - Number of samples along the path (default 50)
+ * @returns Array of points forming the envelope of the robot's swept path
+ */
+export function generateGhostPathPoints(
+  startPoint: Point,
+  lines: Line[],
+  robotWidth: number,
+  robotHeight: number,
+  samples: number = 50,
+): BasePoint[] {
+  // Collect all robot positions and headings along the path
+  const robotStates: Array<{
+    x: number;
+    y: number;
+    heading: number;
+  }> = [];
+
+  let currentLineStart = startPoint;
+
+  // For each line segment
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx];
+    const curvePoints = [
+      currentLineStart,
+      ...line.controlPoints,
+      line.endPoint,
+    ];
+
+    // Sample along this line segment
+    const samplesPerLine = Math.ceil(samples / lines.length);
+    for (let i = 0; i <= samplesPerLine; i++) {
+      const t = i / samplesPerLine;
+      const robotPosInches = getCurvePoint(t, curvePoints);
+
+      // Calculate heading at this position
+      let heading = 0;
+      if (line.endPoint.heading === "linear") {
+        heading = shortestRotation(
+          line.endPoint.startDeg,
+          line.endPoint.endDeg,
+          t,
+        );
+      } else if (line.endPoint.heading === "constant") {
+        heading = line.endPoint.degrees;
+      } else if (line.endPoint.heading === "tangential") {
+        // Calculate tangent direction
+        const nextT = Math.min(t + 0.01, 1);
+        const nextPos = getCurvePoint(nextT, curvePoints);
+        const dx = nextPos.x - robotPosInches.x;
+        const dy = nextPos.y - robotPosInches.y;
+        if (dx !== 0 || dy !== 0) {
+          heading = radiansToDegrees(Math.atan2(dy, dx));
+        }
+      }
+
+      robotStates.push({
+        x: robotPosInches.x,
+        y: robotPosInches.y,
+        heading: heading,
+      });
+    }
+
+    currentLineStart = line.endPoint;
+  }
+
+  // Build the onion skin envelope by tracing the robot's outline
+  // We trace around the robot: front-left → front-right → back-right → back-left → back to start
+  // corners: [front-left, front-right, back-right, back-left]
+
+  const frontLeftEdge: BasePoint[] = [];
+  const frontRightEdge: BasePoint[] = [];
+  const backRightEdge: BasePoint[] = [];
+  const backLeftEdge: BasePoint[] = [];
+
+  for (const state of robotStates) {
+    const corners = getRobotCorners(
+      state.x,
+      state.y,
+      state.heading,
+      robotWidth,
+      robotHeight,
+    );
+
+    // Trace each edge of the robot as it moves along the path
+    frontLeftEdge.push(corners[0]); // front-left
+    frontRightEdge.push(corners[1]); // front-right
+    backRightEdge.push(corners[2]); // back-right
+    backLeftEdge.push(corners[3]); // back-left
+  }
+
+  // Combine all edges to form the complete envelope
+  // Go around the robot: left side forward, then right side backward
+  const result = [
+    ...frontLeftEdge, // Left side from front to back
+    ...backLeftEdge.reverse(), // Back edge going right
+    ...backRightEdge.reverse(), // Right side from back to front
+    ...frontRightEdge, // Front edge going left (closes the polygon)
+  ];
+
+  return result.length >= 3
+    ? result
+    : robotStates.map((s) => ({ x: s.x, y: s.y }));
 }

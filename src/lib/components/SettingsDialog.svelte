@@ -3,6 +3,7 @@
   import { fade, fly } from "svelte/transition";
   import { resetSettings } from "../../utils/settingsPersistence";
   import { AVAILABLE_FIELD_MAPS } from "../../config/defaults";
+  import type { Settings } from "../../types";
 
   export let isOpen = false;
   export let settings: Settings;
@@ -804,30 +805,26 @@
             <div
               class="mt-2 space-y-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
             >
+              <!-- Ghost Paths Toggle -->
               <div
-                class="text-center py-4 text-neutral-500 dark:text-neutral-400"
+                class="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width={1.5}
-                  stroke="currentColor"
-                  class="size-12 mx-auto mb-2 opacity-50"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"
-                  />
-                </svg>
-                <p class="text-sm">
-                  Advanced settings will be added here in future updates
-                </p>
-                <p class="text-xs mt-1">
-                  Path optimization, collision detection, export options, and
-                  so, so much more!
-                </p>
+                <div>
+                  <label
+                    class="text-sm font-medium text-neutral-700 dark:text-neutral-300 block mb-1"
+                  >
+                    Collision Overlays
+                  </label>
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Show ghost paths tracing robot body along the path
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  bind:checked={settings.showGhostPaths}
+                  class="w-5 h-5 rounded border-neutral-300 dark:border-neutral-600 text-purple-500 focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                  title="Enable collision overlay visualization"
+                />
               </div>
             </div>
           {/if}

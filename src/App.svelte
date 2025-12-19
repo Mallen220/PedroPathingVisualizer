@@ -26,7 +26,7 @@
   import { createAnimationController } from "./utils/animation";
   import { calculatePathTime, getAnimationDuration } from "./utils";
 
-  import { calculateRobotState } from "./utils";
+  import { calculateRobotState, generateGhostPathPoints } from "./utils";
   import {
     easeInOutQuad,
     getCurvePoint,
@@ -422,6 +422,78 @@
     return _shapes;
   })();
 
+  $: ghostPathElement = (() => {
+    let ghostPath: Path | null = null;
+
+    if (settings.showGhostPaths && lines.length > 0) {
+      const ghostPoints = generateGhostPathPoints(
+        startPoint,
+        lines,
+        settings.rWidth,
+        settings.rHeight,
+        50,
+      );
+
+      if (ghostPoints.length >= 3) {
+        // Create polygon from ghost path points
+        let vertices = [];
+
+        // Start with move command for first point
+        vertices.push(
+          new Two.Anchor(
+            x(ghostPoints[0].x),
+            y(ghostPoints[0].y),
+            0,
+            0,
+            0,
+            0,
+            Two.Commands.move,
+          ),
+        );
+
+        // Add line commands for remaining points
+        for (let i = 1; i < ghostPoints.length; i++) {
+          vertices.push(
+            new Two.Anchor(
+              x(ghostPoints[i].x),
+              y(ghostPoints[i].y),
+              0,
+              0,
+              0,
+              0,
+              Two.Commands.line,
+            ),
+          );
+        }
+
+        // Close the shape
+        vertices.push(
+          new Two.Anchor(
+            x(ghostPoints[0].x),
+            y(ghostPoints[0].y),
+            0,
+            0,
+            0,
+            0,
+            Two.Commands.close,
+          ),
+        );
+
+        vertices.forEach((point) => (point.relative = false));
+
+        ghostPath = new Two.Path(vertices);
+        ghostPath.id = "ghost-path";
+        ghostPath.stroke = "#a78bfa"; // Light purple/lavender
+        ghostPath.fill = "#a78bfa";
+        ghostPath.opacity = 0.15;
+        ghostPath.linewidth = x(0.5);
+        ghostPath.automatic = false;
+      }
+    }
+
+    return ghostPath;
+  })();
+
   let isLoaded = false;
   // Reactively trigger when any saveable data changes
   $: {
@@ -607,6 +679,9 @@
     two.clear();
 
     two.add(...shapeElements);
+    if (ghostPathElement) {
+      two.add(ghostPathElement);
+    }
     two.add(...path);
     two.add(...points);
     two.add(...eventMarkers);

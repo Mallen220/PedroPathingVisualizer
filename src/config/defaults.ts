@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fieldMap: "decode.webp",
   robotImage: "/robot.png",
   theme: "auto",
+  showGhostPaths: false,
 };
 
 /**
