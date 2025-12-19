@@ -1,3 +1,7 @@
+## 1.2.3 (2025-12-19)
+
+- Added snap to grid feature, improved drag behavior, major backend refractoring for much better readability, Added wait commands and made the file manager more robust. 
+
 ## 1.2.2 (2025-12-08)
 
 - Moved theme selection to settings. Enhanced file manager fixing some users directories. Add file renaming support to FileManager. Quickfix: Improve heading initialization. Updated Icon.
