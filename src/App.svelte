@@ -560,9 +560,9 @@
         let onionRect = new Two.Path(vertices);
         onionRect.id = `onion-layer-${idx}`;
         onionRect.stroke = "#818cf8"; // Indigo color
-        onionRect.fill = "#c7d2fe"; // Light indigo fill
-        onionRect.opacity = 0.2;
-        onionRect.linewidth = x(0.4);
+        onionRect.noFill();
+        onionRect.opacity = 0.35;
+        onionRect.linewidth = x(0.5);
         onionRect.automatic = false;
 
         onionLayers.push(onionRect);
