@@ -1,3 +1,5 @@
+import type { Line, Point } from "../types";
+
 export function quadraticToCubic(
   P0: { x: number; y: number },
   P1: { x: number; y: number },
@@ -100,9 +102,11 @@ export function getTangentAngle(
 }
 
 export function getLineStartHeading(
-  line: any,
-  previousPoint: { x: number; y: number },
+  line: Line | undefined,
+  previousPoint: Point,
 ): number {
+  if (!line || !line.endPoint) return 0;
+
   if (line.endPoint.heading === "constant") return line.endPoint.degrees;
   if (line.endPoint.heading === "linear") return line.endPoint.startDeg;
   if (line.endPoint.heading === "tangential") {
@@ -117,9 +121,11 @@ export function getLineStartHeading(
 }
 
 export function getLineEndHeading(
-  line: any,
-  previousPoint: { x: number; y: number },
+  line: Line | undefined,
+  previousPoint: Point,
 ): number {
+  if (!line || !line.endPoint) return 0;
+
   if (line.endPoint.heading === "constant") return line.endPoint.degrees;
   if (line.endPoint.heading === "linear") return line.endPoint.endDeg;
   if (line.endPoint.heading === "tangential") {

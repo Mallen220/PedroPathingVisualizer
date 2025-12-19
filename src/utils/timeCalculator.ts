@@ -148,7 +148,11 @@ export function calculatePathTime(
       return;
     }
 
-    const line = lineById.get(item.lineId)!;
+    const line = lineById.get(item.lineId);
+    if (!line || !line.endPoint) {
+      // Skip missing or malformed lines in sequence
+      return;
+    }
     const prevPoint = lastPoint;
 
     // --- ROTATION CHECK ---
