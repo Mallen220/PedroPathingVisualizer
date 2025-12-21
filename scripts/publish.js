@@ -242,8 +242,7 @@ async function main() {
     // 5. Create Artifacts
     console.log("\n📦 Step 2: Packaging for All Platforms...");
     console.log("========================");
-    // Changed from dist:unsigned (mac only) to dist:all (mac, win, linux)
-    // Note: This may require specific env setup on the build machine for cross-compilation
+    // Build for macOS, Windows, and Linux
     await runCommand(
       "npm run dist:all",
       "Packaging for macOS, Windows, and Linux",
@@ -255,13 +254,15 @@ async function main() {
     const releaseDir = path.join(__dirname, "../release");
     const files = await fs.readdir(releaseDir);
 
-    // Look for dmg, exe, AppImage, deb
+    // Look for dmg, exe, AppImage, deb, and other Linux packages
     const artifactFiles = files.filter(
       (f) =>
         (f.endsWith(".dmg") ||
           f.endsWith(".exe") ||
           f.endsWith(".AppImage") ||
-          f.endsWith(".deb")) &&
+          f.endsWith(".deb") ||
+          f.endsWith(".rpm") ||
+          f.endsWith(".tar.gz")) &&
         f.includes(version) &&
         !f.includes("blockmap"), // Exclude electron-builder internal files
     );
@@ -276,6 +277,26 @@ async function main() {
 
     console.log(`✅ Found ${artifactFiles.length} artifacts:`);
     artifactFiles.forEach((f) => console.log(`   - ${f}`));
+
+    // Log specific info about Linux packages
+    const linuxPackages = artifactFiles.filter(
+      (f) =>
+        f.endsWith(".AppImage") ||
+        f.endsWith(".deb") ||
+        f.endsWith(".rpm") ||
+        f.endsWith(".tar.gz"),
+    );
+    if (linuxPackages.length > 0) {
+      console.log(`\n🐧 Linux packages for Ubuntu x86_64:`);
+      linuxPackages.forEach((f) => {
+        const arch = f.includes("x64")
+          ? "x86_64 (amd64)"
+          : f.includes("arm64")
+            ? "arm64"
+            : "unknown arch";
+        console.log(`   - ${f} (${arch})`);
+      });
+    }
 
     // 7. Create git tag
     console.log("\n🏷️  Step 4: Creating git tag...");
@@ -339,6 +360,9 @@ async function main() {
     console.log("1. Check GitHub authentication: gh auth status");
     console.log(
       "2. Ensure cross-compilation dependencies are installed if building for other OSs",
+    );
+    console.log(
+      "3. For Linux packages on macOS, ensure dpkg is installed: brew install dpkg",
     );
   } finally {
     rl.close();
