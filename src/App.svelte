@@ -1127,6 +1127,64 @@
       dragOffset = { x: 0, y: 0 };
       recordChange();
     });
+
+    // Double-click on the field to create a new path at that position
+    two.renderer.domElement.addEventListener("dblclick", (evt: MouseEvent) => {
+      // Ignore dblclicks on existing points/obstacles/lines
+      const elem = document.elementFromPoint(evt.clientX, evt.clientY);
+      if (
+        elem?.id &&
+        (elem.id.startsWith("point") ||
+          elem.id.startsWith("obstacle") ||
+          elem.id.startsWith("line"))
+      ) {
+        return;
+      }
+
+      const rect = two.renderer.domElement.getBoundingClientRect();
+      const rawInchX = x.invert(evt.clientX - rect.left);
+      const rawInchY = y.invert(evt.clientY - rect.top);
+
+      // Apply grid snapping if enabled
+      const currentGridSize = $gridSize;
+      const currentSnapToGrid = $snapToGrid;
+      const currentShowGrid = $showGrid;
+
+      let inchX = rawInchX;
+      let inchY = rawInchY;
+
+      if (currentSnapToGrid && currentShowGrid && currentGridSize > 0) {
+        inchX = Math.round(rawInchX / currentGridSize) * currentGridSize;
+        inchY = Math.round(rawInchY / currentGridSize) * currentGridSize;
+      }
+
+      // Clamp to field boundaries
+      inchX = Math.max(0, Math.min(FIELD_SIZE, inchX));
+      inchY = Math.max(0, Math.min(FIELD_SIZE, inchY));
+
+      // Create a new line with endPoint at the clicked position
+      const newLine: Line = {
+        id: `line-${Math.random().toString(36).slice(2)}`,
+        endPoint: {
+          x: inchX,
+          y: inchY,
+          heading: "tangential",
+          reverse: true,
+        },
+        controlPoints: [],
+        color: getRandomColor(),
+        locked: false,
+        waitBeforeMs: 0,
+        waitAfterMs: 0,
+        waitBeforeName: "",
+        waitAfterName: "",
+      };
+
+      lines = [...lines, newLine];
+      sequence = [...sequence, { kind: "path", lineId: newLine.id! }];
+      recordChange();
+      two.update();
+    });
   });
   document.addEventListener("keydown", function (evt) {
     if (evt.code === "Space" && document.activeElement === document.body) {
