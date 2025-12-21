@@ -719,6 +719,14 @@
       transition:fade={{ duration: 300 }}
       class="fixed inset-0 bg-black bg-opacity-50"
       on:click={() => (isOpen = false)}
+      role="button"
+      tabindex="0"
+      aria-label="Close file manager backdrop"
+      on:keydown={(e) => {
+        if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+          isOpen = false;
+        }
+      }}
     />
   {/if}
 
@@ -933,6 +941,12 @@
             <div
               class="p-3 border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer file-item"
               on:click={() => loadFile(file)}
+              role="button"
+              tabindex="0"
+              on:keydown={(e) => {
+                if (e.key === "Enter" || e.key === " ") loadFile(file);
+              }}
+              aria-label={`Open ${file.name}`}
               class:bg-blue-50={selectedFile?.path === file.path}
               class:dark:bg-blue-900={selectedFile?.path === file.path}
             >

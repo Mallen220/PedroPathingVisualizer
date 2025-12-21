@@ -274,14 +274,14 @@
 
               <!-- Robot Image Upload -->
               <div>
-                <label
+                <div
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Robot Image
                   <div class="text-xs text-neutral-500 dark:text-neutral-400">
                     Upload a custom image for your robot
                   </div>
-                </label>
+                </div>
                 <div
                   class="flex flex-col items-center gap-3 p-4 border border-neutral-300 dark:border-neutral-700 rounded-md bg-neutral-50 dark:bg-neutral-800/50"
                 >
@@ -832,11 +832,11 @@
                 class="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
               >
                 <div>
-                  <label
+                  <div
                     class="text-sm font-medium text-neutral-700 dark:text-neutral-300 block mb-1"
                   >
                     Robot Onion Layers
-                  </label>
+                  </div>
                   <div class="text-xs text-neutral-500 dark:text-neutral-400">
                     Show robot body at intervals along the path
                   </div>
@@ -854,11 +854,11 @@
                 <div
                   class="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
                 >
-                  <label
+                  <div
                     class="text-sm font-medium text-neutral-700 dark:text-neutral-300 block mb-2"
                   >
                     Onion Layer Spacing
-                  </label>
+                  </div>
                   <div class="flex items-center gap-2">
                     <input
                       type="range"

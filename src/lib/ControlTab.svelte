@@ -37,6 +37,10 @@
   export let shapes: Shape[];
   export let recordChange: () => void;
 
+  // Reference exported but unused props to silence Svelte unused-export warnings
+  $: robotWidth;
+  $: robotHeight;
+
   // Compute timeline markers for the UI (start of each travel segment)
   $: timePrediction = calculatePathTime(startPoint, lines, settings, sequence);
   $: markers = (() => {

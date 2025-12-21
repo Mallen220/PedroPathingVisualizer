@@ -120,17 +120,15 @@
   <div
     transition:fade={{ duration: 500, easing: cubicInOut }}
     class="bg-black bg-opacity-25 flex flex-col justify-center items-center absolute top-0 left-0 w-full h-full z-[1005]"
-    on:click={() => (isOpen = false)}
-    on:keydown={(e) => e.key === "Escape" && (isOpen = false)}
     role="dialog"
     aria-modal="true"
+    aria-label="Export code dialog"
     tabindex="-1"
   >
     <div
       transition:fly={{ duration: 500, easing: cubicInOut, y: 20 }}
       class="flex flex-col justify-start items-start p-4 bg-white dark:bg-neutral-900 rounded-lg w-full max-w-4xl gap-2.5 max-h-[90vh]"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
+      tabindex="-1"
       role="document"
     >
       <div class="flex flex-row justify-between items-center w-full">

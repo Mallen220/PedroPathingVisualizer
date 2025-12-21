@@ -1523,23 +1523,6 @@
       on:contextmenu={(e) => e.preventDefault()}
       on:dragstart={(e) => e.preventDefault()}
       on:selectstart={(e) => e.preventDefault()}
-      on:mousedown={(e) => {
-        // Prevent selection on mouse down
-        if (e.shiftKey || e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }}
-      on:keydown={(e) => {
-        // Prevent Ctrl+A, Ctrl+C, Ctrl+X in the field area
-        if (
-          (e.ctrlKey || e.metaKey) &&
-          (e.key === "a" || e.key === "c" || e.key === "x")
-        ) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }}
       tabindex="-1"
     >
       <img
