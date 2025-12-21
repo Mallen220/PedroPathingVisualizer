@@ -246,7 +246,7 @@ async function main() {
     // Note: This may require specific env setup on the build machine for cross-compilation
     await runCommand(
       "npm run dist:all",
-      "Packaging for macOS, Windows, and Linux",
+      "Packaging for macOS, Windows, and Linux (x64 & arm64)",
     );
 
     // 6. Find Artifacts
@@ -255,16 +255,28 @@ async function main() {
     const releaseDir = path.join(__dirname, "../release");
     const files = await fs.readdir(releaseDir);
 
-    // Look for dmg, exe, AppImage, deb
+    // Look for dmg, exe, AppImage, deb, tar.gz
     const artifactFiles = files.filter(
       (f) =>
         (f.endsWith(".dmg") ||
           f.endsWith(".exe") ||
           f.endsWith(".AppImage") ||
-          f.endsWith(".deb")) &&
+          f.endsWith(".deb") ||
+          f.endsWith(".tar.gz")) &&
         f.includes(version) &&
         !f.includes("blockmap"), // Exclude electron-builder internal files
     );
+
+    // Check for linux x86_64 (amd64) artifacts
+    const hasLinuxAmd64 = artifactFiles.some((f) =>
+      f.endsWith(".deb") ? f.includes("_amd64") : f.toLowerCase().includes("amd64") || f.toLowerCase().includes("x64")
+    );
+
+    if (!hasLinuxAmd64) {
+      console.log(
+        "⚠ No Linux x86_64 (amd64) artifact detected. If you intended to build linux x86_64, run `npm run dist:linux:x64` or update your CI to include `--x64`.",
+      );
+    }
 
     if (artifactFiles.length === 0) {
       throw new Error(

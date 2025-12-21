@@ -53,9 +53,9 @@ Enter your password when prompted to complete installation.
 2. Run the installer and follow the installation wizard
 3. Launch from Start Menu or desktop shortcut
 
-### **Linux (Ubuntu/Debian)**
+### **Linux (Ubuntu/Debian) — x86_64 (amd64) & arm64**
 
-Download either .deb (for Debian/Ubuntu) or .AppImage for other distros.
+Download either `.deb` (for Debian/Ubuntu) or `.AppImage` for other distros. For x86_64 machines choose the `_amd64.deb` or the standard `.AppImage`; arm64 builds include `arm64` in the filename.
 
 **Using .deb package:**
 
@@ -207,6 +207,9 @@ npm run dist
 
 # Build all platforms (requires cross-compilation setup)
 npm run dist:all
+
+# Build linux x86_64 (amd64) specifically on a mac or CI environment
+npm run dist:linux:x64
 ```
 
 ## 🤝 Contributing
