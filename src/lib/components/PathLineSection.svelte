@@ -207,7 +207,19 @@
           title={snapToGridTitle}
         />
 
-        <HeadingControls endPoint={line.endPoint} locked={line.locked} />
+        <HeadingControls
+          endPoint={line.endPoint}
+          locked={line.locked}
+          on:change={() => {
+            // Force reactivity so timeline recalculates immediately
+            lines = [...lines];
+          }}
+          on:commit={() => {
+            // Commit change to history
+            lines = [...lines];
+            recordChange();
+          }}
+        />
       </div>
     </div>
 

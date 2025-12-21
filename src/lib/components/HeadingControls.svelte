@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
   export let endPoint: any;
   export let locked: boolean = false;
+  const dispatch = createEventDispatcher();
 </script>
 
 <select
@@ -27,6 +29,8 @@ With tangential heading, the heading follows the direction of the line."
       min="-180"
       max="180"
       bind:value={endPoint.startDeg}
+      on:input={() => dispatch("change")}
+      on:blur={() => dispatch("commit")}
       title="The heading the robot starts this line at (in degrees)"
       disabled={locked}
     />
@@ -39,6 +43,8 @@ With tangential heading, the heading follows the direction of the line."
       min="-180"
       max="180"
       bind:value={endPoint.endDeg}
+      on:input={() => dispatch("change")}
+      on:blur={() => dispatch("commit")}
       title="The heading the robot ends this line at (in degrees)"
       disabled={locked}
     />
@@ -62,12 +68,14 @@ With tangential heading, the heading follows the direction of the line."
           endPoint.degrees = 0;
           e.target.value = "0";
         }
+        dispatch("change");
       }}
       on:blur={(e) => {
         if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
           endPoint.degrees = 0;
           e.target.value = "0";
         }
+        dispatch("commit");
       }}
       title="The constant heading the robot maintains throughout this line (in degrees)"
       disabled={locked}
@@ -78,6 +86,8 @@ With tangential heading, the heading follows the direction of the line."
   <input
     type="checkbox"
     bind:checked={endPoint.reverse}
+    on:change={() => dispatch("change")}
+    on:blur={() => dispatch("commit")}
     title="Reverse the direction the robot faces along the tangential path"
     disabled={locked}
   />
