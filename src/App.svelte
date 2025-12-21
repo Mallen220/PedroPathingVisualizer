@@ -57,6 +57,7 @@
   import { loadSettings, saveSettings } from "./utils/settingsPersistence";
   import { onMount, tick } from "svelte";
   import { debounce } from "lodash";
+  import { createHistory, type AppState } from "./utils/history";
   // Electron API type (defined in preload.js, attached to window)
   interface ElectronAPI {
     writeFile: (filePath: string, content: string) => Promise<boolean>;
@@ -107,6 +108,54 @@
     lineId: ln.id!,
   }));
   let shapes: Shape[] = getDefaultShapes();
+
+  const history = createHistory();
+  const { canUndoStore, canRedoStore } = history;
+
+  function getAppState(): AppState {
+    return {
+      startPoint,
+      lines,
+      shapes,
+      sequence,
+      settings,
+    };
+  }
+
+  // Use the stores for reactivity
+  $: canUndo = $canUndoStore;
+  $: canRedo = $canRedoStore;
+
+  function recordChange() {
+    history.record(getAppState());
+  }
+
+  function undoAction() {
+    const prev = history.undo();
+    if (prev) {
+      startPoint = prev.startPoint;
+      lines = prev.lines;
+      shapes = prev.shapes;
+      sequence = prev.sequence;
+      settings = prev.settings;
+      isUnsaved.set(true);
+      two && two.update();
+    }
+  }
+
+  function redoAction() {
+    const next = history.redo();
+    if (next) {
+      startPoint = next.startPoint;
+      lines = next.lines;
+      shapes = next.shapes;
+      sequence = next.sequence;
+      settings = next.settings;
+      isUnsaved.set(true);
+      two && two.update();
+    }
+  }
+
   $: {
     // Ensure arrays are reactive when items are added/removed
     lines = lines;
@@ -584,6 +633,7 @@
   onMount(() => {
     setTimeout(() => {
       isLoaded = true;
+      recordChange();
     }, 500);
   });
   onMount(async () => {
@@ -957,6 +1007,7 @@
     two.renderer.domElement.addEventListener("mouseup", () => {
       isDown = false;
       dragOffset = { x: 0, y: 0 };
+      recordChange();
     });
   });
   document.addEventListener("keydown", function (evt) {
@@ -1081,6 +1132,7 @@
       shapes = data.shapes;
     }
     isUnsaved.set(false);
+    recordChange();
   }
 
   function loadRobot(evt: Event) {
@@ -1111,6 +1163,7 @@
       ...sequence,
       { kind: "path", lineId: lines[lines.length - 1].id! },
     ];
+    recordChange();
   }
 
   function addControlPoint() {
@@ -1120,6 +1173,7 @@
         x: _.random(36, 108),
         y: _.random(36, 108),
       });
+      recordChange();
     }
   }
 
@@ -1128,6 +1182,7 @@
       const lastLine = lines[lines.length - 1];
       if (lastLine.controlPoints.length > 0) {
         lastLine.controlPoints.pop();
+        recordChange();
       }
     }
   }
@@ -1146,6 +1201,14 @@
     event.preventDefault();
     removeControlPoint();
     two.update();
+  });
+  hotkeys("cmd+z, ctrl+z", function (event) {
+    event.preventDefault();
+    undoAction();
+  });
+  hotkeys("cmd+shift+z, ctrl+shift+z, ctrl+y", function (event) {
+    event.preventDefault();
+    redoAction();
   });
   function applyTheme(theme: "light" | "dark" | "auto") {
     let actualTheme = theme;
@@ -1204,6 +1267,11 @@
   {saveFileAs}
   {loadFile}
   {loadRobot}
+  {undoAction}
+  {redoAction}
+  {recordChange}
+  {canUndo}
+  {canRedo}
 />
 <!--   {saveFile} -->
 <div
@@ -1318,5 +1386,6 @@ pointer-events: none;`}
     {handleSeek}
     bind:loopAnimation
     {resetAnimation}
+    {recordChange}
   />
 </div>

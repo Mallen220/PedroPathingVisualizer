@@ -14,6 +14,7 @@
   export let onRemove: () => void;
   export let onInsertAfter: () => void;
   export let onAddWaitAfter: () => void;
+  export let recordChange: () => void;
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
@@ -220,6 +221,7 @@
       bind:line
       lineIdx={idx}
       bind:collapsed={collapsedControlPoints}
+      {recordChange}
     />
   {/if}
 </div>

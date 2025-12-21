@@ -34,6 +34,11 @@
 
   export let saveProject: () => any;
   export let saveFileAs: () => any;
+  export let undoAction: () => any;
+  export let redoAction: () => any;
+  export let recordChange: () => any;
+  export let canUndo: boolean;
+  export let canRedo: boolean;
 
   let fileManagerOpen = false;
   let settingsOpen = false;
@@ -104,6 +109,7 @@
 
     if (confirm(message)) {
       resetPath();
+      if (recordChange) recordChange();
     }
   }
 
@@ -385,6 +391,52 @@
           <path d="M12 3v6l3.7 2.7"></path>
         </svg>
       </button>
+
+      <!-- Undo / Redo -->
+      <div class="flex items-center gap-2">
+        <button
+          title="Undo"
+          on:click={undoAction}
+          disabled={!canUndo}
+          class:opacity-50={!canUndo}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="size-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 1 1 0 12h-3"
+            />
+          </svg>
+        </button>
+        <button
+          title="Redo"
+          on:click={redoAction}
+          disabled={!canRedo}
+          class:opacity-50={!canRedo}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="size-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 9l6 6m0 0-6 6m6-6H9a6 6 0 1 1 0-12h3"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Divider -->

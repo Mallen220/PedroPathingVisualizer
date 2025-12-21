@@ -34,6 +34,7 @@
   export let loopAnimation: boolean;
 
   export let shapes: Shape[];
+  export let recordChange: () => void;
 
   let collapsedEventMarkers: boolean[] = lines.map(() => false);
 
@@ -124,6 +125,7 @@
         (s) => s.kind === "wait" || s.lineId !== removedId,
       );
     }
+    recordChange();
   }
 
   function addLine() {
@@ -147,6 +149,7 @@
     sequence = [...sequence, { kind: "path", lineId: newLine.id! }];
     collapsedSections.lines.push(false);
     collapsedSections.controlPoints.push(true);
+    recordChange();
   }
 
   function addWait() {
@@ -206,6 +209,7 @@
     // Force reactivity
     collapsedSections = { ...collapsedSections };
     collapsedEventMarkers = [...collapsedEventMarkers];
+    recordChange();
   }
 </script>
 
@@ -244,6 +248,7 @@
             onRemove={() => removeLine(lines.findIndex((l) => l.id === ln.id))}
             onInsertAfter={() => insertLineAfter(sIdx)}
             onAddWaitAfter={() => insertWaitAfter(sIdx)}
+            {recordChange}
           />
         {/each}
       {:else}

@@ -5,6 +5,7 @@
   export let line: Line;
   export let lineIdx: number;
   export let collapsed: boolean;
+  export let recordChange: () => void;
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
@@ -49,6 +50,7 @@
             y: _.random(36, 108),
           },
         ];
+        recordChange();
       }}
       class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1 px-2 py-1"
       title="Add Control Point"
@@ -93,6 +95,7 @@
                 let _pts = line.controlPoints;
                 _pts.splice(idx1, 1);
                 line.controlPoints = _pts;
+                recordChange();
               }}
               class="text-red-500 hover:text-red-600"
               title="Remove Control Point"
