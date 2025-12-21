@@ -1169,7 +1169,7 @@
           x: inchX,
           y: inchY,
           heading: "tangential",
-          reverse: true,
+          reverse: false,
         },
         controlPoints: [],
         color: getRandomColor(),

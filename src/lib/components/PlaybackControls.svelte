@@ -5,6 +5,7 @@
   export let percent: number;
   export let handleSeek: (percent: number) => void;
   export let loopAnimation: boolean;
+  export let markers: { percent: number; color: string; name: string }[] = [];
 </script>
 
 <div
@@ -78,13 +79,31 @@
     </svg>
   </button>
 
-  <input
-    bind:value={percent}
-    type="range"
-    min="0"
-    max="100"
-    step="0.000001"
-    class="w-full appearance-none slider focus:outline-none"
-    on:input={(e) => handleSeek(parseFloat(e.target.value))}
-  />
+  <div class="w-full relative">
+    <!-- markers: small colored dots positioned by percent -->
+    {#each markers as m, i}
+      <div
+        class="absolute"
+        role="button"
+        tabindex="0"
+        on:click={() => handleSeek(m.percent)}
+        on:keydown={(e) => {
+          if (e.key === "Enter" || e.key === " ") handleSeek(m.percent);
+        }}
+        style={`left: ${m.percent}%; top: 3px; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 9999px; background: ${m.color}; box-shadow: 0 0 0 2px rgba(0,0,0,0.06); cursor: pointer;`}
+        title={m.name}
+        aria-label={m.name}
+      ></div>
+    {/each}
+
+    <input
+      bind:value={percent}
+      type="range"
+      min="0"
+      max="100"
+      step="0.000001"
+      class="w-full appearance-none slider focus:outline-none"
+      on:input={(e) => handleSeek(parseFloat(e.target.value))}
+    />
+  </div>
 </div>

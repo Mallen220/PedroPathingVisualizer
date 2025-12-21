@@ -15,6 +15,7 @@
   import PathLineSection from "./components/PathLineSection.svelte";
   import PlaybackControls from "./components/PlaybackControls.svelte";
   import WaitRow from "./components/WaitRow.svelte";
+  import { calculatePathTime } from "../utils";
 
   export let percent: number;
   export let playing: boolean;
@@ -35,6 +36,32 @@
 
   export let shapes: Shape[];
   export let recordChange: () => void;
+
+  // Compute timeline markers for the UI (start of each travel segment)
+  $: timePrediction = calculatePathTime(startPoint, lines, settings, sequence);
+  $: markers = (() => {
+    const _markers: { percent: number; color: string; name: string }[] = [];
+    if (
+      !timePrediction ||
+      !timePrediction.timeline ||
+      timePrediction.totalTime <= 0
+    )
+      return _markers;
+
+    timePrediction.timeline.forEach((ev) => {
+      if ((ev as any).type === "travel") {
+        const start = (ev as any).startTime as number;
+        const pct = (start / timePrediction.totalTime) * 100;
+        const lineIndex = (ev as any).lineIndex as number;
+        const line = lines[lineIndex];
+        const color = line?.color || "#ffffff";
+        const name = line?.name || `Path ${lineIndex + 1}`;
+        _markers.push({ percent: pct, color, name });
+      }
+    });
+
+    return _markers;
+  })();
 
   let collapsedEventMarkers: boolean[] = lines.map(() => false);
 
@@ -485,5 +512,6 @@
     bind:percent
     {handleSeek}
     bind:loopAnimation
+    {markers}
   />
 </div>
