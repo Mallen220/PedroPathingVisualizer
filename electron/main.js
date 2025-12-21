@@ -16,6 +16,11 @@ let server;
 let serverPort = 34567;
 let appUpdater;
 
+/**
+ * Try to start the HTTP server on `serverPort`, and if it's already in use
+ * try subsequent ports up to `maxAttempts` times. When successful, set the
+ * global `server` and `serverPort` to the listening instance/port.
+ */
 const startServer = async () => {
   const expressApp = express();
 
@@ -47,14 +52,44 @@ const startServer = async () => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 
-  server = http.createServer(expressApp);
+  // Helper to attempt listening on ports starting at `startPort`.
+  const tryListenOnPortRange = (startPort, maxAttempts = 50) => {
+    return new Promise((resolve, reject) => {
+      let attempt = 0;
+      let port = startPort;
 
-  return new Promise((resolve) => {
-    server.listen(serverPort, () => {
-      console.log(`Local server running on port ${serverPort}`);
-      resolve();
+      const attemptListen = () => {
+        attempt += 1;
+        // Create a new server instance for each attempt so errors don't persist
+        const candidate = http.createServer(expressApp);
+
+        candidate.once("error", (err) => {
+          if (err && err.code === "EADDRINUSE" && attempt < maxAttempts) {
+            console.warn(`Port ${port} in use, trying ${port + 1}`);
+            port += 1;
+            // Give a tiny delay to avoid busy-looping
+            setTimeout(attemptListen, 10);
+          } else {
+            reject(err);
+          }
+        });
+
+        candidate.once("listening", () => {
+          server = candidate;
+          serverPort = port;
+          console.log(`Local server running on port ${serverPort}`);
+          resolve();
+        });
+
+        candidate.listen(port);
+      };
+
+      attemptListen();
     });
-  });
+  };
+
+  // Try to listen, allowing fallback ports if needed
+  await tryListenOnPortRange(serverPort, 100);
 };
 
 const createWindow = () => {
