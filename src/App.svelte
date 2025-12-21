@@ -78,6 +78,10 @@
     return (input || []).map((line) => ({
       ...line,
       id: line.id || `line-${Math.random().toString(36).slice(2)}`,
+      controlPoints: line.controlPoints || [],
+      eventMarkers: line.eventMarkers || [],
+      color: line.color || getRandomColor(),
+      name: line.name || "",
       waitBeforeMs: Math.max(
         0,
         Number(line.waitBeforeMs ?? line.waitBefore?.durationMs ?? 0),
@@ -1157,19 +1161,33 @@
     } else {
       // Use the original load function for web or when no directory is set
       loadTrajectoryFromFile(evt, (data) => {
-        startPoint = data.startPoint;
-        lines = normalizeLines(data.lines || []);
+        // Ensure startPoint has all required fields
+        startPoint = data.startPoint || {
+          x: 72,
+          y: 72,
+          heading: "tangential",
+          reverse: false,
+        };
+
+        // Normalize lines with all required fields
+        const normalizedLines = normalizeLines(data.lines || []);
+        lines = normalizedLines;
+
+        // Derive sequence from data or create default
         sequence = (
           data.sequence && data.sequence.length
             ? data.sequence
-            : (data.lines || []).map((ln) => ({
+            : normalizedLines.map((ln) => ({
                 kind: "path",
-                lineId: ln.id || `line-${Math.random().toString(36).slice(2)}`,
+                lineId: ln.id!,
               }))
         ) as SequenceItem[];
-        if (data.shapes) {
-          shapes = data.shapes;
-        }
+
+        // Load shapes with defaults
+        shapes = data.shapes || [];
+
+        isUnsaved.set(false);
+        recordChange();
       });
     }
 
@@ -1232,19 +1250,31 @@
 
   // Helper function to load data into app state
   function loadData(data: any) {
-    startPoint = data.startPoint;
-    lines = normalizeLines(data.lines || []);
+    // Ensure startPoint has all required fields
+    startPoint = data.startPoint || {
+      x: 72,
+      y: 72,
+      heading: "tangential",
+      reverse: false,
+    };
+
+    // Normalize lines with all required fields
+    const normalizedLines = normalizeLines(data.lines || []);
+    lines = normalizedLines;
+
+    // Derive sequence from data or create default
     sequence = (
       data.sequence && data.sequence.length
         ? data.sequence
-        : (data.lines || []).map((ln) => ({
+        : normalizedLines.map((ln) => ({
             kind: "path",
-            lineId: ln.id || `line-${Math.random().toString(36).slice(2)}`,
+            lineId: ln.id!,
           }))
     ) as SequenceItem[];
-    if (data.shapes) {
-      shapes = data.shapes;
-    }
+
+    // Load shapes with defaults
+    shapes = data.shapes || [];
+
     isUnsaved.set(false);
     recordChange();
   }

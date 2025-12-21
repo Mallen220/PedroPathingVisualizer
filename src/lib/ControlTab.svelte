@@ -45,6 +45,20 @@
     controlPoints: lines.map(() => true), // Start with control points collapsed
   };
 
+  // Reactive statements to update UI state when lines or shapes change from file load
+  $: if (lines.length !== collapsedSections.lines.length) {
+    collapsedEventMarkers = lines.map(() => false);
+    collapsedSections = {
+      obstacles: shapes.map(() => true),
+      lines: lines.map(() => false),
+      controlPoints: lines.map(() => true),
+    };
+  }
+
+  $: if (shapes.length !== collapsedSections.obstacles.length) {
+    collapsedSections.obstacles = shapes.map(() => true);
+  }
+
   const makeId = () =>
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   function getWait(i: any) {
