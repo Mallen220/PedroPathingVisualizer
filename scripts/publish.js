@@ -135,7 +135,7 @@ curl -fsSL https://raw.githubusercontent.com/Mallen220/PedroPathingVisualizer/ma
 Download and install via the  \`.exe\` installer below.
 
 #### **Linux**
-Download the \`.deb\` or \`.AppImage\` file. Run in terminal with executable permissions.
+Download the \`.deb\`, \`.tar.gz\`, or \`.AppImage\` file. Run in terminal with executable permissions.
 
 ## 📝 Release Notes
 `;
@@ -269,7 +269,9 @@ async function main() {
 
     // Check for linux x86_64 (amd64) artifacts
     const hasLinuxAmd64 = artifactFiles.some((f) =>
-      f.endsWith(".deb") ? f.includes("_amd64") : f.toLowerCase().includes("amd64") || f.toLowerCase().includes("x64")
+      f.endsWith(".deb")
+        ? f.includes("_amd64")
+        : f.toLowerCase().includes("amd64") || f.toLowerCase().includes("x64"),
     );
 
     if (!hasLinuxAmd64) {

@@ -1,6 +1,6 @@
 ## 1.2.5 (2025-12-21)
 
-- Allows unlimited instances of the app to be running, add GIF exporting, testing x86_64 (amd64) Linux support. 
+- Allows unlimited instances of the app to be running, add GIF exporting, testing x86_64 (amd64) Linux support.
 
 ## 1.2.4 (2025-12-21)
 
