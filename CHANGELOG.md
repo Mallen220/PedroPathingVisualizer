@@ -1,3 +1,7 @@
+## 1.2.4 (2025-12-21)
+
+- Added onion skinning and undo/redo
+
 ## 1.2.3 (2025-12-19)
 
 - Added snap to grid feature, improved drag behavior, major backend refractoring for much better readability, Added wait commands and made the file manager more robust.
