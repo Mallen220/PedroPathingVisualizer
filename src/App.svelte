@@ -112,14 +112,37 @@
   let startTime: number | null = null;
   let previousTime: number | null = null;
   // Path data
-  let settings: Settings = { ...DEFAULT_SETTINGS };
-  let startPoint: Point = getDefaultStartPoint();
-  let lines: Line[] = normalizeLines(getDefaultLines());
-  let sequence: SequenceItem[] = lines.map((ln) => ({
-    kind: "path",
-    lineId: ln.id!,
-  }));
-  let shapes: Shape[] = getDefaultShapes();
+  export let initialData: AppState | null = null;
+
+  let settings: Settings;
+  let startPoint: Point;
+  let lines: Line[];
+  let sequence: SequenceItem[];
+  let shapes: Shape[];
+
+  if (initialData) {
+    settings = initialData.settings || { ...DEFAULT_SETTINGS };
+    startPoint = initialData.startPoint || getDefaultStartPoint();
+    lines = normalizeLines(initialData.lines || getDefaultLines());
+    sequence = initialData.sequence || lines.map((ln) => ({
+      kind: "path",
+      lineId: ln.id!,
+    }));
+    shapes = initialData.shapes || getDefaultShapes();
+    // If a file path is passed, set it in the store
+    if (initialData.filePath) {
+      currentFilePath.set(initialData.filePath);
+    }
+  } else {
+    settings = { ...DEFAULT_SETTINGS };
+    startPoint = getDefaultStartPoint();
+    lines = normalizeLines(getDefaultLines());
+    sequence = lines.map((ln) => ({
+      kind: "path",
+      lineId: ln.id!,
+    }));
+    shapes = getDefaultShapes();
+  }
   let previewOptimizedLines: Line[] | null = null;
 
   const history = createHistory();
