@@ -1,29 +1,32 @@
 <script lang="ts">
-  export let line: Line;
-  export let lineIdx: number;
+  import type { Line, SequenceWaitItem } from "../../types";
+
+  export let item: Line | SequenceWaitItem;
+  export let index: number;
   export let collapsed: boolean;
+  export let label: string = "Line";
 
   function toggleCollapsed() {
     collapsed = !collapsed;
   }
 
   function addEventMarker() {
-    if (!line.eventMarkers) {
-      line.eventMarkers = [];
+    if (!item.eventMarkers) {
+      item.eventMarkers = [];
     }
-    line.eventMarkers.push({
+    item.eventMarkers.push({
       id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: `Event_${lineIdx + 1}_${line.eventMarkers.length + 1}`,
+      name: `Event_${index + 1}_${item.eventMarkers.length + 1}`,
       position: 0.5,
-      lineIndex: lineIdx,
+      lineIndex: index,
     });
-    line = { ...line }; // Force reactivity
+    item = { ...item }; // Force reactivity
   }
 
   function removeEventMarker(eventIdx: number) {
-    if (line.eventMarkers) {
-      line.eventMarkers.splice(eventIdx, 1);
-      line = { ...line };
+    if (item.eventMarkers) {
+      item.eventMarkers.splice(eventIdx, 1);
+      item = { ...item };
     }
   }
 </script>
@@ -51,13 +54,13 @@
           d="m8.25 4.5 7.5 7.5-7.5 7.5"
         />
       </svg>
-      Event Markers ({line.eventMarkers?.length || 0})
+      Event Markers ({item.eventMarkers?.length || 0})
     </button>
     <button
       on:click={addEventMarker}
       class="text-sm text-purple-500 hover:text-purple-600 flex items-center gap-1 px-2 py-1"
       title="Add Event Marker"
-      disabled={line.locked}
+      disabled={item.locked}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -77,9 +80,9 @@
     </button>
   </div>
 
-  {#if !collapsed && line.eventMarkers && line.eventMarkers.length > 0}
+  {#if !collapsed && item.eventMarkers && item.eventMarkers.length > 0}
     <div class="w-full mt-2 space-y-2">
-      {#each line.eventMarkers as event, eventIdx}
+      {#each item.eventMarkers as event, eventIdx}
         <div
           class="flex flex-col p-2 border border-purple-300 dark:border-purple-700 rounded-md bg-purple-50 dark:bg-purple-900/20"
         >
@@ -90,10 +93,10 @@
                 bind:value={event.name}
                 class="pl-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm w-32"
                 placeholder="Event name"
-                disabled={line.locked}
+                disabled={item.locked}
                 on:change={() => {
                   // Update the array to trigger reactivity
-                  line.eventMarkers = [...line.eventMarkers];
+                  item.eventMarkers = [...(item.eventMarkers || [])];
                 }}
               />
             </div>
@@ -103,7 +106,7 @@
               on:click={() => removeEventMarker(eventIdx)}
               class="text-red-500 hover:text-red-600"
               title="Remove Event Marker"
-              disabled={line.locked}
+              disabled={item.locked}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -134,19 +137,19 @@
               step="0.01"
               value={event.position}
               class="flex-1 slider"
-              disabled={line.locked}
+              disabled={item.locked}
               on:input={(e) => {
                 const value = parseFloat(e.target.value);
                 if (!isNaN(value)) {
                   event.position = value;
-                  line.eventMarkers = [...line.eventMarkers];
+                  item.eventMarkers = [...(item.eventMarkers || [])];
                 }
               }}
             />
             <input
               type="number"
               value={event.position}
-              disabled={line.locked}
+              disabled={item.locked}
               min="0"
               max="1"
               step="0.01"
@@ -164,7 +167,7 @@
                 }
                 // Valid - update
                 event.position = value;
-                line.eventMarkers = [...line.eventMarkers];
+                item.eventMarkers = [...(item.eventMarkers || [])];
               }}
               on:keydown={(e) => {
                 if (e.key === "Enter") {
@@ -177,7 +180,7 @@
                   }
                   // Valid - update
                   event.position = value;
-                  line.eventMarkers = [...line.eventMarkers];
+                  item.eventMarkers = [...(item.eventMarkers || [])];
                   e.target.blur(); // Trigger blur to update
                 }
               }}
@@ -185,7 +188,7 @@
           </div>
 
           <div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            Line {lineIdx + 1}, Position: {event.position.toFixed(2)}
+            {label} {index + 1}, Position: {event.position.toFixed(2)}
           </div>
         </div>
       {/each}

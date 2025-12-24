@@ -851,56 +851,85 @@
   }
 
   $: eventMarkers = (() => {
-    const markers = [];
+    const markers: Two.Group[] = [];
 
+    // Helper to create marker
+    const createMarker = (
+      position: { x: number; y: number },
+      idPrefix: string,
+    ) => {
+      const markerGroup = new Two.Group();
+      markerGroup.id = idPrefix;
+
+      // Create a circle for the marker
+      const markerCircle = new Two.Circle(
+        x(position.x),
+        y(position.y),
+        x(POINT_RADIUS * 1.3), // Slightly larger than normal points
+      );
+      markerCircle.id = `${idPrefix}-circle`;
+      markerCircle.fill = "#8b5cf6"; // Purple color
+      markerCircle.stroke = "#ffffff";
+      markerCircle.linewidth = x(0.3);
+
+      // Create a flag/icon inside
+      const flagSize = x(1);
+      const flagPoints = [
+        new Two.Anchor(x(position.x), y(position.y) - flagSize / 2),
+        new Two.Anchor(x(position.x) + flagSize / 2, y(position.y)),
+        new Two.Anchor(x(position.x), y(position.y) + flagSize / 2),
+      ];
+      const flag = new Two.Path(flagPoints, true);
+      flag.fill = "#ffffff";
+      flag.stroke = "none";
+      flag.id = `${idPrefix}-flag`;
+
+      markerGroup.add(markerCircle, flag);
+      return markerGroup;
+    };
+
+    // 1. Line Events
     lines.forEach((line, lineIdx) => {
-      if (!line || !line.endPoint) return; // Skip invalid lines or lines without endPoint
+      if (!line || !line.endPoint) return;
       if (line.eventMarkers && line.eventMarkers.length > 0) {
         line.eventMarkers.forEach((event, eventIdx) => {
-          // Get the correct start point for this line
           const lineStart =
             lineIdx === 0 ? startPoint : lines[lineIdx - 1]?.endPoint || null;
-          if (!lineStart) return; // Skip if previous line's endPoint is missing
+          if (!lineStart) return;
           const curvePoints = [lineStart, ...line.controlPoints, line.endPoint];
           const eventPosition = getCurvePoint(event.position, curvePoints);
 
-          // Create marker visualization
-          const markerGroup = new Two.Group();
-          markerGroup.id = `event-${lineIdx}-${eventIdx}`;
-
-          // Create a circle for the marker
-          const markerCircle = new Two.Circle(
-            x(eventPosition.x),
-            y(eventPosition.y),
-            x(POINT_RADIUS * 1.3), // Slightly larger than normal points
+          markers.push(
+            createMarker(eventPosition, `event-line-${lineIdx}-${eventIdx}`),
           );
-          markerCircle.id = `event-circle-${lineIdx}-${eventIdx}`;
-          markerCircle.fill = "#8b5cf6"; // Purple color
-          markerCircle.stroke = "#ffffff";
-          markerCircle.linewidth = x(0.3);
-          // Create a flag/icon inside
-          const flagSize = x(1);
-          const flagPoints = [
-            new Two.Anchor(
-              x(eventPosition.x),
-              y(eventPosition.y) - flagSize / 2,
-            ),
-            new Two.Anchor(
-              x(eventPosition.x) + flagSize / 2,
-              y(eventPosition.y),
-            ),
-            new Two.Anchor(
-              x(eventPosition.x),
-              y(eventPosition.y) + flagSize / 2,
-            ),
-          ];
-          const flag = new Two.Path(flagPoints, true);
-          flag.fill = "#ffffff";
-          flag.stroke = "none";
-          flag.id = `event-flag-${lineIdx}-${eventIdx}`;
+        });
+      }
+    });
 
-          markerGroup.add(markerCircle, flag);
-          markers.push(markerGroup);
+    // 2. Wait Events
+    sequence.forEach((item, seqIdx) => {
+      if (item.kind === "wait" && (item as any).eventMarkers?.length > 0) {
+        // Find the position where this wait happens (end of previous path)
+        // We need to trace back to find the last known position
+        let position = startPoint;
+
+        // Iterate sequence up to this point to find the robot position
+        for (let i = 0; i < seqIdx; i++) {
+          const prevItem = sequence[i];
+          if (prevItem.kind === "path") {
+            const line = lines.find((l) => l.id === prevItem.lineId);
+            if (line && line.endPoint) {
+              position = line.endPoint;
+            }
+          }
+        }
+
+        (item as any).eventMarkers.forEach((event: any, eventIdx: number) => {
+          // All wait markers are at the same position (robot is stationary)
+          // We could potentially offset them slightly if there are multiple, but stacking is fine for now
+          markers.push(
+            createMarker(position, `event-wait-${seqIdx}-${eventIdx}`),
+          );
         });
       }
     });

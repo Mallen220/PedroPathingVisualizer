@@ -142,6 +142,7 @@ export function calculatePathTime(
           startHeading: currentHeading,
           targetHeading: currentHeading,
           atPoint: lastPoint,
+          eventMarkers: (item as any).eventMarkers,
         });
         currentTime += waitSeconds;
       }
