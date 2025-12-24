@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fade } from 'svelte/transition';
   import App from '../App.svelte';
   import StartScreen from './StartScreen.svelte';
   import type { AppState } from '../utils/history';
@@ -17,4 +18,6 @@
   }
 </script>
 
-<svelte:component this={currentComponent} {...props} on:loadPath={handleLoadPath} on:newPath={handleNewPath} />
+<div in:fade={{ duration: 300 }} out:fade={{ duration: 300 }}>
+  <svelte:component this={currentComponent} {...props} on:loadPath={handleLoadPath} on:newPath={handleNewPath} />
+</div>

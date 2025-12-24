@@ -9,12 +9,7 @@
   let paths: (AppState & { name: string; filePath: string })[] = [];
 
   // Define the Electron API type
-  interface ElectronAPI {
-    getDirectory: () => Promise<string>;
-    listFiles: (directory: string) => Promise<string[]>;
-    readFile: (filePath: string) => Promise<string>;
-  }
-  const electronAPI = (window as any).electronAPI as ElectronAPI | undefined;
+  const electronAPI = window.electronAPI;
 
   async function fetchPaths() {
     if (!electronAPI) {
@@ -25,18 +20,22 @@
     }
 
     try {
-      const directory = await electronAPI.getDirectory();
+      let directory = await electronAPI.getSavedDirectory();
+      if (!directory) {
+        directory = await electronAPI.setDirectory();
+      }
+
       if (directory) {
         const files = await electronAPI.listFiles(directory);
-        const ppFiles = files.filter((file) => file.endsWith('.pp'));
+        const ppFiles = files.filter((file) => file.name.endsWith('.pp'));
 
         const pathData = await Promise.all(
           ppFiles.map(async (file) => {
-            const filePath = `${directory}/${file}`;
+            const filePath = `${directory}/${file.name}`;
             const content = await electronAPI.readFile(filePath);
             const data = JSON.parse(content);
             return {
-              name: file,
+              name: file.name,
               filePath,
               ...data,
             };
