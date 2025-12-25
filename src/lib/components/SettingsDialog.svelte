@@ -5,6 +5,7 @@
   import {
     AVAILABLE_FIELD_MAPS,
     DEFAULT_SETTINGS,
+    DEFAULT_KEY_BINDINGS,
   } from "../../config/defaults";
   import type { Settings } from "../../types";
 
@@ -33,8 +34,15 @@
     event.preventDefault();
     event.stopPropagation();
 
-    // If Escape is pressed, cancel recording without changes
+    // If Escape is pressed, reset this binding to the default and stop recording
     if (event.key === "Escape") {
+      const defaultBinding = DEFAULT_KEY_BINDINGS.find(
+        (b) => b.id === binding.id,
+      );
+      if (defaultBinding) {
+        binding.key = defaultBinding.key;
+        settings = { ...settings }; // Force reactivity
+      }
       recordingKeyFor = null;
       return;
     }
@@ -957,8 +965,8 @@
                       d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
                     />
                   </svg>
-                  Click a button to record a new shortcut. Press Escape to cancel
-                  recording.
+                  Click a button to record a new shortcut. Press Escape to reset the
+                  binding to its default.
                 </p>
               </div>
             </div>
