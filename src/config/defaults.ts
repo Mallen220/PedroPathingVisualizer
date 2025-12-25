@@ -1,4 +1,4 @@
-import type { Point, Line, Shape, Settings } from "../types";
+import type { Point, Line, Shape, Settings, KeyBinding } from "../types";
 import { getRandomColor } from "../utils";
 
 /**
@@ -26,6 +26,46 @@ export const AVAILABLE_FIELD_MAPS = [
 /**
  * Default settings
  */
+export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
+  {
+    id: "add-path",
+    key: "w",
+    description: "Add new path",
+    action: "addNewLine",
+  },
+  {
+    id: "add-control-point",
+    key: "a",
+    description: "Add control point",
+    action: "addControlPoint",
+  },
+  {
+    id: "remove-control-point",
+    key: "s",
+    description: "Remove control point",
+    action: "removeControlPoint",
+  },
+  {
+    id: "save-project",
+    key: "cmd+s, ctrl+s",
+    description: "Save project",
+    action: "saveProject",
+  },
+  {
+    id: "play-pause",
+    key: "space",
+    description: "Play / Pause",
+    action: "togglePlay",
+  },
+  { id: "undo", key: "cmd+z, ctrl+z", description: "Undo", action: "undo" },
+  {
+    id: "redo",
+    key: "cmd+shift+z, ctrl+shift+z, ctrl+y",
+    description: "Redo",
+    action: "redo",
+  },
+];
+
 export const DEFAULT_SETTINGS: Settings = {
   xVelocity: 30,
   yVelocity: 30,
@@ -47,6 +87,7 @@ export const DEFAULT_SETTINGS: Settings = {
   optimizationPopulationSize: 50,
   optimizationMutationRate: 0.4,
   optimizationMutationStrength: 6.0,
+  keyBindings: DEFAULT_KEY_BINDINGS,
 };
 
 /**

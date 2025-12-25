@@ -19,7 +19,6 @@
   } from "../config";
   import FileManager from "./FileManager.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
-  import KeyboardShortcutsDialog from "./components/KeyboardShortcutsDialog.svelte";
   import ExportCodeDialog from "./components/ExportCodeDialog.svelte";
   import { calculatePathTime, formatTime } from "../utils";
 
@@ -44,7 +43,6 @@
 
   let fileManagerOpen = false;
   let settingsOpen = false;
-  let shortcutsOpen = false;
   let exportMenuOpen = false;
   let exportDialog: ExportCodeDialog;
 
@@ -169,8 +167,6 @@
 />
 
 <SettingsDialog bind:isOpen={settingsOpen} bind:settings />
-<KeyboardShortcutsDialog bind:isOpen={shortcutsOpen} />
-
 <div
   class="absolute top-0 left-0 w-full bg-neutral-50 dark:bg-neutral-900 shadow-md flex flex-row justify-between items-center px-6 py-4 border-b-[0.75px] border-[#b300e6]"
 >
@@ -728,58 +724,6 @@
         </svg>
       </a>
 
-      <!-- Keyboard Shortcuts Help -->
-      <button
-        title="Keyboard Shortcuts"
-        on:click={() => (shortcutsOpen = true)}
-        aria-label="Keyboard Shortcuts"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="size-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
-        >
-          <path d="M16 2v4"></path><path d="M21 6V2"></path><path d="M8 6V2"
-          ></path><path d="M3 6V2"></path><rect
-            x="16"
-            y="18"
-            width="4"
-            height="4"
-            rx="1"
-          ></rect><rect x="10" y="18" width="4" height="4" rx="1"></rect><rect
-            x="4"
-            y="18"
-            width="4"
-            height="4"
-            rx="1"
-          ></rect><rect x="4" y="12" width="4" height="4" rx="1"></rect><rect
-            x="10"
-            y="12"
-            width="4"
-            height="4"
-            rx="1"
-          ></rect><rect x="16" y="12" width="4" height="4" rx="1"></rect><rect
-            x="4"
-            y="6"
-            width="4"
-            height="4"
-            rx="1"
-          ></rect><rect x="10" y="6" width="4" height="4" rx="1"></rect><rect
-            x="16"
-            y="6"
-            width="4"
-            height="4"
-            rx="1"
-          ></rect>
-        </svg>
-      </button>
 
       <!-- Settings button -->
       <button
