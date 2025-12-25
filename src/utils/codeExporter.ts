@@ -10,6 +10,7 @@ export async function generateJavaCode(
   startPoint: Point,
   lines: Line[],
   exportFullCode: boolean,
+  sequence?: SequenceItem[],
 ): Promise<string> {
   const headingTypeToFunctionName = {
     constant: "setConstantHeadingInterpolation",

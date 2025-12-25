@@ -53,6 +53,7 @@
           startPoint,
           lines,
           exportFullCode,
+          sequence,
         );
         currentLanguage = java;
       } else if (format === "points") {
@@ -108,7 +109,12 @@
 
   async function handleExportFullCodeChange() {
     if (exportFormat === "java") {
-      exportedCode = await generateJavaCode(startPoint, lines, exportFullCode);
+      exportedCode = await generateJavaCode(
+        startPoint,
+        lines,
+        exportFullCode,
+        sequence,
+      );
     }
   }
 </script>
@@ -142,8 +148,9 @@
             Here is the Sequential Command code for this path:
           {/if}
         </p>
+
         <div class="flex items-center gap-2">
-          {#if exportFormat === "java"}{:else if exportFormat === "sequential"}
+          {#if exportFormat === "sequential"}
             <div class="flex items-center gap-4">
               <div
                 class="flex bg-neutral-100 dark:bg-neutral-800 rounded-md p-0.5 border border-neutral-300 dark:border-neutral-600"
@@ -192,6 +199,28 @@
             </div>
           {/if}
         </div>
+
+        <!-- Close button -->
+        <button
+          on:click={() => (isOpen = false)}
+          aria-label="Close export dialog"
+          class="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width={2}
+            stroke="currentColor"
+            class="size-6 text-neutral-700 dark:text-neutral-400"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18 18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
       </div>
 
       <div class="relative w-full flex-1 overflow-auto">
