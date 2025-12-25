@@ -95,6 +95,12 @@
     collapsedSections.obstacles = shapes.map(() => true);
   }
 
+  function toggleAllPaths() {
+    const allCollapsed = collapsedSections.lines.every((c) => c);
+    collapsedSections.lines = collapsedSections.lines.map(() => !allCollapsed);
+    collapsedSections = { ...collapsedSections };
+  }
+
   const makeId = () =>
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   function getWait(i: any) {
@@ -415,6 +421,39 @@
     {/if}
 
     <StartingPointSection bind:startPoint {addPathAtStart} {addWaitAtStart} />
+
+    <!-- Sequence Header -->
+    <div
+      class="flex items-center gap-2 w-full mt-4 mb-2 border-b border-neutral-200 dark:border-neutral-700 pb-2"
+    >
+      <button
+        on:click={toggleAllPaths}
+        class="flex items-center gap-2 font-semibold hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-sm"
+        title="{collapsedSections.lines.every((c) => c)
+          ? 'Expand all'
+          : 'Collapse all'} paths"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width={2}
+          stroke="currentColor"
+          class="size-4 transition-transform {collapsedSections.lines.every(
+            (c) => c,
+          )
+            ? 'rotate-0'
+            : 'rotate-90'}"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="m8.25 4.5 7.5 7.5-7.5 7.5"
+          />
+        </svg>
+        Sequence ({sequence.length})
+      </button>
+    </div>
 
     <!-- Unified sequence render: paths and waits -->
     {#each sequence as item, sIdx}
