@@ -1,3 +1,7 @@
+## 1.2.9 (2025-12-25)
+
+- Add event markers for wait steps with SolversLib support. 
+
 ## 1.2.8 (2025-12-23)
 
 - Added timeline markers. Added path optimizer based on PathPlanner algorithm. Optimization settings exist in the settings section.
