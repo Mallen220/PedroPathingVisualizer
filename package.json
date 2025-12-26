@@ -7,7 +7,7 @@
   "email": "allenmc220@gmail.com",
   "license": "MIT",
   "description": "A better alternative to pedro pathing visualizer",
-  "type": "module",  
+  "type": "module",
   "scripts": {
     "version:bump": "node scripts/bump-version.js",
     "build": "vite build",

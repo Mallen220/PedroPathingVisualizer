@@ -23,6 +23,7 @@
   import ControlTab from "./lib/ControlTab.svelte";
   import Navbar from "./lib/Navbar.svelte";
   import MathTools from "./lib/MathTools.svelte";
+  import FieldCoordinates from "./lib/components/FieldCoordinates.svelte";
   import _ from "lodash";
   import hotkeys from "hotkeys-js";
   import { createAnimationController } from "./utils/animation";
@@ -124,6 +125,10 @@
   }));
   let shapes: Shape[] = getDefaultShapes();
   let previewOptimizedLines: Line[] | null = null;
+
+  let currentMouseX = 0;
+  let currentMouseY = 0;
+  let isMouseOverField = false;
 
   const history = createHistory();
   const { canUndoStore, canRedoStore } = history;
@@ -1292,7 +1297,28 @@
     let isDown = false;
     let dragOffset = { x: 0, y: 0 }; // Store offset to prevent snapping to center
 
+    two.renderer.domElement.addEventListener("mouseleave", () => {
+      isMouseOverField = false;
+    });
+
     two.renderer.domElement.addEventListener("mousemove", (evt: MouseEvent) => {
+      const rect = two.renderer.domElement.getBoundingClientRect();
+      const transformed = getTransformedCoordinates(
+        evt.clientX,
+        evt.clientY,
+        rect,
+        settings.fieldRotation || 0,
+      );
+      const xPos = transformed.x;
+      const yPos = transformed.y;
+      const rawInchXForDisplay = x.invert(xPos);
+      const rawInchYForDisplay = y.invert(yPos);
+
+      // Update coordinates display
+      currentMouseX = Math.max(0, Math.min(FIELD_SIZE, rawInchXForDisplay));
+      currentMouseY = Math.max(0, Math.min(FIELD_SIZE, rawInchYForDisplay));
+      isMouseOverField = true;
+
       const elem = document.elementFromPoint(evt.clientX, evt.clientY);
 
       if (isDown && currentElem) {
@@ -1302,17 +1328,6 @@
         if (line >= 0 && lines[line]?.locked) {
           return;
         }
-
-        // Use simple bounding rect math to match D3 scales which are bound to clientWidth/Height
-        const rect = two.renderer.domElement.getBoundingClientRect();
-        const transformed = getTransformedCoordinates(
-          evt.clientX,
-          evt.clientY,
-          rect,
-          settings.fieldRotation || 0,
-        );
-        const xPos = transformed.x;
-        const yPos = transformed.y;
 
         // Get current store values for reactivity
         const currentGridSize = $gridSize;
@@ -1842,6 +1857,11 @@
         on:selectstart={(e) => e.preventDefault()}
       />
       <MathTools {x} {y} {twoElement} {robotXY} {robotHeading} />
+      <FieldCoordinates
+        x={currentMouseX}
+        y={currentMouseY}
+        visible={isMouseOverField}
+      />
       <img
         src={settings.robotImage || "/robot.png"}
         alt="Robot"
