@@ -453,7 +453,19 @@
         : "table-tab"}
   >
     {#if activeTab === "table"}
-      <WaypointTable bind:startPoint bind:lines bind:sequence {recordChange} />
+      <WaypointTable
+        bind:startPoint
+        bind:lines
+        bind:sequence
+        {recordChange}
+        onToggleOptimization={() => (optimizationOpen = !optimizationOpen)}
+        {optimizationOpen}
+        {handleOptimizationApply}
+        {onPreviewChange}
+        bind:shapes
+        bind:collapsedObstacles={collapsedSections.obstacles}
+        {settings}
+      />
     {/if}
 
     {#if activeTab === "field"}
