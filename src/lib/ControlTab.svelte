@@ -17,6 +17,7 @@
   import WaitRow from "./components/WaitRow.svelte";
   import WaitMarkersSection from "./components/WaitMarkersSection.svelte";
   import OptimizationDialog from "./components/OptimizationDialog.svelte";
+  import WaypointTable from "./components/WaypointTable.svelte";
   import { calculatePathTime } from "../utils";
 
   export let percent: number;
@@ -41,7 +42,7 @@
   export let onPreviewChange: ((lines: Line[] | null) => void) | null = null;
 
   let optimizationOpen = false;
-  let activeTab: "path" | "field" = "path";
+  let activeTab: "path" | "field" | "table" = "path";
 
   // Reference exported but unused props to silence Svelte unused-export warnings
   $: robotWidth;
@@ -414,15 +415,40 @@
       >
         Field & Tools
       </button>
+      <button
+        role="tab"
+        aria-selected={activeTab === "table"}
+        aria-controls="table-panel"
+        id="table-tab"
+        class="flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 {activeTab ===
+        'table'
+          ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
+          : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
+        on:click={() => (activeTab = "table")}
+      >
+        Table
+      </button>
     </div>
   </div>
 
   <div
     class="flex flex-col justify-start items-start w-full rounded-lg bg-neutral-50 dark:bg-neutral-900 shadow-md p-4 overflow-y-scroll overflow-x-hidden h-full gap-6"
     role="tabpanel"
-    id={activeTab === "path" ? "path-panel" : "field-panel"}
-    aria-labelledby={activeTab === "path" ? "path-tab" : "field-tab"}
+    id={activeTab === "path"
+      ? "path-panel"
+      : activeTab === "field"
+        ? "field-panel"
+        : "table-panel"}
+    aria-labelledby={activeTab === "path"
+      ? "path-tab"
+      : activeTab === "field"
+        ? "field-tab"
+        : "table-tab"}
   >
+    {#if activeTab === "table"}
+      <WaypointTable bind:startPoint bind:lines {recordChange} />
+    {/if}
+
     {#if activeTab === "field"}
       <RobotPositionDisplay
         {robotXY}
