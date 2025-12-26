@@ -166,6 +166,28 @@
     dragPosition = null;
   }
 
+  function syncLinesToSequence(newSeq: SequenceItem[]) {
+    const pathOrder = newSeq
+      .filter((item) => item.kind === "path")
+      .map((item) => item.lineId);
+
+    const byId = new Map(lines.map((l) => [l.id, l]));
+    const reordered: Line[] = [];
+
+    pathOrder.forEach((id) => {
+      const l = byId.get(id);
+      if (l) {
+        reordered.push(l);
+        byId.delete(id);
+      }
+    });
+
+    // Append any lines that are not currently in the sequence to preserve data
+    reordered.push(...byId.values() as Iterable<Line>);
+
+    lines = reordered;
+  }
+
   function handleDrop(e: DragEvent, index: number) {
     e.preventDefault();
     if (draggingIndex === null || draggingIndex === index) {
@@ -201,6 +223,7 @@
 
     newSequence.splice(insertIndex, 0, item);
     sequence = newSequence;
+    syncLinesToSequence(newSequence);
     recordChange();
 
     handleDragEnd();
