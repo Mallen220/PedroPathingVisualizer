@@ -12,6 +12,8 @@
     "version:bump": "node scripts/bump-version.js",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "vitest",
+    "tests": "vitest",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
     "dev": "npm run format && npm run build && electron .",
     "start": "npm run build && electron .",
@@ -24,6 +26,9 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@tsconfig/svelte": "^5.0.4",
     "autoprefixer": "^10.4.20",
     "cli-progress": "^3.12.0",
@@ -31,6 +36,7 @@
     "electron-builder": "^24.9.1",
     "electron-installer-dmg": "^5.0.1",
     "hotkeys-js": "^3.13.9",
+    "jsdom": "^27.3.0",
     "postcss": "^8.4.41",
     "prettier": "^3.7.4",
     "prettier-plugin-svelte": "^3.4.0",
@@ -39,7 +45,8 @@
     "tailwindcss": "^3.4.9",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
-    "vite": "^5.4.14"
+    "vite": "^5.4.14",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@types/d3": "^7.4.3",
@@ -49,6 +56,7 @@
     "express": "^4.18.2",
     "express-rate-limit": "^8.2.1",
     "get-port": "^7.0.0",
+    "gif.js": "^0.2.0",
     "hotkeys-js": "^3.13.9",
     "lodash": "^4.17.21",
     "prettier-plugin-java": "^2.6.4",
@@ -57,8 +65,7 @@
     "svelte-dnd-action": "^0.9.67",
     "svelte-highlight": "^7.7.0",
     "two.js": "^0.8.14",
-    "update-electron-app": "^3.1.1",
-    "gif.js": "^0.2.0"
+    "update-electron-app": "^3.1.1"
   },
   "build": {
     "appId": "com.pedropathing.visualizer",
