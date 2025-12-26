@@ -77,11 +77,11 @@
         class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-semibold"
       >
         <tr>
-          <th class="px-3 py-2 border-b dark:border-neutral-700">Type</th>
           <th class="px-3 py-2 border-b dark:border-neutral-700">Name</th>
-          <th class="px-3 py-2 border-b dark:border-neutral-700">X (in)</th>
+          <th class="px-3 py-2 border-b dark:border-neutral-700"
+            >X (in) / Dur (ms)</th
+          >
           <th class="px-3 py-2 border-b dark:border-neutral-700">Y (in)</th>
-          <th class="px-3 py-2 border-b dark:border-neutral-700">Dur (ms)</th>
           <th class="px-3 py-2 border-b dark:border-neutral-700 w-10"></th>
         </tr>
       </thead>
@@ -93,7 +93,6 @@
           >
             Start Point
           </td>
-          <td class="px-3 py-2 text-neutral-500 dark:text-neutral-400"> - </td>
           <td class="px-3 py-2">
             <input
               type="number"
@@ -114,7 +113,6 @@
               disabled={startPoint.locked}
             />
           </td>
-          <td class="px-3 py-2 text-neutral-500 dark:text-neutral-400">-</td>
           <td class="px-3 py-2 text-center">
             {#if startPoint.locked}
               <span title="Locked">🔒</span>
@@ -136,9 +134,6 @@
                   >
                     ↳ Control {j + 1}
                   </td>
-                  <td class="px-3 py-2 text-neutral-500 dark:text-neutral-400">
-                    -
-                  </td>
                   <td class="px-3 py-2">
                     <input
                       type="number"
@@ -159,9 +154,6 @@
                       disabled={line.locked}
                     />
                   </td>
-                  <td class="px-3 py-2 text-neutral-500 dark:text-neutral-400"
-                    >-</td
-                  >
                   <td class="px-3 py-2 text-center">
                     {#if line.locked}
                       <span title="Locked" class="text-xs">🔒</span>
@@ -174,12 +166,9 @@
               <tr
                 class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 font-medium"
               >
-                <td class="px-3 py-2 text-neutral-800 dark:text-neutral-200">
-                  Path End
-                </td>
                 <td class="px-3 py-2">
                   <input
-                    class="w-28 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+                    class="w-full max-w-[160px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
                     value={line.name || `Path ${lineIdx + 1}`}
                     on:input={(e) =>
                       // @ts-ignore
@@ -208,9 +197,6 @@
                     disabled={line.locked}
                   />
                 </td>
-                <td class="px-3 py-2 text-neutral-500 dark:text-neutral-400"
-                  >-</td
-                >
                 <td class="px-3 py-2 text-center">
                   {#if line.locked}
                     <span title="Locked">🔒</span>
@@ -223,14 +209,9 @@
             <tr
               class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-900/50"
             >
-              <td
-                class="px-3 py-2 font-medium text-amber-600 dark:text-amber-500"
-              >
-                Wait
-              </td>
               <td class="px-3 py-2">
                 <input
-                  class="w-28 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
+                  class="w-full max-w-[160px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
                   value={item.name}
                   on:input={(e) =>
                     // @ts-ignore
@@ -239,8 +220,6 @@
                   placeholder="Wait Name"
                 />
               </td>
-              <td class="px-3 py-2 text-neutral-400 text-xs italic"> - </td>
-              <td class="px-3 py-2 text-neutral-400 text-xs italic"> - </td>
               <td class="px-3 py-2">
                 <input
                   type="number"
@@ -256,6 +235,7 @@
                   disabled={item.locked}
                 />
               </td>
+              <td class="px-3 py-2 text-neutral-400 text-xs italic"> - </td>
               <td class="px-3 py-2 text-center">
                 {#if item.locked}
                   <span title="Locked">🔒</span>
