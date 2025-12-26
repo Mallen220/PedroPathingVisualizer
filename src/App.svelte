@@ -1800,13 +1800,14 @@
   class="w-screen h-screen pt-20 p-2 flex flex-row justify-center items-center gap-2"
 >
   <div class="flex h-full justify-center items-center">
-    <div
-      bind:this={twoElement}
-      bind:clientWidth={width}
-      bind:clientHeight={height}
-      class="h-full aspect-square rounded-lg shadow-md bg-neutral-50 dark:bg-neutral-900 relative overflow-clip"
-      role="application"
-      style="
+    <div class="relative h-full aspect-square">
+      <div
+        bind:this={twoElement}
+        bind:clientWidth={width}
+        bind:clientHeight={height}
+        class="w-full h-full rounded-lg shadow-md bg-neutral-50 dark:bg-neutral-900 relative overflow-clip"
+        role="application"
+        style="
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -1820,20 +1821,20 @@
     -ms-user-drag: none;
     -o-user-drag: none;
   "
-      on:contextmenu={(e) => e.preventDefault()}
-      on:dragstart={(e) => e.preventDefault()}
-      on:selectstart={(e) => e.preventDefault()}
-      tabindex="-1"
-      style:transform={`rotate(${settings.fieldRotation || 0}deg)`}
-      style:transition="transform 0.3s ease-in-out"
-    >
-      <img
-        src={settings.fieldMap
-          ? `/fields/${settings.fieldMap}`
-          : "/fields/decode.webp"}
-        alt="Field"
-        class="absolute top-0 left-0 w-full h-full rounded-lg z-10"
-        style="
+        on:contextmenu={(e) => e.preventDefault()}
+        on:dragstart={(e) => e.preventDefault()}
+        on:selectstart={(e) => e.preventDefault()}
+        tabindex="-1"
+        style:transform={`rotate(${settings.fieldRotation || 0}deg)`}
+        style:transition="transform 0.3s ease-in-out"
+      >
+        <img
+          src={settings.fieldMap
+            ? `/fields/${settings.fieldMap}`
+            : "/fields/decode.webp"}
+          alt="Field"
+          class="absolute top-0 left-0 w-full h-full rounded-lg z-10"
+          style="
     background: transparent; 
     pointer-events: none; 
     user-select: none; 
@@ -1848,33 +1849,34 @@
     -ms-user-drag: none;
     -o-user-drag: none;
   "
-        draggable="false"
-        on:error={(e) => {
-          console.error("Failed to load field map:", settings.fieldMap);
-          e.target.src = "/fields/decode.webp"; // Fallback
-        }}
-        on:dragstart={(e) => e.preventDefault()}
-        on:selectstart={(e) => e.preventDefault()}
-      />
-      <MathTools {x} {y} {twoElement} {robotXY} {robotHeading} />
+          draggable="false"
+          on:error={(e) => {
+            console.error("Failed to load field map:", settings.fieldMap);
+            e.target.src = "/fields/decode.webp"; // Fallback
+          }}
+          on:dragstart={(e) => e.preventDefault()}
+          on:selectstart={(e) => e.preventDefault()}
+        />
+        <MathTools {x} {y} {twoElement} {robotXY} {robotHeading} />
+        <img
+          src={settings.robotImage || "/robot.png"}
+          alt="Robot"
+          style={`position: absolute; top: ${robotXY.y}px;
+left: ${robotXY.x}px; transform: translate(-50%, -50%) rotate(${robotHeading}deg); z-index: 20; width: ${x(robotWidth)}px; height: ${x(robotHeight)}px;user-select: none; -webkit-user-select: none; -moz-user-select: none;-ms-user-select: none;
+pointer-events: none;`}
+          draggable="false"
+          on:error={(e) => {
+            console.error("Failed to load robot image:", settings.robotImage);
+            e.target.src = "/robot.png"; // Fallback to default
+          }}
+          on:dragstart={(e) => e.preventDefault()}
+          on:selectstart={(e) => e.preventDefault()}
+        />
+      </div>
       <FieldCoordinates
         x={currentMouseX}
         y={currentMouseY}
         visible={isMouseOverField}
-      />
-      <img
-        src={settings.robotImage || "/robot.png"}
-        alt="Robot"
-        style={`position: absolute; top: ${robotXY.y}px;
-left: ${robotXY.x}px; transform: translate(-50%, -50%) rotate(${robotHeading}deg); z-index: 20; width: ${x(robotWidth)}px; height: ${x(robotHeight)}px;user-select: none; -webkit-user-select: none; -moz-user-select: none;-ms-user-select: none;
-pointer-events: none;`}
-        draggable="false"
-        on:error={(e) => {
-          console.error("Failed to load robot image:", settings.robotImage);
-          e.target.src = "/robot.png"; // Fallback to default
-        }}
-        on:dragstart={(e) => e.preventDefault()}
-        on:selectstart={(e) => e.preventDefault()}
       />
     </div>
   </div>
