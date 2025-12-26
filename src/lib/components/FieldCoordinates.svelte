@@ -2,11 +2,13 @@
   export let x: number;
   export let y: number;
   export let visible: boolean = true;
+
+  $: positionClass = x < 48 && y < 24 ? "top-2 right-2" : "bottom-2 left-2";
 </script>
 
 {#if visible}
   <div
-    class="absolute bottom-2 left-2 bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-700 z-50 pointer-events-none select-none transition-opacity duration-200"
+    class="absolute {positionClass} bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-700 z-50 pointer-events-none select-none transition-opacity duration-200"
     role="status"
     aria-label="Field Coordinates"
   >
