@@ -7,7 +7,7 @@
     SequenceItem,
     Shape,
   } from "./types";
-  import * as d3 from "d3";
+  import { scaleLinear, type ScaleLinear } from "d3";
   import {
     snapToGrid,
     gridSize,
@@ -243,7 +243,7 @@
   let shapeGroup = new Two.Group();
   shapeGroup.id = "shape-group";
   // Coordinate converters
-  let x: d3.ScaleLinear<number, number, number>;
+  let x: ScaleLinear<number, number, number>;
 
   // Animation controller
   let loopAnimation = true;
@@ -253,15 +253,13 @@
   /**
    * Converter for X axis from inches to pixels.
    */
-  $: x = d3
-    .scaleLinear()
+  $: x = scaleLinear()
     .domain([0, FIELD_SIZE])
     .range([0, width || FIELD_SIZE]);
   /**
    * Converter for Y axis from inches to pixels.
    */
-  $: y = d3
-    .scaleLinear()
+  $: y = scaleLinear()
     .domain([0, FIELD_SIZE])
     .range([height || FIELD_SIZE, 0]);
   $: {

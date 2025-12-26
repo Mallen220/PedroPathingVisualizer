@@ -6,10 +6,10 @@
     protractorLockToRobot,
     gridSize,
   } from "../stores";
-  import type * as d3 from "d3";
+  import type { ScaleLinear } from "d3";
 
-  export let x: d3.ScaleLinear<number, number, number>;
-  export let y: d3.ScaleLinear<number, number, number>;
+  export let x: ScaleLinear<number, number, number>;
+  export let y: ScaleLinear<number, number, number>;
   export let twoElement: HTMLDivElement;
   export let robotXY: { x: number; y: number };
 
