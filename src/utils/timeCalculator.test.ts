@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { calculatePathTime, formatTime } from './timeCalculator';
-import type { Point, Line, Settings, SequenceItem } from '../types';
+import { describe, it, expect } from "vitest";
+import { calculatePathTime, formatTime } from "./timeCalculator";
+import type { Point, Line, Settings, SequenceItem } from "../types";
 
-describe('Time Calculator', () => {
+describe("Time Calculator", () => {
   const defaultSettings: Settings = {
     xVelocity: 10,
     yVelocity: 10,
@@ -10,74 +10,83 @@ describe('Time Calculator', () => {
     maxVelocity: 10,
     maxAcceleration: 5,
     maxDeceleration: 5,
-    fieldMap: 'decode.webp',
+    fieldMap: "decode.webp",
     kFriction: 0.4,
     rWidth: 18,
     rHeight: 18,
     safetyMargin: 1,
-    theme: 'auto'
+    theme: "auto",
   };
 
   const startPoint: Point = {
     x: 0,
     y: 0,
-    heading: 'constant',
+    heading: "constant",
     degrees: 0,
     startDeg: 0,
     endDeg: 0,
     reversed: false,
     reverse: false,
-    type: 'point'
+    type: "point",
   };
 
-  it('calculates travel time correctly for a simple line', () => {
-    const lines: Line[] = [{
-        id: 'line1',
+  it("calculates travel time correctly for a simple line", () => {
+    const lines: Line[] = [
+      {
+        id: "line1",
         endPoint: {
-            x: 10,
-            y: 0,
-            type: 'point',
-            heading: 'constant',
-            degrees: 0
+          x: 10,
+          y: 0,
+          type: "point",
+          heading: "constant",
+          degrees: 0,
         },
         controlPoints: [],
-        color: '#fff'
-    }];
+        color: "#fff",
+      },
+    ];
 
     const result = calculatePathTime(startPoint, lines, defaultSettings);
     expect(result.totalTime).toBeCloseTo(2.828, 2);
   });
 
-  it('formats time correctly', () => {
-      expect(formatTime(1.5)).toBe('1.500s');
-      expect(formatTime(65.123)).toBe('1:05.123s');
-      expect(formatTime(0)).toBe('0.000s');
+  it("formats time correctly", () => {
+    expect(formatTime(1.5)).toBe("1.500s");
+    expect(formatTime(65.123)).toBe("1:05.123s");
+    expect(formatTime(0)).toBe("0.000s");
   });
 
-  it('handles wait commands', () => {
-      const lines: Line[] = [{
-          id: 'line1',
-          endPoint: {
-              x: 10,
-              y: 0,
-              type: 'point',
-              heading: 'constant',
-              degrees: 0
-          },
-          controlPoints: [],
-          color: '#fff'
-      }];
+  it("handles wait commands", () => {
+    const lines: Line[] = [
+      {
+        id: "line1",
+        endPoint: {
+          x: 10,
+          y: 0,
+          type: "point",
+          heading: "constant",
+          degrees: 0,
+        },
+        controlPoints: [],
+        color: "#fff",
+      },
+    ];
 
-      const sequence: SequenceItem[] = [
-          { kind: 'path', lineId: 'line1' },
-          { kind: 'wait', durationMs: 1000, name: 'wait1', id: 'wait1' }
-      ];
+    const sequence: SequenceItem[] = [
+      { kind: "path", lineId: "line1" },
+      { kind: "wait", durationMs: 1000, name: "wait1", id: "wait1" },
+    ];
 
-      const result = calculatePathTime(startPoint, lines, defaultSettings, sequence);
-      expect(result.totalTime).toBeCloseTo(3.828, 2);
+    const result = calculatePathTime(
+      startPoint,
+      lines,
+      defaultSettings,
+      sequence,
+    );
+    expect(result.totalTime).toBeCloseTo(3.828, 2);
   });
 
-  it('calculates rotation time', () => {
+  it("calculates rotation time", () => {
     // We need to trigger the rotation logic:
     // if (diff > 0.1) ...
     // diff = abs(getAngularDifference(currentHeading, requiredStartHeading))
@@ -88,42 +97,49 @@ describe('Time Calculator', () => {
     // We set Line 2 endPoint heading to 'tangential'.
 
     const lines: Line[] = [
-        {
-            id: 'line1',
-            endPoint: {
-                x: 10,
-                y: 0,
-                type: 'point',
-                heading: 'constant',
-                degrees: 0
-            },
-            controlPoints: [],
-            color: '#fff'
+      {
+        id: "line1",
+        endPoint: {
+          x: 10,
+          y: 0,
+          type: "point",
+          heading: "constant",
+          degrees: 0,
         },
-        {
-            id: 'line2',
-            endPoint: {
-                x: 10,
-                y: 10,
-                type: 'point',
-                heading: 'tangential',
-                reverse: false
-            },
-            controlPoints: [],
-            color: '#fff'
-        }
+        controlPoints: [],
+        color: "#fff",
+      },
+      {
+        id: "line2",
+        endPoint: {
+          x: 10,
+          y: 10,
+          type: "point",
+          heading: "tangential",
+          reverse: false,
+        },
+        controlPoints: [],
+        color: "#fff",
+      },
     ];
 
     // Explicitly define sequence to ensure order
     const sequence: SequenceItem[] = [
-        { kind: 'path', lineId: 'line1' },
-        { kind: 'path', lineId: 'line2' }
+      { kind: "path", lineId: "line1" },
+      { kind: "path", lineId: "line2" },
     ];
 
-    const result = calculatePathTime(startPoint, lines, defaultSettings, sequence);
+    const result = calculatePathTime(
+      startPoint,
+      lines,
+      defaultSettings,
+      sequence,
+    );
 
     // Check timeline for wait type without waitId (auto-generated rotation wait)
-    const rotationEvents = result.timeline.filter(e => e.type === 'wait' && !e.waitId);
+    const rotationEvents = result.timeline.filter(
+      (e) => e.type === "wait" && !e.waitId,
+    );
 
     expect(rotationEvents.length).toBeGreaterThan(0);
     expect(rotationEvents[0].duration).toBeCloseTo(1.0, 1);
