@@ -26,6 +26,16 @@
   export let shapes: import("../../types").Shape[];
   export let collapsedObstacles: boolean[];
 
+  // Prevent Svelte unused-export warnings: these are bound from parent and used in markup
+  $: shapes;
+  $: collapsedObstacles;
+
+  // Ensure these are referenced so the compiler doesn't mark them as unused
+  $: _shapesCount = Array.isArray(shapes) ? shapes.length : 0;
+  $: _collapsedObstaclesCount = Array.isArray(collapsedObstacles)
+    ? collapsedObstacles.length
+    : 0;
+
   // Use snap stores to determine step size for inputs
   $: stepSize = $snapToGrid && $showGrid ? $gridSize : 0.1;
 

@@ -31,9 +31,20 @@
   }
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
+  role="button"
+  tabindex="0"
+  aria-pressed={isSelected}
   class={`flex flex-col w-full justify-start items-start gap-1 ${isSelected ? "border-l-4 border-amber-400 pl-2" : ""}`}
   on:click={() => selectedLineId.set(line.id)}
+  on:keydown={(e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      selectedLineId.set(line.id);
+    }
+  }}
 >
   <div class="flex flex-row w-full justify-between items-center">
     <div class="flex flex-row items-center gap-2">
