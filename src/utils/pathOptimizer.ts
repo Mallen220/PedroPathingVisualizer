@@ -41,7 +41,7 @@ export class PathOptimizer {
   // Generate a mutated version of the lines
   private mutate(lines: Line[]): Line[] {
     const newLines = _.cloneDeep(lines);
-    const MIN_DIST = 0.5; // Minimum distance in inches for control points
+    const MIN_DIST = 10; // Minimum distance in inches for control points
 
     let prevPoint = this.startPoint;
 
