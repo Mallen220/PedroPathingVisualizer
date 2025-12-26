@@ -48,8 +48,8 @@
   export let sequence: SequenceItem[];
   export let settings: Settings;
 
-  let viewMode: "directory" | "recent" = "directory";
-  let sortMode: "recent" | "name" = "recent";
+  type SortOption = "recent" | "name" | "date";
+  let sortMode: SortOption = "recent";
   let currentDirectory = "";
   let files: FileInfo[] = [];
   let loading = false;
@@ -157,8 +157,16 @@
   }
 
   async function refreshDirectory() {
-    if (viewMode === "recent") {
-      refreshRecentFiles();
+    errorMessage = "";
+    if (sortMode === "recent") {
+      const recentPaths = settings?.recentFiles || [];
+      files = recentPaths.map((filePath) => ({
+        name: path.basename(filePath),
+        path: filePath,
+        size: 0, // Unknown size without checking file system
+        modified: new Date(), // Unknown modification time
+      }));
+      // Keep recent order (which is preserved from settings.recentFiles array)
       return;
     }
 
@@ -189,6 +197,16 @@
           supportedFileTypes.includes(path.extname(file.name).toLowerCase()),
         );
 
+      // Sort files
+      if (sortMode === "name") {
+        files.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (sortMode === "date") {
+        files.sort(
+          (a, b) =>
+            new Date(b.modified).getTime() - new Date(a.modified).getTime(),
+        );
+      }
+
       errorMessage = "";
     } catch (error) {
       console.error("Error refreshing directory:", error);
@@ -197,36 +215,11 @@
     }
   }
 
-  function refreshRecentFiles() {
-    errorMessage = "";
-    const recentPaths = settings?.recentFiles || [];
-    files = recentPaths.map((filePath) => ({
-      name: path.basename(filePath),
-      path: filePath,
-      size: 0, // Unknown size without checking file system
-      modified: new Date(), // Unknown modification time
-    }));
-
-    if (sortMode === "name") {
-      files.sort((a, b) => a.name.localeCompare(b.name));
-    }
-    // Else keep recent order (which is preserved from settings.recentFiles array)
-  }
-
-  // React to view/sort mode changes
+  // React to sort mode or directory changes
   $: {
-    if (viewMode === "recent") {
-      refreshRecentFiles();
-    } else {
-      if (currentDirectory) {
-        refreshDirectory(); // This is async but okay
-      }
+    if (currentDirectory || sortMode) {
+      refreshDirectory();
     }
-  }
-
-  // React to sort mode changes specifically for recent files
-  $: if (viewMode === "recent" && sortMode) {
-    refreshRecentFiles();
   }
 
   async function changeDirectory() {
@@ -331,7 +324,7 @@
 
     try {
       // Check if file exists (especially for recent files)
-      if (viewMode === "recent") {
+      if (sortMode === "recent") {
         const exists = await electronAPI.fileExists(file.path);
         if (!exists) {
           if (
@@ -343,7 +336,6 @@
               (p) => p !== file.path,
             );
             settings = { ...settings }; // Trigger reactivity
-            // refreshRecentFiles(); // Reactivity will trigger this
           }
           return;
         }
@@ -371,7 +363,7 @@
       selectedFile = file;
 
       // Update recent files list (move to top) if in recent mode
-      if (viewMode === "recent" && settings.recentFiles) {
+      if (sortMode === "recent" && settings.recentFiles) {
         const idx = settings.recentFiles.indexOf(file.path);
         if (idx !== -1) {
           settings.recentFiles.splice(idx, 1);
@@ -835,30 +827,44 @@
         </button>
       </div>
 
-      <!-- View Toggle -->
-      <div class="flex gap-2 mb-4">
-        <button
-          on:click={() => (viewMode = "directory")}
-          class="flex-1 py-1 text-sm rounded-md transition-colors {viewMode ===
-          'directory'
-            ? 'bg-blue-500 text-white'
-            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'}"
-        >
-          Directory
-        </button>
-        <button
-          on:click={() => (viewMode = "recent")}
-          class="flex-1 py-1 text-sm rounded-md transition-colors {viewMode ===
-          'recent'
-            ? 'bg-blue-500 text-white'
-            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'}"
-        >
-          Recent
-        </button>
+      <!-- View/Sort Toggle -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Sort by:</span>
+        </div>
+        <div class="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-md">
+          <button
+            on:click={() => (sortMode = "recent")}
+            class="flex-1 py-1.5 text-xs font-medium rounded transition-all {sortMode ===
+            'recent'
+              ? 'bg-white dark:bg-neutral-700 shadow-sm text-blue-600 dark:text-blue-400'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}"
+          >
+            Recent
+          </button>
+          <button
+            on:click={() => (sortMode = "name")}
+            class="flex-1 py-1.5 text-xs font-medium rounded transition-all {sortMode ===
+            'name'
+              ? 'bg-white dark:bg-neutral-700 shadow-sm text-blue-600 dark:text-blue-400'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}"
+          >
+            Name
+          </button>
+          <button
+            on:click={() => (sortMode = "date")}
+            class="flex-1 py-1.5 text-xs font-medium rounded transition-all {sortMode ===
+            'date'
+              ? 'bg-white dark:bg-neutral-700 shadow-sm text-blue-600 dark:text-blue-400'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}"
+          >
+            Date
+          </button>
+        </div>
       </div>
 
-      <!-- Directory Info with Stats (Only in Directory Mode) -->
-      {#if viewMode === "directory"}
+      <!-- Directory Info (Only when not in Recent sort mode) -->
+      {#if sortMode !== "recent"}
         <div class="mb-4">
           <div class="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
             <div class="font-medium mb-1">Current Directory:</div>
@@ -872,37 +878,10 @@
             </div>
           </div>
         </div>
-      {:else}
-        <!-- Sorting Options (Only in Recent Mode) -->
-        <div class="mb-4 flex items-center justify-between">
-          <span class="text-sm text-neutral-600 dark:text-neutral-400"
-            >Sort by:</span
-          >
-          <div class="flex bg-neutral-100 dark:bg-neutral-800 rounded p-1">
-            <button
-              on:click={() => (sortMode = "recent")}
-              class="px-2 py-0.5 text-xs rounded transition-colors {sortMode ===
-              'recent'
-                ? 'bg-white dark:bg-neutral-700 shadow text-blue-600 dark:text-blue-400'
-                : 'text-neutral-500 dark:text-neutral-400'}"
-            >
-              Recent
-            </button>
-            <button
-              on:click={() => (sortMode = "name")}
-              class="px-2 py-0.5 text-xs rounded transition-colors {sortMode ===
-              'name'
-                ? 'bg-white dark:bg-neutral-700 shadow text-blue-600 dark:text-blue-400'
-                : 'text-neutral-500 dark:text-neutral-400'}"
-            >
-              Name
-            </button>
-          </div>
-        </div>
       {/if}
 
-      <!-- Error Message -->
-      {#if errorMessage}
+      <!-- Error Message (Only show if not in recent mode, or if it's not a directory error) -->
+      {#if errorMessage && (sortMode !== "recent" || !errorMessage.includes("directory"))}
         <div
           class="mb-3 p-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-sm text-red-700 dark:text-red-300"
         >
@@ -910,7 +889,7 @@
         </div>
       {/if}
 
-      {#if viewMode === "directory"}
+      {#if sortMode !== "recent"}
         <button
           on:click={changeDirectory}
           class="w-full px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors flex items-center justify-center gap-2"
@@ -935,7 +914,7 @@
     </div>
 
     <!-- New File Section (Only in Directory Mode) -->
-    {#if viewMode === "directory"}
+    {#if sortMode !== "recent"}
       <div
         class="flex-shrink-0 p-4 border-b border-neutral-200 dark:border-neutral-700"
       >

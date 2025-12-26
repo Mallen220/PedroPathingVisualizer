@@ -1581,6 +1581,12 @@
     } else {
       // Use the original load function for web or when no directory is set
       loadTrajectoryFromFile(evt, (data) => {
+        // Add to recent files if path is available (Electron)
+        if ((file as any).path) {
+          addToRecentFiles((file as any).path);
+          currentFilePath.set((file as any).path);
+        }
+
         // Ensure startPoint has all required fields
         startPoint = data.startPoint || {
           x: 72,
