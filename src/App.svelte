@@ -1814,7 +1814,7 @@
           x: _.random(36, 108),
           y: _.random(36, 108),
           heading: "tangential",
-          reverse: true,
+          reverse: false,
         } as Point,
         controlPoints: [],
         color: getRandomColor(),
