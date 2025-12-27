@@ -244,15 +244,14 @@ const createMenu = (mainWindow) => {
         { role: "toggleDevTools" },
         { type: "separator" },
         { role: "resetZoom" },
-        { role: "zoomIn" },
-        { role: "zoomOut" },
         { type: "separator" },
         { role: "togglefullscreen" },
         { type: "separator" },
         {
           label: "Settings",
           accelerator: "CmdOrCtrl+,",
-          click: () => mainWindow.webContents.send("menu-action", "open-settings"),
+          click: () =>
+            mainWindow.webContents.send("menu-action", "open-settings"),
         },
       ],
     },
@@ -279,11 +278,12 @@ const createMenu = (mainWindow) => {
         {
           label: "Keyboard Shortcuts",
           accelerator: "CmdOrCtrl+/",
-          click: () => mainWindow.webContents.send("menu-action", "open-shortcuts"),
+          click: () =>
+            mainWindow.webContents.send("menu-action", "open-shortcuts"),
         },
         { type: "separator" },
         {
-          label: "Learn More",
+          label: "See Project on GitHub",
           click: async () => {
             await shell.openExternal(
               "https://github.com/Mallen220/PedroPathingVisualizer",
