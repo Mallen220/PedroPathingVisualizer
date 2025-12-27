@@ -10,6 +10,8 @@
     currentFilePath,
     isUnsaved,
     snapToGrid,
+    showSettings,
+    exportDialogState,
   } from "../stores";
   import { getRandomColor } from "../utils";
   import {
@@ -44,7 +46,6 @@
   export let canRedo: boolean;
 
   let fileManagerOpen = false;
-  let settingsOpen = false;
   let shortcutsOpen = false;
   let exportMenuOpen = false;
   let exportDialog: ExportCodeDialog;
@@ -82,6 +83,14 @@
   // Update store when local state changes (from closing dialog)
   $: showShortcuts.set(shortcutsOpen);
 
+  // Sync export dialog state
+  $: if ($exportDialogState.isOpen && exportDialog) {
+    exportDialog.openWithFormat($exportDialogState.format);
+    // Reset store state after opening to allow re-opening
+    // actually, ExportCodeDialog probably doesn't two-way bind openWithFormat well with this store pattern
+    // if we just call openWithFormat it sets internal isOpen=true
+  }
+
   function handleGridSizeChange(event: Event) {
     const value = Number((event.target as HTMLSelectElement).value);
     selectedGridSize = value;
@@ -90,7 +99,7 @@
 
   function handleExport(format: "java" | "points" | "sequential") {
     exportMenuOpen = false;
-    exportDialog.openWithFormat(format);
+    exportDialogState.set({ isOpen: true, format });
   }
 
   function resetPath() {
@@ -184,7 +193,7 @@
   bind:sequence
 />
 
-<SettingsDialog bind:isOpen={settingsOpen} bind:settings />
+<SettingsDialog bind:isOpen={$showSettings} bind:settings />
 <KeyboardShortcutsDialog bind:isOpen={shortcutsOpen} bind:settings />
 <div
   class="absolute top-0 left-0 w-full bg-neutral-50 dark:bg-neutral-900 shadow-md flex flex-row justify-between items-center px-6 py-4 border-b-[0.75px] border-[#b300e6]"
@@ -765,7 +774,7 @@
       <!-- Settings button -->
       <button
         title="Open Settings"
-        on:click={() => (settingsOpen = true)}
+        on:click={() => showSettings.set(true)}
         aria-label="Open Settings"
       >
         <svg

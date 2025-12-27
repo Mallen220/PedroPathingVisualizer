@@ -185,8 +185,30 @@ const createMenu = (mainWindow) => {
         },
         { type: "separator" },
         {
-          label: "Export GIF",
-          click: () => mainWindow.webContents.send("menu-action", "export-gif"),
+          label: "Export",
+          submenu: [
+            {
+              label: "Export as Java Code...",
+              click: () =>
+                mainWindow.webContents.send("menu-action", "export-java"),
+            },
+            {
+              label: "Export as Points Array...",
+              click: () =>
+                mainWindow.webContents.send("menu-action", "export-points"),
+            },
+            {
+              label: "Export as Sequential Command...",
+              click: () =>
+                mainWindow.webContents.send("menu-action", "export-sequential"),
+            },
+            { type: "separator" },
+            {
+              label: "Export GIF...",
+              click: () =>
+                mainWindow.webContents.send("menu-action", "export-gif"),
+            },
+          ],
         },
         { type: "separator" },
         { role: isMac ? "close" : "quit" },
@@ -226,6 +248,12 @@ const createMenu = (mainWindow) => {
         { role: "zoomOut" },
         { type: "separator" },
         { role: "togglefullscreen" },
+        { type: "separator" },
+        {
+          label: "Settings",
+          accelerator: "CmdOrCtrl+,",
+          click: () => mainWindow.webContents.send("menu-action", "open-settings"),
+        },
       ],
     },
     // Window Menu
@@ -248,6 +276,12 @@ const createMenu = (mainWindow) => {
     {
       role: "help",
       submenu: [
+        {
+          label: "Keyboard Shortcuts",
+          accelerator: "CmdOrCtrl+/",
+          click: () => mainWindow.webContents.send("menu-action", "open-shortcuts"),
+        },
+        { type: "separator" },
         {
           label: "Learn More",
           click: async () => {

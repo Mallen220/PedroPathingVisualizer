@@ -16,6 +16,8 @@
     showGrid,
     showProtractor,
     showShortcuts,
+    showSettings,
+    exportDialogState,
   } from "./stores";
   import Two from "two.js";
   import type { Path } from "two.js/src/path";
@@ -1983,6 +1985,21 @@
             break;
           case "export-gif":
             exportGif();
+            break;
+          case "export-java":
+            exportDialogState.set({ isOpen: true, format: "java" });
+            break;
+          case "export-points":
+            exportDialogState.set({ isOpen: true, format: "points" });
+            break;
+          case "export-sequential":
+            exportDialogState.set({ isOpen: true, format: "sequential" });
+            break;
+          case "open-settings":
+            showSettings.set(true);
+            break;
+          case "open-shortcuts":
+            showShortcuts.set(true);
             break;
           case "undo":
             if (canUndo) undoAction();
