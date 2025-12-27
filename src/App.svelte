@@ -1980,10 +1980,10 @@
 />
 <!--   {saveFile} -->
 <div
-  class="w-screen h-screen pt-20 p-2 flex flex-row justify-center items-center gap-2"
+  class="w-screen h-screen pt-20 p-2 flex flex-col lg:flex-row justify-center items-center gap-2 overflow-hidden bg-neutral-200 dark:bg-neutral-950"
 >
-  <div class="flex h-full justify-center items-center">
-    <div class="relative h-full aspect-square" bind:this={wrapperDiv}>
+  <div class="flex-1 flex justify-center items-center min-h-0 min-w-0 w-full lg:h-full relative">
+    <div class="relative max-w-full max-h-full aspect-square" bind:this={wrapperDiv}>
       <div
         bind:this={twoElement}
         bind:clientWidth={width}
@@ -2064,11 +2064,12 @@ pointer-events: none;`}
       />
     </div>
   </div>
-  <ControlTab
-    bind:playing
-    {play}
-    {pause}
-    bind:startPoint
+  <div class="w-full h-[45%] lg:w-[28rem] lg:h-full flex-shrink-0 min-h-0">
+    <ControlTab
+      bind:playing
+      {play}
+      {pause}
+      bind:startPoint
     bind:lines
     bind:sequence
     bind:robotWidth
@@ -2089,4 +2090,5 @@ pointer-events: none;`}
       previewOptimizedLines = newLines;
     }}
   />
+  </div>
 </div>
