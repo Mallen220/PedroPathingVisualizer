@@ -492,14 +492,14 @@
     <div class="flex items-center gap-3">
       <!-- Load trajectory from file -->
       <input
-        id="file-input"
+        id="file-upload"
         type="file"
         accept=".pp"
         on:change={loadFile}
         class="hidden"
       />
       <label
-        for="file-input"
+        for="file-upload"
         title="Load trajectory from a .pp file"
         aria-label="Load trajectory from a .pp file"
         class="cursor-pointer hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
