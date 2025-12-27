@@ -271,6 +271,7 @@
         {lines}
         {settings}
         {sequence}
+        {shapes}
         onApply={handleOptimizationApply}
         {onPreviewChange}
         onClose={() => onToggleOptimization && onToggleOptimization()}

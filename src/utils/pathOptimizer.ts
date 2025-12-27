@@ -1,8 +1,17 @@
 // src/utils/pathOptimizer.ts
 import _ from "lodash";
-import type { Line, Point, SequenceItem, Settings } from "../types";
-import { calculatePathTime } from "./timeCalculator"; // Assuming this is where it's exported
+import type {
+  Line,
+  Point,
+  SequenceItem,
+  Settings,
+  Shape,
+  TimelineEvent,
+} from "../types";
+import { calculatePathTime } from "./timeCalculator";
 import { FIELD_SIZE } from "../config";
+import { calculateRobotState } from "./animation";
+import { pointInPolygon, getRobotCorners } from "./geometry";
 
 export interface OptimizationResult {
   generation: number;
@@ -20,17 +29,20 @@ export class PathOptimizer {
   private originalLines: Line[];
   private settings: Settings;
   private sequence: SequenceItem[];
+  private shapes: Shape[];
 
   constructor(
     startPoint: Point,
     lines: Line[],
     settings: Settings,
     sequence: SequenceItem[],
+    shapes: Shape[] = [],
   ) {
     this.startPoint = _.cloneDeep(startPoint);
     this.originalLines = _.cloneDeep(lines);
     this.settings = settings;
     this.sequence = sequence;
+    this.shapes = shapes;
     // Use settings values if provided, else defaults
     this.generations = settings.optimizationIterations ?? 100;
     this.populationSize = settings.optimizationPopulationSize ?? 50;
@@ -101,18 +113,55 @@ export class PathOptimizer {
         }
       }
 
-      /*
-      if (!line.locked && Math.random() < 0.1) {
-         line.endPoint.x += (Math.random() - 0.5) * 2;
-         line.endPoint.y += (Math.random() - 0.5) * 2;
-         // Clamp...
-      }
-      */
-
       prevPoint = line.endPoint;
     });
 
     return newLines;
+  }
+
+  private checkCollision(timeline: TimelineEvent[], lines: Line[]): boolean {
+    if (!this.shapes || this.shapes.length === 0) return false;
+
+    // Filter out shapes with fewer than 3 vertices
+    const activeShapes = this.shapes.filter((s) => s.vertices.length >= 3);
+    if (activeShapes.length === 0) return false;
+
+    const totalTime = timeline[timeline.length - 1].endTime;
+    const step = 0.2; // Check every 0.2 seconds for performance
+    const identityScale: any = (x: number) => x;
+
+    for (let t = 0; t <= totalTime; t += step) {
+      const percent = (t / totalTime) * 100;
+      const state = calculateRobotState(
+        percent,
+        timeline,
+        lines,
+        this.startPoint,
+        identityScale,
+        identityScale,
+      );
+
+      const corners = getRobotCorners(
+        state.x,
+        state.y,
+        state.heading,
+        this.settings.rWidth,
+        this.settings.rHeight,
+      );
+
+      for (const shape of activeShapes) {
+        // Check if any robot corner is in shape
+        for (const corner of corners) {
+          if (pointInPolygon([corner.x, corner.y], shape.vertices)) return true;
+        }
+
+        // Also check if any shape vertex is inside the robot (for cases where obstacle is smaller than robot)
+        for (const v of shape.vertices) {
+          if (pointInPolygon([v.x, v.y], corners)) return true;
+        }
+      }
+    }
+    return false;
   }
 
   private calculateFitness(lines: Line[]): number {
@@ -122,6 +171,12 @@ export class PathOptimizer {
       this.settings,
       this.sequence,
     );
+
+    // Penalize collisions heavily
+    if (this.checkCollision(result.timeline, lines)) {
+      return Infinity;
+    }
+
     return result.totalTime;
   }
 
@@ -182,9 +237,17 @@ export class PathOptimizer {
         Math.floor(this.populationSize * 0.5),
       );
 
+      // If all parents have infinite time (all colliding), we might be stuck.
+      // In that case, we should probably allow high mutations or keep trying.
+      // But genetic algorithm usually finds a way if at least one valid path exists.
+      // If parentPool is empty or all invalid, we continue mutating anyway.
+
       while (nextGen.length < this.populationSize) {
-        const parent =
-          parentPool[Math.floor(Math.random() * parentPool.length)];
+        let parent = parentPool[0]; // Default to best
+        if (parentPool.length > 0) {
+          parent = parentPool[Math.floor(Math.random() * parentPool.length)];
+        }
+
         const childLines = this.mutate(parent.lines);
         nextGen.push({
           lines: childLines,

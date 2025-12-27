@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
   import { cubicInOut } from "svelte/easing";
-  import type { Line, Point, SequenceItem, Settings } from "../../types";
+  import type { Line, Point, SequenceItem, Settings, Shape } from "../../types";
   import {
     PathOptimizer,
     type OptimizationResult,
@@ -13,6 +13,7 @@
   export let lines: Line[];
   export let settings: Settings;
   export let sequence: SequenceItem[];
+  export let shapes: Shape[] = [];
   export let onApply: (newLines: Line[]) => void;
   export let onPreviewChange: ((lines: Line[] | null) => void) | null = null;
   export let onClose: (() => void) | null = null;
@@ -29,7 +30,13 @@
     progress = 0;
     logs = [];
 
-    const optimizer = new PathOptimizer(startPoint, lines, settings, sequence);
+    const optimizer = new PathOptimizer(
+      startPoint,
+      lines,
+      settings,
+      sequence,
+      shapes,
+    );
 
     logs = [...logs, "Initializing population..."];
 
@@ -124,7 +131,9 @@
   >
     <span class="text-sm font-medium">Current Best Time:</span>
     <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
-      {currentBestTime > 0 ? formatTime(currentBestTime) : "--"}
+      {currentBestTime > 0 && currentBestTime !== Infinity
+        ? formatTime(currentBestTime)
+        : "--"}
     </span>
   </div>
 
