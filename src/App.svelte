@@ -63,21 +63,10 @@
   import { onMount, tick } from "svelte";
   import { debounce } from "lodash";
   import { createHistory, type AppState } from "./utils/history";
-  // Electron API type (defined in preload.js, attached to window)
-  interface ElectronAPI {
-    writeFile: (filePath: string, content: string) => Promise<boolean>;
-    writeFileBase64?: (
-      filePath: string,
-      base64Content: string,
-    ) => Promise<boolean>;
-    showSaveDialog?: (options: any) => Promise<string | null>;
-    getDirectory?: () => Promise<string>;
-    fileExists?: (filePath: string) => Promise<boolean>;
-    readFile?: (filePath: string) => Promise<string>;
-  }
+  import { getFileSystem } from "./utils/fileSystemAdapter";
 
-  // Access electron API from window (attached by preload script)
-  const electronAPI = (window as any).electronAPI as ElectronAPI | undefined;
+  // Access file system via adapter
+  const fileSystem = getFileSystem();
 
   function normalizeLines(input: Line[]): Line[] {
     return (input || []).map((line) => ({
@@ -888,14 +877,15 @@
   }
 
   async function loadRecentFile(path: string) {
-    if (!electronAPI || !electronAPI.readFile) {
-      alert("Cannot load files in this environment");
-      return;
-    }
-
     try {
       // Check if file exists
-      if (electronAPI.fileExists && !(await electronAPI.fileExists(path))) {
+      if (await fileSystem.fileExists(path)) {
+        const content = await fileSystem.readFile(path);
+        const data = JSON.parse(content);
+        loadData(data);
+        currentFilePath.set(path);
+        addToRecentFiles(path);
+      } else {
         if (
           confirm(
             `File not found: ${path}\nDo you want to remove it from recent files?`,
@@ -906,14 +896,7 @@
           );
           settings = { ...settings };
         }
-        return;
       }
-
-      const content = await electronAPI.readFile(path);
-      const data = JSON.parse(content);
-      loadData(data);
-      currentFilePath.set(path);
-      addToRecentFiles(path);
     } catch (err) {
       console.error("Error loading recent file:", err);
       alert("Failed to load file: " + (err as Error).message);
@@ -922,7 +905,7 @@
 
   // Save Function
   async function saveProject() {
-    if ($currentFilePath && electronAPI) {
+    if ($currentFilePath) {
       try {
         const jsonString = JSON.stringify({
           startPoint,
@@ -931,7 +914,7 @@
           shapes,
           settings,
         });
-        await electronAPI.writeFile($currentFilePath, jsonString);
+        await fileSystem.writeFile($currentFilePath, jsonString);
         lastSavedState = getCurrentState();
         isUnsaved.set(false);
         addToRecentFiles($currentFilePath);
@@ -1270,48 +1253,32 @@
         },
       });
 
-      if (
-        electronAPI &&
-        (electronAPI as any).showSaveDialog &&
-        (electronAPI as any).writeFileBase64
-      ) {
-        // Ask user where to save
-        try {
-          const destPath = await (electronAPI as any).showSaveDialog({
-            defaultPath: "path.gif",
-            filters: [{ name: "GIF", extensions: ["gif"] }],
-          });
+      // Try to save via FileSystem (works if showSaveDialog is supported or mocked)
+      // Note: NetworkAdapter.showSaveDialog currently returns null to fallback to browser download
+      const destPath = await fileSystem.showSaveDialog({
+        defaultPath: "path.gif",
+        filters: [{ name: "GIF", extensions: ["gif"] }],
+      });
 
-          if (destPath) {
-            // Convert blob to base64
-            const base64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => {
-                const dataUrl = reader.result as string;
-                const comma = dataUrl.indexOf(",");
-                resolve(dataUrl.slice(comma + 1));
-              };
-              reader.onerror = () =>
-                reject(new Error("Failed to read blob as data URL"));
-              reader.readAsDataURL(blob);
-            });
+      if (destPath) {
+        // Convert blob to base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = reader.result as string;
+            const comma = dataUrl.indexOf(",");
+            resolve(dataUrl.slice(comma + 1));
+          };
+          reader.onerror = () =>
+            reject(new Error("Failed to read blob as data URL"));
+          reader.readAsDataURL(blob);
+        });
 
-            await (electronAPI as any).writeFileBase64(destPath, base64);
-            notif.textContent = `GIF saved to ${destPath}`;
-            setTimeout(() => notif.remove(), 2000);
-            return;
-          } else {
-            notif.textContent = "Save canceled";
-            setTimeout(() => notif.remove(), 1500);
-            return;
-          }
-        } catch (err) {
-          console.error("Error saving GIF via Electron:", err);
-          alert("Failed to save GIF: " + (err as Error).message);
-          notif.remove();
-          return;
-        }
+        await fileSystem.writeFileBase64(destPath, base64);
+        notif.textContent = `GIF saved to ${destPath}`;
+        setTimeout(() => notif.remove(), 2000);
       } else {
+        // Fallback to browser download
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -1666,8 +1633,10 @@
       return;
     }
 
-    // If we're in Electron environment and have a current directory, copy the file
-    if (electronAPI && $currentFilePath) {
+    // If we have a current directory (even via network), copy the file
+    // Check if we are in a "project" context by seeing if currentFilePath is set
+    // AND if we can write to that location.
+    if ($currentFilePath) {
       await loadFileWithCopy(file);
     } else {
       // Use the original load function for web or when no directory is set
@@ -1725,11 +1694,11 @@
           // Get the current directory from the current file path
           const currentDir = $currentFilePath
             ? $currentFilePath.substring(0, $currentFilePath.lastIndexOf("/"))
-            : await electronAPI.getDirectory();
+            : await fileSystem.getDirectory();
           // Create the destination path
           const destPath = currentDir + "/" + file.name;
           // Check if file already exists in the directory
-          const exists = await electronAPI.fileExists(destPath);
+          const exists = await fileSystem.fileExists(destPath);
           if (exists) {
             // Ask for confirmation to overwrite
             const overwrite = confirm(
@@ -1743,7 +1712,7 @@
           }
 
           // Copy the file to the current directory
-          await electronAPI.writeFile(destPath, content);
+          await fileSystem.writeFile(destPath, content);
           // Load the data into the app
           loadData(data);
           // Update the current file path to the newly loaded file
@@ -1841,7 +1810,7 @@
     recordChange();
   }
 
-  import { selectedLineId, toggleCollapseAllTrigger } from "./stores";
+  import { selectedLineId, selectedPointId, toggleCollapseAllTrigger } from "./stores";
 
   function addControlPoint() {
     if (lines.length === 0) return;

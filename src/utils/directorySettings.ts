@@ -5,31 +5,15 @@ const DEFAULT_DIRECTORY_SETTINGS: DirectorySettings = {
   autoPathsDirectory: "",
 };
 
-// Get the path for the directory settings file
-function getDirectorySettingsPath(): string {
-  const electronAPI = (window as any).electronAPI;
-  if (electronAPI) {
-    return electronAPI
-      .getAppDataPath()
-      .then((appDataPath: string) => `${appDataPath}/directory-settings.json`);
-  }
-  return "";
-}
+import { getFileSystem } from "./fileSystemAdapter";
 
 // Save directory settings
 export async function saveDirectorySettings(
   settings: DirectorySettings,
 ): Promise<void> {
   try {
-    const settingsPath = await getDirectorySettingsPath();
-    const electronAPI = (window as any).electronAPI;
-
-    if (electronAPI && settingsPath) {
-      await electronAPI.writeFile(
-        settingsPath,
-        JSON.stringify(settings, null, 2),
-      );
-    }
+    const fs = getFileSystem();
+    await fs.saveDirectorySettings(settings);
   } catch (error) {
     console.error("Error saving directory settings:", error);
   }
@@ -38,17 +22,9 @@ export async function saveDirectorySettings(
 // Load directory settings
 export async function loadDirectorySettings(): Promise<DirectorySettings> {
   try {
-    const settingsPath = await getDirectorySettingsPath();
-    const electronAPI = (window as any).electronAPI;
-
-    if (electronAPI && settingsPath) {
-      const exists = await electronAPI.fileExists(settingsPath);
-      if (exists) {
-        const content = await electronAPI.readFile(settingsPath);
-        const savedSettings = JSON.parse(content) as Partial<DirectorySettings>;
-        return { ...DEFAULT_DIRECTORY_SETTINGS, ...savedSettings };
-      }
-    }
+    const fs = getFileSystem();
+    const settings = await fs.getDirectorySettings();
+    return { ...DEFAULT_DIRECTORY_SETTINGS, ...settings };
   } catch (error) {
     console.error("Error loading directory settings:", error);
   }

@@ -10,28 +10,13 @@ interface StoredSettings {
   lastUpdated: string;
 }
 
-// Helper to get electronAPI safely (allows mocking in tests)
-function getElectronAPI() {
-  return (
-    ((window as any).electronAPI as {
-      getAppDataPath: () => Promise<string>;
-      readFile: (filePath: string) => Promise<string>;
-      writeFile: (filePath: string, content: string) => Promise<boolean>;
-      fileExists: (filePath: string) => Promise<boolean>;
-    }) || undefined
-  );
-}
+import { getFileSystem } from "./fileSystemAdapter";
 
 // Get the settings file path
 async function getSettingsFilePath(): Promise<string> {
-  const api = getElectronAPI();
-  if (!api) {
-    console.warn("Electron API not available, using default settings");
-    return "";
-  }
-
+  const fs = getFileSystem();
   try {
-    const appDataPath = await api.getAppDataPath();
+    const appDataPath = await fs.getAppDataPath();
     return `${appDataPath}/pedro-settings.json`;
   } catch (error) {
     console.error("Error getting app data path:", error);
@@ -87,66 +72,41 @@ function migrateSettings(stored: Partial<StoredSettings>): Settings {
 
 // Load settings from file
 export async function loadSettings(): Promise<Settings> {
-  const api = getElectronAPI();
-  if (!api) {
-    // Try localStorage if Electron API is not available (browser mode)
-    try {
-      const local = localStorage.getItem("pedro-settings");
-      if (local) {
-        const stored: StoredSettings = JSON.parse(local);
-        return migrateSettings(stored);
-      }
-    } catch (e) {
-      console.error("Error loading settings from localStorage:", e);
-    }
-    console.warn("Electron API not available, returning default settings");
-    return { ...DEFAULT_SETTINGS };
-  }
+  const fs = getFileSystem();
 
+  // Try file system (which now works via network too)
   try {
     const filePath = await getSettingsFilePath();
 
-    if (!filePath || !(await api.fileExists(filePath))) {
-      console.log("Settings file does not exist, using defaults");
-      return { ...DEFAULT_SETTINGS };
+    if (!filePath || !(await fs.fileExists(filePath))) {
+      // Fallback to localStorage if file not found (legacy browser support or first run)
+      // But now "browser mode" talks to server.
+      // However, if we want to keep independent browser settings (if server is not reachable?),
+      // we might keep localStorage fallback.
+      // But fileSystemAdapter handles network.
+      console.log("Settings file does not exist, checking localStorage/defaults");
+    } else {
+      const fileContent = await fs.readFile(filePath);
+      const stored: StoredSettings = JSON.parse(fileContent);
+
+      if (stored.version !== SETTINGS_VERSION) {
+        console.log(
+          `Migrating settings from version ${stored.version} to ${SETTINGS_VERSION}`,
+        );
+      }
+      return migrateSettings(stored);
     }
-
-    const fileContent = await api.readFile(filePath);
-    const stored: StoredSettings = JSON.parse(fileContent);
-
-    // Migrate if version differs
-    if (stored.version !== SETTINGS_VERSION) {
-      console.log(
-        `Migrating settings from version ${stored.version} to ${SETTINGS_VERSION}`,
-      );
-    }
-
-    return migrateSettings(stored);
   } catch (error) {
-    console.error("Error loading settings:", error);
-    return { ...DEFAULT_SETTINGS };
+    console.error("Error loading settings from FS:", error);
   }
+
+  // Fallback to defaults
+  return { ...DEFAULT_SETTINGS };
 }
 
 // Save settings to file
 export async function saveSettings(settings: Settings): Promise<boolean> {
-  const api = getElectronAPI();
-  if (!api) {
-    // Try localStorage if Electron API is not available (browser mode)
-    try {
-      const stored: StoredSettings = {
-        version: SETTINGS_VERSION,
-        settings: { ...settings },
-        lastUpdated: new Date().toISOString(),
-      };
-      localStorage.setItem("pedro-settings", JSON.stringify(stored));
-      return true;
-    } catch (e) {
-      console.error("Error saving settings to localStorage:", e);
-    }
-    console.warn("Electron API not available, cannot save settings");
-    return false;
-  }
+  const fs = getFileSystem();
 
   try {
     const filePath = await getSettingsFilePath();
@@ -162,10 +122,19 @@ export async function saveSettings(settings: Settings): Promise<boolean> {
       lastUpdated: new Date().toISOString(),
     };
 
-    await api.writeFile(filePath, JSON.stringify(stored, null, 2));
+    await fs.writeFile(filePath, JSON.stringify(stored, null, 2));
     return true;
   } catch (error) {
     console.error("Error saving settings:", error);
+    // Fallback to localStorage?
+    try {
+      const stored: StoredSettings = {
+        version: SETTINGS_VERSION,
+        settings: { ...settings },
+        lastUpdated: new Date().toISOString(),
+      };
+      localStorage.setItem("pedro-settings", JSON.stringify(stored));
+    } catch {}
     return false;
   }
 }
@@ -179,12 +148,10 @@ export async function resetSettings(): Promise<Settings> {
 
 // Check if settings file exists
 export async function settingsFileExists(): Promise<boolean> {
-  const api = getElectronAPI();
-  if (!api) return false;
-
+  const fs = getFileSystem();
   try {
     const filePath = await getSettingsFilePath();
-    return filePath ? await api.fileExists(filePath) : false;
+    return filePath ? await fs.fileExists(filePath) : false;
   } catch (error) {
     console.error("Error checking settings file:", error);
     return false;

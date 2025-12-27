@@ -159,3 +159,25 @@ export interface FileInfo {
   modified: Date;
   error?: string;
 }
+
+export interface FileSystemAPI {
+  getDirectory(): Promise<string>;
+  setDirectory(): Promise<string | null>;
+  listFiles(directory: string): Promise<FileInfo[]>;
+  readFile(filePath: string): Promise<string>;
+  writeFile(filePath: string, content: string): Promise<boolean>;
+  deleteFile(filePath: string): Promise<boolean>;
+  fileExists(filePath: string): Promise<boolean>;
+  renameFile(
+    oldPath: string,
+    newPath: string,
+  ): Promise<{ success: boolean; newPath: string }>;
+  createDirectory(dirPath: string): Promise<boolean>;
+  getDirectoryStats(dirPath: string): Promise<any>;
+  getDirectorySettings(): Promise<DirectorySettings>;
+  saveDirectorySettings(settings: DirectorySettings): Promise<boolean>;
+  getSavedDirectory(): Promise<string>;
+  getAppDataPath(): Promise<string>;
+  showSaveDialog(options: any): Promise<string | null>;
+  writeFileBase64(filePath: string, base64Content: string): Promise<boolean>;
+}

@@ -70,8 +70,9 @@
   // Add file type filtering
   const supportedFileTypes = [".pp"];
 
-  // Access electronAPI from window
-  const electronAPI = window.electronAPI;
+  // Access file system via adapter
+  import { getFileSystem } from "../utils/fileSystemAdapter";
+  const fileSystem = getFileSystem();
 
   // Helper to get error message from unknown error type
   function getErrorMessage(error: unknown): string {
@@ -121,7 +122,7 @@
 
     try {
       // Try to get saved directory first
-      const savedDir = await electronAPI.getSavedDirectory();
+      const savedDir = await fileSystem.getSavedDirectory();
 
       if (savedDir && savedDir.trim() !== "") {
         try {
@@ -134,7 +135,7 @@
       }
 
       // Fall back to default directory
-      currentDirectory = await electronAPI.getDirectory();
+      currentDirectory = await fileSystem.getDirectory();
       await refreshDirectory();
     } catch (error) {
       console.error("Error loading directory:", error);
@@ -143,13 +144,12 @@
       // Try to create a default directory
       try {
         const defaultDir = path.join(
-          process.env.HOME || "~",
           "Documents",
           "PedroPathingVisualizer",
           "AutoPaths",
         );
 
-        await electronAPI.createDirectory(defaultDir);
+        await fileSystem.createDirectory(defaultDir);
         currentDirectory = defaultDir;
         await saveAutoPathsDirectory(defaultDir);
         await refreshDirectory();
@@ -166,13 +166,13 @@
 
     try {
       // Get directory stats
-      const stats = await electronAPI.getDirectoryStats(currentDirectory);
+      const stats = await fileSystem.getDirectoryStats(currentDirectory);
       if (stats) {
         directoryStats = stats;
       }
 
       // List files
-      const allFiles = await electronAPI.listFiles(currentDirectory);
+      const allFiles = await fileSystem.listFiles(currentDirectory);
 
       // Filter for supported file types and add error handling
       files = allFiles
@@ -218,7 +218,7 @@
 
   async function changeDirectory() {
     try {
-      const newDir = await electronAPI.setDirectory();
+      const newDir = await fileSystem.setDirectory();
       if (newDir) {
         currentDirectory = newDir;
         await saveAutoPathsDirectory(newDir);
@@ -277,14 +277,14 @@
 
     try {
       // Check if new file already exists
-      const exists = await electronAPI.fileExists(newFilePath);
+      const exists = await fileSystem.fileExists(newFilePath);
       if (exists) {
         showToast(`File "${newFileName}" already exists`, "error");
         return;
       }
 
       // Perform the rename
-      const result = await electronAPI.renameFile(
+      const result = await fileSystem.renameFile(
         renamingFile.path,
         newFilePath,
       );
@@ -317,7 +317,7 @@
     }
 
     try {
-      const content = await electronAPI.readFile(file.path);
+      const content = await fileSystem.readFile(file.path);
       const data = JSON.parse(content);
 
       // Validate the loaded data
@@ -367,7 +367,7 @@
         timestamp: new Date().toISOString(),
       });
 
-      await electronAPI.writeFile(selectedFile.path, content);
+      await fileSystem.writeFile(selectedFile.path, content);
       await refreshDirectory();
 
       isUnsaved.set(false);
@@ -401,7 +401,7 @@
 
     try {
       // Check if file exists
-      const exists = await electronAPI.fileExists(filePath);
+      const exists = await fileSystem.fileExists(filePath);
       if (exists) {
         if (!confirm(`File "${fileName}" already exists. Overwrite?`)) {
           return;
@@ -418,7 +418,7 @@
         timestamp: new Date().toISOString(),
       });
 
-      await electronAPI.writeFile(filePath, content);
+      await fileSystem.writeFile(filePath, content);
 
       creatingNewFile = false;
       newFileName = "";
@@ -448,7 +448,7 @@
     }
 
     try {
-      await electronAPI.deleteFile(file.path);
+      await fileSystem.deleteFile(file.path);
 
       if (selectedFile?.path === file.path) {
         selectedFile = null;
@@ -471,7 +471,7 @@
     }
 
     try {
-      const content = await electronAPI.readFile(selectedFile.path);
+      const content = await fileSystem.readFile(selectedFile.path);
       const data = JSON.parse(content);
 
       // Add "Copy" suffix to the name in the data
@@ -485,7 +485,7 @@
 
       // Find a unique name
       while (
-        await electronAPI.fileExists(path.join(currentDirectory, newFileName))
+        await fileSystem.fileExists(path.join(currentDirectory, newFileName))
       ) {
         newFileName = `${baseName}_copy${counter}.pp`;
         counter++;
@@ -495,7 +495,7 @@
 
       const normalizedLines = normalizeLines(data.lines || []);
       const sequenceData = deriveSequence(data, normalizedLines);
-      await electronAPI.writeFile(
+      await fileSystem.writeFile(
         newFilePath,
         JSON.stringify(
           {
@@ -532,7 +532,7 @@
     }
 
     try {
-      const content = await electronAPI.readFile(selectedFile.path);
+      const content = await fileSystem.readFile(selectedFile.path);
       const data = JSON.parse(content);
 
       // Mirror the path data
@@ -546,14 +546,14 @@
 
       // Find a unique name
       while (
-        await electronAPI.fileExists(path.join(currentDirectory, newFileName))
+        await fileSystem.fileExists(path.join(currentDirectory, newFileName))
       ) {
         newFileName = `${baseName}_mirrored${counter}.pp`;
         counter++;
       }
 
       const newFilePath = path.join(currentDirectory, newFileName);
-      await electronAPI.writeFile(
+      await fileSystem.writeFile(
         newFilePath,
         JSON.stringify(mirroredData, null, 2),
       );

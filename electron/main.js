@@ -47,6 +47,246 @@ const startServer = async () => {
   // Serve static files
   expressApp.use(express.static(distPath));
 
+  // Enable JSON parsing for API requests
+  expressApp.use(express.json({ limit: "50mb" }));
+
+  // API Endpoints for Browser Access
+  const apiRouter = express.Router();
+
+  // Helper for consistent API responses
+  const asyncHandler = (fn) => (req, res, next) =>
+    Promise.resolve(fn(req, res, next)).catch(next);
+
+  apiRouter.get(
+    "/file/list",
+    asyncHandler(async (req, res) => {
+      const { directory } = req.query;
+      if (!directory) throw new Error("Directory required");
+      const files = await fs.readdir(directory);
+      const ppFiles = files.filter((file) => file.endsWith(".pp"));
+      const fileDetails = await Promise.all(
+        ppFiles.map(async (file) => {
+          const filePath = path.join(directory, file);
+          const stats = await fs.stat(filePath);
+          return {
+            name: file,
+            path: filePath,
+            size: stats.size,
+            modified: stats.mtime,
+          };
+        }),
+      );
+      res.json(fileDetails);
+    }),
+  );
+
+  apiRouter.get(
+    "/file/read",
+    asyncHandler(async (req, res) => {
+      const { filePath } = req.query;
+      if (!filePath) throw new Error("File path required");
+      const content = await fs.readFile(filePath, "utf-8");
+      res.send(content);
+    }),
+  );
+
+  apiRouter.post(
+    "/file/write",
+    asyncHandler(async (req, res) => {
+      const { filePath, content } = req.body;
+      if (!filePath) throw new Error("File path required");
+      await fs.writeFile(filePath, content, "utf-8");
+      res.json({ success: true });
+    }),
+  );
+
+  apiRouter.post(
+    "/file/delete",
+    asyncHandler(async (req, res) => {
+      const { filePath } = req.body;
+      if (!filePath) throw new Error("File path required");
+      await fs.unlink(filePath);
+      res.json({ success: true });
+    }),
+  );
+
+  apiRouter.get(
+    "/file/exists",
+    asyncHandler(async (req, res) => {
+      const { filePath } = req.query;
+      if (!filePath) throw new Error("File path required");
+      try {
+        await fs.access(filePath);
+        res.json({ exists: true });
+      } catch {
+        res.json({ exists: false });
+      }
+    }),
+  );
+
+  apiRouter.post(
+    "/file/create-directory",
+    asyncHandler(async (req, res) => {
+      const { dirPath } = req.body;
+      if (!dirPath) throw new Error("Directory path required");
+      await fs.mkdir(dirPath, { recursive: true });
+      res.json({ success: true });
+    }),
+  );
+
+  apiRouter.get(
+    "/file/directory-stats",
+    asyncHandler(async (req, res) => {
+      const { dirPath } = req.query;
+      if (!dirPath) throw new Error("Directory path required");
+      const files = await fs.readdir(dirPath);
+      const ppFiles = files.filter((file) => file.endsWith(".pp"));
+      let totalSize = 0;
+      let latestModified = new Date(0);
+      for (const file of ppFiles) {
+        const filePath = path.join(dirPath, file);
+        const stats = await fs.stat(filePath);
+        totalSize += stats.size;
+        if (stats.mtime > latestModified) latestModified = stats.mtime;
+      }
+      res.json({
+        totalFiles: ppFiles.length,
+        totalSize,
+        lastModified: latestModified,
+      });
+    }),
+  );
+
+  apiRouter.post(
+    "/file/rename",
+    asyncHandler(async (req, res) => {
+      const { oldPath, newPath } = req.body;
+      if (!oldPath || !newPath)
+        throw new Error("Old and new paths are required");
+      const exists = await fs
+        .access(newPath)
+        .then(() => true)
+        .catch(() => false);
+      if (exists) {
+        throw new Error(`File "${path.basename(newPath)}" already exists`);
+      }
+      await fs.rename(oldPath, newPath);
+      res.json({ success: true, newPath });
+    }),
+  );
+
+  apiRouter.get(
+    "/settings/directory",
+    asyncHandler(async (req, res) => {
+      const settings = await loadDirectorySettings();
+      res.json(settings);
+    }),
+  );
+
+  apiRouter.post(
+    "/settings/directory",
+    asyncHandler(async (req, res) => {
+      const { settings } = req.body;
+      const success = await saveDirectorySettings(settings);
+      res.json({ success });
+    }),
+  );
+
+  apiRouter.get(
+    "/settings/directory/saved",
+    asyncHandler(async (req, res) => {
+      const settings = await loadDirectorySettings();
+      res.json({ path: settings.autoPathsDirectory || "" });
+    }),
+  );
+
+  apiRouter.get(
+    "/app/data-path",
+    asyncHandler(async (req, res) => {
+      res.json({ path: app.getPath("userData") });
+    }),
+  );
+
+  apiRouter.post(
+    "/file/write-base64",
+    asyncHandler(async (req, res) => {
+      const { filePath, base64Content } = req.body;
+      const buffer = Buffer.from(base64Content, "base64");
+      await fs.writeFile(filePath, buffer);
+      res.json({ success: true });
+    }),
+  );
+
+  apiRouter.post(
+    "/file/set-directory",
+    asyncHandler(async (req, res) => {
+      // Must be run in Electron context, triggers dialog on server
+      if (!mainWindow) throw new Error("Main window not available");
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ["openDirectory"],
+        title: "Select AutoPaths Directory",
+      });
+
+      if (!result.canceled && result.filePaths.length > 0) {
+        const selectedDir = result.filePaths[0];
+        const settings = await loadDirectorySettings();
+        settings.autoPathsDirectory = selectedDir;
+        await saveDirectorySettings(settings);
+        res.json({ path: selectedDir });
+      } else {
+        res.json({ path: null });
+      }
+    }),
+  );
+
+  apiRouter.get(
+    "/file/get-directory",
+    asyncHandler(async (req, res) => {
+      const settings = await loadDirectorySettings();
+      if (
+        settings.autoPathsDirectory &&
+        settings.autoPathsDirectory.trim() !== ""
+      ) {
+        try {
+          await fs.access(settings.autoPathsDirectory);
+          res.json({ path: settings.autoPathsDirectory });
+          return;
+        } catch {}
+      }
+      // Fallback
+      const defaultDir = path.join(
+        process.env.HOME,
+        "Documents",
+        "GitHub",
+        "BBots2025-26",
+        "TeamCode",
+        "src",
+        "main",
+        "assets",
+        "AutoPaths",
+      );
+      try {
+        await fs.access(defaultDir);
+      } catch {
+        await fs.mkdir(defaultDir, { recursive: true });
+      }
+      res.json({ path: defaultDir });
+    }),
+  );
+
+  // Mount API router
+  expressApp.use("/api", apiRouter);
+
+  // Error handler for API
+  expressApp.use((err, req, res, next) => {
+    if (req.url.startsWith("/api")) {
+      console.error("API Error:", err);
+      res.status(500).json({ error: err.message });
+    } else {
+      next(err);
+    }
+  });
+
   // SPA fallback
   expressApp.get("*", limiter, (req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
