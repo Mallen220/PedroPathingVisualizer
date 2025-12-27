@@ -1824,6 +1824,13 @@
     });
   });
 
+  $: if (two && width && height) {
+    if (two.width !== width || two.height !== height) {
+      two.width = width;
+      two.height = height;
+    }
+  }
+
   // Helper: return true if user is typing in an input-like element
   function isUIElementFocused(): boolean {
     const el = document.activeElement as HTMLElement | null;
