@@ -106,7 +106,21 @@
           } else {
             releases.forEach((release: any) => {
               release.assets.forEach((asset: any) => {
-                count += asset.download_count;
+                // Filter for application binaries to avoid counting metadata files (like latest.yml)
+                // which might be downloaded automatically by updaters.
+                const name = asset.name.toLowerCase();
+                if (
+                  name.endsWith(".exe") ||
+                  name.endsWith(".dmg") ||
+                  name.endsWith(".deb") ||
+                  name.endsWith(".rpm") ||
+                  name.endsWith(".appimage") ||
+                  name.endsWith(".pkg") ||
+                  name.endsWith(".zip") ||
+                  name.endsWith(".tar.gz")
+                ) {
+                  count += asset.download_count;
+                }
               });
             });
             page++;
