@@ -25,7 +25,8 @@ export class PathOptimizer {
   private generations: number;
   private mutationRate: number;
   private mutationStrength: number; // Max inches to move a point
-
+  // Cancellation request flag
+  private stopRequested: boolean;
   private startPoint: Point;
   private originalLines: Line[];
   private settings: Settings;
@@ -49,6 +50,14 @@ export class PathOptimizer {
     this.populationSize = settings.optimizationPopulationSize ?? 50;
     this.mutationRate = settings.optimizationMutationRate ?? 0.4;
     this.mutationStrength = settings.optimizationMutationStrength ?? 6.0;
+
+    // Cancellation flag
+    this.stopRequested = false;
+  }
+
+  // Request the optimizer to stop at the next convenient point
+  public stop() {
+    this.stopRequested = true;
   }
 
   // Generate a mutated version of the lines
@@ -273,7 +282,10 @@ export class PathOptimizer {
 
   public async optimize(
     onUpdate: (result: OptimizationResult) => void,
-  ): Promise<{ lines: Line[]; bestTime: number }> {
+  ): Promise<{ lines: Line[]; bestTime: number; stopped?: boolean }> {
+    // Reset cancellation request
+    this.stopRequested = false;
+
     // Initialize population
     let population: { lines: Line[]; time: number }[] = [];
 
@@ -350,6 +362,11 @@ export class PathOptimizer {
         lastYieldTime = performance.now();
       }
 
+      // If stop was requested, break out early
+      if (this.stopRequested) {
+        break;
+      }
+
       // Create next generation
       const nextGen: { lines: Line[]; time: number }[] = [];
 
@@ -382,8 +399,12 @@ export class PathOptimizer {
       population = nextGen;
     }
 
-    // Return best path and best time
+    // Return best path and best time (include stopped flag if cancellation requested)
     population.sort((a, b) => a.time - b.time);
-    return { lines: population[0].lines, bestTime: population[0].time };
+    return {
+      lines: population[0].lines,
+      bestTime: population[0].time,
+      stopped: this.stopRequested,
+    };
   }
 }

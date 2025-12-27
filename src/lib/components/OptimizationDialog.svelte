@@ -27,13 +27,18 @@
   // True if optimizer finished but best candidate still has collision penalty
   let optimizationFailed = false;
 
+  // Runtime optimizer instance (allows us to request stop)
+  let optimizer: PathOptimizer | null = null;
+  let isStopping = false;
+
   async function startOptimization() {
     isRunning = true;
     progress = 0;
     logs = [];
     optimizationFailed = false;
+    isStopping = false;
 
-    const optimizer = new PathOptimizer(
+    optimizer = new PathOptimizer(
       startPoint,
       lines,
       settings,
@@ -67,6 +72,12 @@
 
     optimizedLines = optimizationResult.lines;
     const finalBestTime = optimizationResult.bestTime;
+    const wasStopped = optimizationResult.stopped ?? false;
+
+    if (wasStopped) {
+      logs = [...logs, "Optimization stopped by user."];
+    }
+
     // If bestTime is still in penalty range (>=10000), treat as failure to find collision-free path
     optimizationFailed = finalBestTime >= 10000;
     if (optimizationFailed) {
@@ -78,6 +89,9 @@
 
     logs = [...logs, "Optimization Complete!"];
     isRunning = false;
+    isStopping = false;
+    optimizer = null;
+
     // Automatically show preview of optimized path
     showPreview = true;
     if (onPreviewChange) {
@@ -103,6 +117,14 @@
     showPreview = false;
     if (onPreviewChange) onPreviewChange(null);
     if (onClose) onClose();
+  }
+
+  function stopOptimization() {
+    if (!optimizer) return;
+    // Mark that user requested a stop and ask the optimizer to stop at next opportunity
+    isStopping = true;
+    logs = [...logs, "Stop requested — finishing current generation..."];
+    optimizer.stop();
   }
 
   function togglePreview() {
@@ -199,51 +221,77 @@
   {/if}
 
   {#if isRunning}
-    <button
-      disabled
-      class="w-full px-4 py-2 bg-neutral-400 text-white rounded-md text-sm font-medium cursor-not-allowed flex items-center justify-center gap-2"
-    >
-      <svg
-        class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
-      Optimizing...
-    </button>
-  {:else if optimizedLines !== null}
     <div class="flex gap-2">
       <button
-        on:click={handleClose}
-        class="flex-1 px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-200 rounded-md text-sm font-medium transition-colors"
+        disabled
+        class="flex-1 px-4 py-2 bg-neutral-400 text-white rounded-md text-sm font-medium cursor-not-allowed flex items-center justify-center gap-2"
       >
-        Discard
+        <svg
+          class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        Optimizing...
       </button>
       <button
-        on:click={handleApply}
-        class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors"
-        disabled={optimizationFailed}
-        title={optimizationFailed
-          ? "Cannot apply: optimizer did not find a collision-free path"
-          : ""}
+        on:click={stopOptimization}
+        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
+        disabled={isStopping}
       >
-        Apply New Path
+        {isStopping ? "Stopping..." : "Stop"}
       </button>
     </div>
+  {:else if optimizedLines !== null}
+    {#if optimizationFailed}
+      <div class="flex gap-2">
+        <button
+          on:click={handleClose}
+          class="flex-1 px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-200 rounded-md text-sm font-medium transition-colors"
+        >
+          Discard
+        </button>
+        <button
+          on:click={startOptimization}
+          class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium transition-colors"
+          disabled={isRunning}
+          title={isRunning
+            ? "Optimization already running"
+            : "Retry optimization with current path"}
+        >
+          Retry Optimization
+        </button>
+      </div>
+    {:else}
+      <div class="flex gap-2">
+        <button
+          on:click={handleClose}
+          class="flex-1 px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-200 rounded-md text-sm font-medium transition-colors"
+        >
+          Discard
+        </button>
+        <button
+          on:click={handleApply}
+          class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors"
+        >
+          Apply New Path
+        </button>
+      </div>
+    {/if}
   {:else}
     <button
       on:click={startOptimization}
