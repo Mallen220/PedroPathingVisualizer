@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
-  import { fade, fly } from "svelte/transition";
+  import { fade, fly, slide } from "svelte/transition";
   import { resetSettings } from "../../utils/settingsPersistence";
   import {
     AVAILABLE_FIELD_MAPS,
@@ -948,6 +948,74 @@
                     {/each}
                   </div>
                 </fieldset>
+              </div>
+
+              <!-- Path Color Settings -->
+              <div>
+                <label
+                  class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                >
+                  New Path Color
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Choose how new paths are colored
+                  </div>
+                </label>
+
+                <div class="flex flex-col gap-2 mt-2">
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="color-random"
+                      name="pathColorMode"
+                      value="random"
+                      bind:group={settings.pathColorMode}
+                      class="text-blue-600 focus:ring-blue-500"
+                      on:change={() => (settings = { ...settings })}
+                    />
+                    <label
+                      for="color-random"
+                      class="text-sm text-neutral-700 dark:text-neutral-300"
+                    >
+                      Random Color
+                    </label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="color-fixed"
+                      name="pathColorMode"
+                      value="fixed"
+                      bind:group={settings.pathColorMode}
+                      class="text-blue-600 focus:ring-blue-500"
+                      on:change={() => (settings = { ...settings })}
+                    />
+                    <label
+                      for="color-fixed"
+                      class="text-sm text-neutral-700 dark:text-neutral-300"
+                    >
+                      Fixed Color
+                    </label>
+                  </div>
+                </div>
+
+                {#if settings.pathColorMode === "fixed"}
+                  <div
+                    class="mt-2 flex items-center gap-3 p-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800"
+                    transition:slide={{ duration: 200 }}
+                  >
+                    <input
+                      type="color"
+                      bind:value={settings.defaultPathColor}
+                      class="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                      on:change={() => (settings = { ...settings })}
+                    />
+                    <div
+                      class="text-sm font-mono text-neutral-600 dark:text-neutral-400"
+                    >
+                      {settings.defaultPathColor}
+                    </div>
+                  </div>
+                {/if}
               </div>
             </div>
           {/if}

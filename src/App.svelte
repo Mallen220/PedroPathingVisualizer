@@ -2150,7 +2150,10 @@
           reverse: false,
         },
         controlPoints: [],
-        color: getRandomColor(),
+        color:
+          settings.pathColorMode === "fixed" && settings.defaultPathColor
+            ? settings.defaultPathColor
+            : getRandomColor(),
         locked: false,
         waitBeforeMs: 0,
         waitAfterMs: 0,
@@ -2334,7 +2337,10 @@
         reverse: false,
       } as Point,
       controlPoints: [],
-      color: getRandomColor(),
+      color:
+        settings.pathColorMode === "fixed" && settings.defaultPathColor
+          ? settings.defaultPathColor
+          : getRandomColor(),
       locked: false,
       waitBeforeMs: 0,
       waitAfterMs: 0,

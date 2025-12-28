@@ -308,6 +308,8 @@ export const DEFAULT_SETTINGS: Settings = {
   fieldMap: "decode.webp",
   fieldRotation: 0,
   robotImage: "/robot.png",
+  pathColorMode: "random",
+  defaultPathColor: "#a78bfa", // Default purple-ish
   theme: "auto",
   showGhostPaths: false,
   showOnionLayers: false,
