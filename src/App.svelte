@@ -2408,33 +2408,31 @@ pointer-events: none;`}
 
     <!-- Resizer Handle (Desktop only) -->
     {#if isLargeScreen && showSidebar}
-      <div
-        class="w-2 cursor-col-resize flex justify-center items-center hover:bg-purple-500/50 active:bg-purple-600 transition-colors rounded-sm select-none z-40"
+      <button
+        class="w-2 cursor-col-resize flex justify-center items-center hover:bg-purple-500/50 active:bg-purple-600 transition-colors rounded-sm select-none z-40 border-none bg-transparent p-0 m-0"
         on:mousedown={startHorizontalResize}
-        role="separator"
         aria-label="Resize Sidebar"
         tabindex="0"
       >
         <div
           class="w-[2px] h-8 bg-neutral-400 dark:bg-neutral-600 rounded-full"
         ></div>
-      </div>
+      </button>
     {/if}
 
     <!-- Resizer Handle (Mobile/Tablet only) -->
     {#if !isLargeScreen && showSidebar}
-      <div
-        class="h-2 w-full cursor-row-resize flex justify-center items-center hover:bg-purple-500/50 active:bg-purple-600 transition-colors rounded-sm select-none z-40"
+      <button
+        class="h-2 w-full cursor-row-resize flex justify-center items-center hover:bg-purple-500/50 active:bg-purple-600 transition-colors rounded-sm select-none z-40 border-none bg-transparent p-0 m-0"
         on:mousedown={startVerticalResize}
         on:touchstart={startVerticalResize}
-        role="separator"
         aria-label="Resize Tab"
         tabindex="0"
       >
         <div
           class="h-[2px] w-8 bg-neutral-400 dark:bg-neutral-600 rounded-full"
         ></div>
-      </div>
+      </button>
     {/if}
 
     <!-- Control Tab (Right Pane) -->

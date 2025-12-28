@@ -36,7 +36,7 @@
   export let robotHeight: number;
   export let settings: Settings;
 
-  export let showSidebar = true;
+  // export let showSidebar = true;
 
   export let saveProject: () => any;
   export let saveFileAs: () => any;
