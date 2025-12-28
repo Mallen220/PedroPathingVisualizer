@@ -7,9 +7,10 @@
   export let loopAnimation: boolean;
   export let markers: { percent: number; color: string; name: string }[] = [];
   export let playbackSpeed: number = 1.0;
-  // export let changePlaybackSpeedBy: (delta: number) => void;
-  export let resetPlaybackSpeed: () => void;
   export let setPlaybackSpeed: (factor: number, autoPlay?: boolean) => void;
+
+  import { fade, fly } from "svelte/transition";
+  import { cubicInOut } from "svelte/easing";
 
   // Speed dropdown state & helpers
   let showSpeedMenu = false;
@@ -137,6 +138,8 @@
         class="absolute right-0 bottom-full mb-2 w-36 rounded-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg z-50 overflow-hidden"
         on:click|stopPropagation
         on:keydown={handleMenuKey}
+        in:fly={{ y: 8, duration: 160, easing: cubicInOut }}
+        out:fly={{ y: 8, duration: 120, easing: cubicInOut }}
       >
         {#each speedOptions as s}
           <li role="menuitem">
@@ -170,22 +173,6 @@
             </button>
           </li>
         {/each}
-
-        <li
-          role="separator"
-          class="border-t border-neutral-100 dark:border-neutral-800"
-        ></li>
-        <li>
-          <button
-            on:click={() => {
-              resetPlaybackSpeed();
-              showSpeedMenu = false;
-            }}
-            class="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-          >
-            Reset to 1.00x
-          </button>
-        </li>
       </ul>
     {/if}
   </div>
