@@ -9,7 +9,9 @@
   export let settings: any;
   // export let width: number; // Unused in script, removed
   // export let height: number; // Unused in script, removed
-  export let showGrid = false;
+
+  // Removed showGrid as it is unused
+
   export let snapToGrid = false;
   export const robotXY: any = null; // Unused in this file logic, but passed for binding consistency if needed
   export const robotHeading: number = 0; // Unused in this file logic

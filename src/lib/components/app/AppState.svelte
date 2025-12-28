@@ -113,7 +113,12 @@
   // Initialization
   onMount(async () => {
       const savedSettings = await loadSettings();
-      settings = { ...savedSettings };
+      // Ensure settings is not null or empty
+      if (savedSettings) {
+          settings = { ...DEFAULT_SETTINGS, ...savedSettings };
+      } else {
+          settings = { ...DEFAULT_SETTINGS };
+      }
 
       // Defaults from settings
       robotWidth = settings?.rWidth || DEFAULT_ROBOT_WIDTH;

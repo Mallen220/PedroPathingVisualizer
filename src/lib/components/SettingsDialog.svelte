@@ -157,6 +157,29 @@
     }
   }
 
+  async function handleImageUpload(e: Event) {
+    const target = e.currentTarget as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+      try {
+        const base64 = await imageToBase64(file);
+        settings.robotImage = base64;
+        settings = { ...settings }; // Force reactivity
+
+        // Show success message
+        const successMsg = document.createElement("div");
+        successMsg.className =
+          "fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg";
+        successMsg.textContent = "Robot image updated!";
+        document.body.appendChild(successMsg);
+        setTimeout(() => successMsg.remove(), 3000);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Unknown error";
+        alert("Error loading image: " + msg);
+      }
+    }
+  }
+
   // Helper function to handle input with validation
   function handleNumberInput(
     value: string,
@@ -180,7 +203,7 @@
   }
 
   // Helper function to convert file to base64
-  function imageToBase64(file) {
+  function imageToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -525,26 +548,7 @@
                       type="file"
                       accept="image/*"
                       class="hidden"
-                      on:change={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          try {
-                            const base64 = await imageToBase64(file);
-                            settings.robotImage = base64;
-                            settings = { ...settings }; // Force reactivity
-
-                            // Show success message
-                            const successMsg = document.createElement("div");
-                            successMsg.className =
-                              "fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg";
-                            successMsg.textContent = "Robot image updated!";
-                            document.body.appendChild(successMsg);
-                            setTimeout(() => successMsg.remove(), 3000);
-                          } catch (error) {
-                            alert("Error loading image: " + error.message);
-                          }
-                        }
-                      }}
+                      on:change={handleImageUpload}
                     />
                     <button
                       on:click={() =>

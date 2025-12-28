@@ -20,25 +20,37 @@
   import DataController from "./DataController.svelte";
 
   import { calculatePathTime, getAnimationDuration } from "../../../utils";
-  import { DEFAULT_KEY_BINDINGS, FIELD_SIZE } from "../../../config";
+  import {
+    DEFAULT_KEY_BINDINGS,
+    FIELD_SIZE,
+    DEFAULT_SETTINGS,
+    getDefaultStartPoint,
+    getDefaultLines,
+    getDefaultShapes
+  } from "../../../config";
   import { scaleLinear } from "d3";
   import {
     showSidebar,
     snapToGrid,
     showGrid
   } from "../../../stores";
+  import { normalizeLines } from "../../../utils/path";
+  import type { SequenceItem } from "../../../types";
 
   // --- State & Logic ---
   let appState: AppState;
 
-  // Bound variables from AppState
-  let startPoint: any;
-  let lines: any;
-  let shapes: any;
-  let sequence: any;
-  let settings: any;
-  let robotWidth: any;
-  let robotHeight: any;
+  // Bound variables from AppState - Initialize with Defaults to prevent undefined errors
+  let startPoint = getDefaultStartPoint();
+  let lines = normalizeLines(getDefaultLines());
+  let shapes = getDefaultShapes();
+  let sequence: SequenceItem[] = lines.map((ln) => ({
+    kind: "path" as const,
+    lineId: ln.id!,
+  }));
+  let settings = { ...DEFAULT_SETTINGS };
+  let robotWidth = DEFAULT_SETTINGS.rWidth;
+  let robotHeight = DEFAULT_SETTINGS.rHeight;
 
   // Bind directly to exposed props of AppState
   let canUndo = false;
@@ -238,7 +250,6 @@
                     {x} {y}
                     {robotXY} {robotHeading}
                     snapToGrid={$snapToGrid}
-                    showGrid={$showGrid}
                     let:currentMouseX
                     let:currentMouseY
                     let:isMouseOverField
