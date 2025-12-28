@@ -91,9 +91,16 @@
   // Reactive statements to update UI state when lines or shapes change from file load
   $: if (lines.length !== collapsedSections.lines.length) {
     collapsedEventMarkers = lines.map(() => false);
+    // Determine whether current sections are all collapsed (without referencing reactive `allCollapsed` to avoid cycles)
+    const wasAllCollapsed =
+      collapsedSections &&
+      collapsedSections.lines &&
+      collapsedSections.lines.length > 0 &&
+      collapsedSections.lines.every((v) => v === true);
     collapsedSections = {
       obstacles: shapes.map(() => true),
-      lines: lines.map(() => false),
+      // If sections were all collapsed, new lines should start collapsed
+      lines: lines.map(() => (wasAllCollapsed ? true : false)),
       controlPoints: lines.map(() => true),
     };
   }
@@ -171,7 +178,11 @@
     newSeq.splice(seqIndex + 1, 0, { kind: "path", lineId: newLine.id! });
     sequence = newSeq;
 
-    collapsedSections.lines.splice(lineIndex + 1, 0, false);
+    collapsedSections.lines.splice(
+      lineIndex + 1,
+      0,
+      allCollapsed ? true : false,
+    );
     collapsedSections.controlPoints.splice(lineIndex + 1, 0, true);
     collapsedEventMarkers.splice(lineIndex + 1, 0, false);
 
@@ -225,7 +236,7 @@
     };
     lines = [...lines, newLine];
     sequence = [...sequence, { kind: "path", lineId: newLine.id! }];
-    collapsedSections.lines.push(false);
+    collapsedSections.lines.push(allCollapsed ? true : false);
     collapsedSections.controlPoints.push(true);
     // Select the newly created line and its endpoint
     selectedLineId.set(newLine.id!);
@@ -320,12 +331,18 @@
     };
     lines = [newLine, ...lines];
     sequence = [{ kind: "path", lineId: newLine.id! }, ...sequence];
-    collapsedSections.lines = [false, ...collapsedSections.lines];
+    collapsedSections.lines = [
+      allCollapsed ? true : false,
+      ...collapsedSections.lines,
+    ];
     collapsedSections.controlPoints = [
       true,
       ...collapsedSections.controlPoints,
     ];
-    collapsedEventMarkers = [false, ...collapsedEventMarkers];
+    collapsedEventMarkers = [
+      allCollapsed ? true : false,
+      ...collapsedEventMarkers,
+    ];
     // Select the new starting path
     selectedLineId.set(newLine.id!);
     recordChange();
@@ -376,8 +393,8 @@
     newSeq.splice(seqIndex + 1, 0, { kind: "path", lineId: newLine.id! });
     sequence = newSeq;
 
-    // Add UI state for the new line
-    collapsedSections.lines.push(false);
+    // Add UI state for the new line (respect collapse-all)
+    collapsedSections.lines.push(allCollapsed ? true : false);
     collapsedSections.controlPoints.push(true);
     collapsedEventMarkers.push(false);
 
