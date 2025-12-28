@@ -74,25 +74,51 @@ select_asset_by_pattern() {
     arch_candidates=()
     if [[ "$arch" == "arm64" ]] || [[ "$arch" == "aarch64" ]]; then
         arch_candidates=("arm64" "aarch64")
+        arch_display="Apple Silicon (M series)"
     else
         arch_candidates=("amd64" "x86_64" "x64" "x86")
+        arch_display="Intel (x86_64)"
     fi
 
-    # Try to auto-select asset that includes architecture in filename (case-insensitive)
+    # Try to auto-detect best match
+    auto_match_url=""
+    auto_match_name=""
+    
     for a in "${arch_candidates[@]}"; do
         for u in "${urls[@]}"; do
             fname=$(basename "$u")
             if echo "$fname" | grep -iq "$a"; then
-                echo "$u"
-                return
+                auto_match_url="$u"
+                auto_match_name="$fname"
+                break 2
             fi
         done
     done
+    
+    # If on x86_64/amd64 and no explicit match, exclude arm/aarch variants
+    if [ -z "$auto_match_url" ] && [[ "$arch" != "arm64" && "$arch" != "aarch64" ]]; then
+        for u in "${urls[@]}"; do
+            fname=$(basename "$u")
+            if ! echo "$fname" | grep -Eiq "(arm64|aarch64|arm)"; then
+                auto_match_url="$u"
+                auto_match_name="$fname"
+                break
+            fi
+        done
+    fi
 
-    # No auto-match; present interactive choices
+    # Present interactive choices with auto-detect option
     echo "" >&2
     echo "Multiple assets found for pattern: $pattern" >&2
     echo "" >&2
+    
+    if [ -n "$auto_match_url" ]; then
+        printf "  [A] Auto-detect for %s → %s (recommended)\n" "$arch_display" "$auto_match_name" >&2
+    else
+        printf "  [A] Auto-detect for %s (no match found)\n" "$arch_display" >&2
+    fi
+    echo "" >&2
+    
     local i=1
     for u in "${urls[@]}"; do
         printf "  [%d] %s\n" "$i" "$(basename "$u")" >&2
@@ -102,7 +128,25 @@ select_asset_by_pattern() {
     echo "" >&2
 
     while true; do
-        read -p "Select an asset number to download [1-$((i-1))] or 0: " sel < /dev/tty
+        read -p "Select an asset [A/1-$((i-1))/0] (Default: A): " sel < /dev/tty
+        
+        # Default to auto if empty
+        if [ -z "$sel" ]; then
+            sel="A"
+        fi
+        
+        # Handle auto-detect
+        if [[ "$sel" == "A" || "$sel" == "a" ]]; then
+            if [ -n "$auto_match_url" ]; then
+                print_status "Auto-selected: $auto_match_name" >&2
+                echo "$auto_match_url"
+                return
+            else
+                print_error "No suitable asset found for $arch_display" >&2
+                continue
+            fi
+        fi
+        
         if printf "%s" "$sel" | grep -Eq "^[0-9]+$"; then
             if [ "$sel" -eq 0 ]; then
                 read -p "Enter full download URL: " manual < /dev/tty
@@ -113,7 +157,7 @@ select_asset_by_pattern() {
                 return
             fi
         fi
-        echo "Invalid selection."
+        echo "Invalid selection." >&2
     done
 }
 
