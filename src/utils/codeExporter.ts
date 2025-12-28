@@ -1,4 +1,4 @@
-import prettier from "prettier";
+import * as prettier from "prettier";
 import prettierJavaPlugin from "prettier-plugin-java";
 import type { Point, Line, BasePoint, SequenceItem } from "../types";
 import { getCurvePoint } from "./math";
