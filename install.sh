@@ -37,6 +37,13 @@ get_download_urls() {
     grep -Ei "$pattern" || true
 }
 
+# Return the latest release version (tag_name) without leading 'v'
+get_latest_version() {
+    curl -s "https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases/latest" | \
+    grep -o '"tag_name": "[^"]*"' | \
+    head -1 | cut -d'"' -f4 | sed 's/^v//' || true
+}
+
 # Interactive asset selector: prefers local machine architecture if possible
 # Compatible with older bash (avoids 'mapfile') and prints a clear numbered list
 select_asset_by_pattern() {
@@ -127,6 +134,33 @@ install_mac() {
 
     print_status "Looking for DMG assets in the latest release..."
     DOWNLOAD_URL=$(select_asset_by_pattern "\.dmg")
+
+    # Fallback for Intel macs: if no DMG found via the general selector, try explicit conventional names
+    if [ -z "$DOWNLOAD_URL" ] && [[ "$(uname -m)" == "x86_64" || "$(uname -m)" == "i386" ]]; then
+        print_info "No DMG auto-selected; attempting Intel mac fallback filenames..."
+        version=$(get_latest_version)
+        if [ -n "$version" ]; then
+            # Candidate filename patterns to try (covers common naming conventions and the requested variant)
+            candidates=(
+                "Pedro-Pathing-Visualizer-${version}.dmg"
+                "Pedro-Pathing-Visualizer-${version}-amd64.dmg"
+                "pedro-pathing-visualizer_${version}.dmg"
+                "pedro-pathing-visualizer-${version}.dmg"
+                "Pedro-Pathing-Visualizer-${version}-arm64.dmg"
+            )
+
+            for c in "${candidates[@]}"; do
+                # Escape dots for regex, search by basename match
+                pattern="$(echo "$c" | sed 's/\./\\./g')$"
+                url=$(get_download_urls "$pattern")
+                if [ -n "$url" ]; then
+                    DOWNLOAD_URL="$url"
+                    print_status "Found DMG via fallback: $(basename "$url")"
+                    break
+                fi
+            done
+        fi
+    fi
 
     if [ -z "$DOWNLOAD_URL" ]; then
         print_error "No DMG found in latest release. You can manually provide a direct download URL."
