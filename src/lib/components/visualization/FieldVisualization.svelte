@@ -109,22 +109,12 @@
           pointElem.fill = line.color;
           pointElem.noStroke();
 
-          // Fix: Ensure 4th argument is a style object or similar, if Two.Text signature expects it.
-          // Or remove it if it's incorrect. Looking at Two.js docs or typical usage, Two.Text(message, x, y, styles).
-          // styles is an object. `x(POINT_RADIUS)` is a number. This was causing a type error.
-          // Probably intended to be 'styles'? Or maybe radius was passed incorrectly?
-          // If I look at App.svelte: `let pointText = new Two.Text("${idx1}", x(point.x), y(point.y - 0.15), x(POINT_RADIUS));`
-          // Maybe it's NOT style, but something else? Or maybe types are wrong.
-          // If I pass an object `{ size: x(1.55) }` etc, it might be better.
-          // But constructor is `constructor(message?: string, x?: number, y?: number, styles?: any)`
-          // If I just omit the 4th arg and set properties later, it's safer.
-
+          // Removed style argument to fix type error, setting properties individually
           let pointText = new Two.Text(
             `${idx1}`,
             x(point.x),
             y(point.y - 0.15)
           );
-          // Set styles on the instance
           pointText.size = x(1.55);
           pointText.leading = 1;
           pointText.family = "ui-sans-serif, system-ui, sans-serif";
@@ -496,4 +486,10 @@
 
 </script>
 
-<div bind:this={container} class="w-full h-full"></div>
+<div
+  bind:this={container}
+  bind:clientWidth={width}
+  bind:clientHeight={height}
+  class="w-full h-full absolute top-0 left-0 z-15 pointer-events-none"
+  style="z-index: 15;"
+></div>
