@@ -1,3 +1,4 @@
+
 <script lang="ts">
   import type { Point, Line, Shape, Settings, SequenceItem } from "../types";
   import { onMount, onDestroy } from "svelte";
@@ -12,6 +13,8 @@
     snapToGrid,
     showSettings,
     exportDialogState,
+    showSidebar,
+    showShortcuts
   } from "../stores";
   import { getRandomColor } from "../utils";
   import {
@@ -24,7 +27,6 @@
   import KeyboardShortcutsDialog from "./components/KeyboardShortcutsDialog.svelte";
   import ExportCodeDialog from "./components/ExportCodeDialog.svelte";
   import { calculatePathTime, formatTime } from "../utils";
-  import { showShortcuts } from "../stores";
 
   export let loadFile: (evt: any) => any;
 
@@ -36,8 +38,6 @@
   export let robotHeight: number;
   export let settings: Settings;
 
-  // export let showSidebar = true;
-
   export let saveProject: () => any;
   export let saveFileAs: () => any;
   export let exportGif: () => any;
@@ -46,6 +46,7 @@
   export let recordChange: () => any;
   export let canUndo: boolean;
   export let canRedo: boolean;
+  export const onPreviewOptimizedLines: (lines: Line[] | null) => void = () => {};
 
   let fileManagerOpen = false;
   let shortcutsOpen = false;
@@ -88,9 +89,6 @@
   // Sync export dialog state
   $: if ($exportDialogState.isOpen && exportDialog) {
     exportDialog.openWithFormat($exportDialogState.format);
-    // Reset store state after opening to allow re-opening
-    // actually, ExportCodeDialog probably doesn't two-way bind openWithFormat well with this store pattern
-    // if we just call openWithFormat it sets internal isOpen=true
   }
 
   function handleGridSizeChange(event: Event) {
@@ -308,6 +306,20 @@
       class="h-6 border-l border-neutral-300 dark:border-neutral-700 mx-4"
       aria-hidden="true"
     ></div>
+
+    <!-- Sidebar toggle -->
+    <button
+      title={$showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+      aria-label={$showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+      aria-pressed={$showSidebar}
+      on:click={() => showSidebar.update(v => !v)}
+      class:text-blue-500={$showSidebar}
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+        </svg>
+    </button>
 
     <!-- Snap to grid toggle -->
     {#if $showGrid}
