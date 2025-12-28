@@ -69,8 +69,6 @@
   let mainContentHeight = 0;
   let mainContentWidth = 0;
   let mainContentDiv: HTMLDivElement;
-  let width = 0;
-  let height = 0;
   let innerWidth = 0;
   let innerHeight = 0;
   let userFieldLimit: number | null = null;
@@ -93,8 +91,8 @@
   $: playbackSpeed = $playbackSpeedStore;
 
   // --- D3 Scales (Used for resizing logic / math) ---
-  $: x = d3.scaleLinear().domain([0, FIELD_SIZE]).range([0, width || FIELD_SIZE]);
-  $: y = d3.scaleLinear().domain([0, FIELD_SIZE]).range([height || FIELD_SIZE, 0]);
+  $: x = d3.scaleLinear().domain([0, FIELD_SIZE]).range([0, fieldDrawSize || FIELD_SIZE]);
+  $: y = d3.scaleLinear().domain([0, FIELD_SIZE]).range([fieldDrawSize || FIELD_SIZE, 0]);
 
   // --- Preview Optimization ---
   let previewOptimizedLines: any[] | null = null;
