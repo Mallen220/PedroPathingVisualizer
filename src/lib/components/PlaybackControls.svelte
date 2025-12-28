@@ -10,6 +10,23 @@
   // export let changePlaybackSpeedBy: (delta: number) => void;
   export let resetPlaybackSpeed: () => void;
   export let setPlaybackSpeed: (factor: number, autoPlay?: boolean) => void;
+
+  // Speed dropdown state & helpers
+  let showSpeedMenu = false;
+  const speedOptions = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
+
+  function toggleSpeedMenu() {
+    showSpeedMenu = !showSpeedMenu;
+  }
+
+  function selectSpeed(s) {
+    setPlaybackSpeed(s, true);
+    showSpeedMenu = false;
+  }
+
+  function handleMenuKey(e) {
+    if (e.key === "Escape") showSpeedMenu = false;
+  }
 </script>
 
 <div
@@ -83,45 +100,94 @@
     </svg>
   </button>
 
-  <!-- Playback Speed Indicator -->
-  <div class="ml-2">
+  <!-- Playback Speed Indicator (dropdown) -->
+  <div class="ml-2 relative">
     <button
-      title="Cycle playback speed (0.25x - 3x). Press '1' to reset to 1x."
-      aria-label="Playback speed"
-      on:click={() => {
-        // cycle by +0.25 and wrap to 0.25 after 3.0
-        const curr = playbackSpeed || 1.0;
-        const next = Math.round((curr + 0.25) * 100) / 100;
-        if (next > 3.0) {
-          setPlaybackSpeed(0.25, true);
-        } else {
-          setPlaybackSpeed(next, true);
-        }
-      }}
-      on:keydown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          const curr = playbackSpeed || 1.0;
-          const next = Math.round((curr + 0.25) * 100) / 100;
-          if (next > 3.0) {
-            setPlaybackSpeed(0.25, true);
-          } else {
-            setPlaybackSpeed(next, true);
-          }
-        } else if (e.key === "1") {
-          e.preventDefault();
-          resetPlaybackSpeed();
-        }
-      }}
-      class="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+      title="Open playback speed menu"
+      aria-label="Playback speed options"
+      aria-haspopup="menu"
+      aria-expanded={showSpeedMenu}
+      on:click|stopPropagation={toggleSpeedMenu}
+      class="flex items-center gap-2 px-3 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-sm text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
       tabindex="0"
     >
-      {#if playbackSpeed}
-        <span>{playbackSpeed.toFixed(2)}x</span>
-      {:else}
-        <span>1.00x</span>
-      {/if}
+      <span class="font-medium">{(playbackSpeed || 1).toFixed(2)}x</span>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="size-4 text-neutral-500 dark:text-neutral-400"
+        class:rotate-180={showSpeedMenu}
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
     </button>
+
+    {#if showSpeedMenu}
+      <!-- Click anywhere else to close (window handler below) -->
+      <ul
+        role="menu"
+        aria-label="Playback speeds"
+        class="absolute right-0 bottom-full mb-2 w-36 rounded-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg z-50 overflow-hidden"
+        on:click|stopPropagation
+        on:keydown={handleMenuKey}
+      >
+        {#each speedOptions as s}
+          <li role="menuitem">
+            <button
+              on:click={() => selectSpeed(s)}
+              on:keydown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  selectSpeed(s);
+                }
+              }}
+              class="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between"
+            >
+              <span>{s.toFixed(2)}x</span>
+              {#if Math.abs(s - (playbackSpeed || 1)) < 1e-6}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  class="size-4 text-green-600"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              {/if}
+            </button>
+          </li>
+        {/each}
+
+        <li
+          role="separator"
+          class="border-t border-neutral-100 dark:border-neutral-800"
+        ></li>
+        <li>
+          <button
+            on:click={() => {
+              resetPlaybackSpeed();
+              showSpeedMenu = false;
+            }}
+            class="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          >
+            Reset to 1.00x
+          </button>
+        </li>
+      </ul>
+    {/if}
   </div>
 
   <div class="w-full relative">
@@ -152,3 +218,8 @@
     />
   </div>
 </div>
+
+<svelte:window
+  on:click={() => (showSpeedMenu = false)}
+  on:keydown={(e) => e.key === "Escape" && (showSpeedMenu = false)}
+/>
