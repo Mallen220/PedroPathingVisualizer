@@ -47,7 +47,7 @@
   export let onPreviewChange: ((lines: Line[] | null) => void) | null = null;
 
   let optimizationOpen = false;
-  let activeTab: "path" | "field" | "table" = "path";
+  export let activeTab: "path" | "field" | "table" = "path";
 
   // Reference exported but unused props to silence Svelte unused-export warnings
   $: robotWidth;

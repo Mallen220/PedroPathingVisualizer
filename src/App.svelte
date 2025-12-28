@@ -115,6 +115,8 @@
 
   // Layout State
   let showSidebar = true;
+  // Active tab for ControlTab (path | field | table)
+  let activeControlTab: "path" | "field" | "table" = "path";
   let mainContentHeight = 0;
   let mainContentWidth = 0;
   let mainContentDiv: HTMLDivElement;
@@ -1325,6 +1327,34 @@
       bind("decreasePlaybackSpeed", () => changePlaybackSpeedBy(-0.25));
       bind("resetPlaybackSpeed", () => resetPlaybackSpeed());
       bind("toggleProtractor", () => showProtractor.update((v) => !v));
+
+      bind("toggleSidebar", () => {
+        showSidebar = !showSidebar;
+      });
+
+      bind("selectTabPaths", () => (activeControlTab = "path"));
+      bind("selectTabField", () => (activeControlTab = "field"));
+      bind("selectTabTable", () => (activeControlTab = "table"));
+
+      bind("cycleTabNext", () => {
+        const order: ("path" | "field" | "table")[] = [
+          "path",
+          "field",
+          "table",
+        ];
+        const idx = order.indexOf(activeControlTab);
+        activeControlTab = order[(idx + 1) % order.length];
+      });
+
+      bind("cycleTabPrev", () => {
+        const order: ("path" | "field" | "table")[] = [
+          "path",
+          "field",
+          "table",
+        ];
+        const idx = order.indexOf(activeControlTab);
+        activeControlTab = order[(idx - 1 + order.length) % order.length];
+      });
       bind("toggleCollapseAll", () =>
         toggleCollapseAllTrigger.update((v) => v + 1),
       );
@@ -3107,6 +3137,7 @@ pointer-events: none;`}
         {changePlaybackSpeedBy}
         {resetPlaybackSpeed}
         {setPlaybackSpeed}
+        bind:activeTab={activeControlTab}
         onPreviewChange={(newLines) => {
           previewOptimizedLines = newLines;
         }}

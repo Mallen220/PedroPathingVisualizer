@@ -221,6 +221,42 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     action: "toggleCollapseAll",
   },
   {
+    id: "toggle-sidebar",
+    key: "b",
+    description: "Toggle sidebar / control tab",
+    action: "toggleSidebar",
+  },
+  {
+    id: "select-paths-tab",
+    key: "alt+1",
+    description: "Switch to Paths tab",
+    action: "selectTabPaths",
+  },
+  {
+    id: "select-field-tab",
+    key: "alt+2",
+    description: "Switch to Field & Tools tab",
+    action: "selectTabField",
+  },
+  {
+    id: "select-table-tab",
+    key: "alt+3",
+    description: "Switch to Table tab",
+    action: "selectTabTable",
+  },
+  {
+    id: "cycle-tabs-next",
+    key: "ctrl+tab",
+    description: "Cycle tabs forward",
+    action: "cycleTabNext",
+  },
+  {
+    id: "cycle-tabs-prev",
+    key: "ctrl+shift+tab",
+    description: "Cycle tabs backward",
+    action: "cycleTabPrev",
+  },
+  {
     id: "show-help",
     key: "shift+/",
     description: "Show keyboard shortcuts",
