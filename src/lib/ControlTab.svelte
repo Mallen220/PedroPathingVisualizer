@@ -37,6 +37,10 @@
   export let settings: Settings;
   export let handleSeek: (percent: number) => void;
   export let loopAnimation: boolean;
+  export let playbackSpeed: number = 1.0;
+  export let changePlaybackSpeedBy: (delta: number) => void;
+  export let resetPlaybackSpeed: () => void;
+  export let setPlaybackSpeed: (factor: number, autoPlay?: boolean) => void;
 
   export let shapes: Shape[];
   export let recordChange: () => void;
@@ -696,5 +700,9 @@
     {handleSeek}
     bind:loopAnimation
     {markers}
+    {playbackSpeed}
+    {changePlaybackSpeedBy}
+    {resetPlaybackSpeed}
+    {setPlaybackSpeed}
   />
 </div>

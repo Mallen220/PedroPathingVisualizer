@@ -69,6 +69,24 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     description: "Play / Pause",
     action: "togglePlay",
   },
+  {
+    id: "increase-speed",
+    key: "up",
+    description: "Increase playback speed by 0.25x",
+    action: "increasePlaybackSpeed",
+  },
+  {
+    id: "decrease-speed",
+    key: "down",
+    description: "Decrease playback speed by 0.25x",
+    action: "decreasePlaybackSpeed",
+  },
+  {
+    id: "reset-playback-speed",
+    key: "1",
+    description: "Reset playback speed to 1x",
+    action: "resetPlaybackSpeed",
+  },
   { id: "undo", key: "cmd+z, ctrl+z", description: "Undo", action: "undo" },
   {
     id: "redo",

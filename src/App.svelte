@@ -374,7 +374,11 @@
   let loopAnimation = true;
   let animationController: ReturnType<typeof createAnimationController>;
   $: timePrediction = calculatePathTime(startPoint, lines, settings, sequence);
-  $: animationDuration = getAnimationDuration(timePrediction.totalTime / 1000);
+  let playbackSpeed = 1.0; // 1x by default
+  $: animationDuration = getAnimationDuration(
+    timePrediction.totalTime / 1000,
+    playbackSpeed,
+  );
   /**
    * Converter for X axis from inches to pixels.
    */
@@ -1238,6 +1242,8 @@
         const key = getKey(action);
         if (key) {
           hotkeys(key, (e) => {
+            // Avoid acting when a UI element (input/select/textarea/button) is focused
+            if (isUIElementFocused()) return;
             e.preventDefault();
             handler(e);
           });
@@ -1283,6 +1289,9 @@
       bind("cycleGridSize", () => cycleGridSize());
       bind("cycleGridSizeReverse", () => cycleGridSizeReverse());
       bind("toggleSnap", () => snapToGrid.update((v) => !v));
+      bind("increasePlaybackSpeed", () => changePlaybackSpeedBy(0.25));
+      bind("decreasePlaybackSpeed", () => changePlaybackSpeedBy(-0.25));
+      bind("resetPlaybackSpeed", () => resetPlaybackSpeed());
       bind("toggleProtractor", () => showProtractor.update((v) => !v));
       bind("toggleCollapseAll", () =>
         toggleCollapseAllTrigger.update((v) => v + 1),
@@ -1612,18 +1621,44 @@
   }
 
   function play() {
-    animationController.play();
+    if (animationController) animationController.play();
     playing = true;
   }
 
   function pause() {
-    animationController.pause();
+    if (animationController) animationController.pause();
     playing = false;
   }
 
   function resetAnimation() {
-    animationController.reset();
+    if (animationController) animationController.reset();
     playing = false;
+  }
+
+  function setPlaybackSpeed(factor: number, autoPlay: boolean = true) {
+    // Clamp and round to 2 decimals
+    const clamped = Math.max(
+      0.25,
+      Math.min(3.0, Math.round(factor * 100) / 100),
+    );
+    playbackSpeed = clamped;
+    // Recalculate animationDuration and apply to controller if ready
+    const newDuration = getAnimationDuration(
+      timePrediction.totalTime / 1000,
+      playbackSpeed,
+    );
+    if (animationController) {
+      animationController.setDuration(newDuration);
+    }
+    if (autoPlay) play();
+  }
+
+  function changePlaybackSpeedBy(delta: number) {
+    setPlaybackSpeed((playbackSpeed || 1.0) + delta, true);
+  }
+
+  function resetPlaybackSpeed() {
+    setPlaybackSpeed(1.0, false);
   }
 
   // Handle slider changes
@@ -2801,6 +2836,10 @@ pointer-events: none;`}
         bind:loopAnimation
         {resetAnimation}
         {recordChange}
+        {playbackSpeed}
+        {changePlaybackSpeedBy}
+        {resetPlaybackSpeed}
+        {setPlaybackSpeed}
         onPreviewChange={(newLines) => {
           previewOptimizedLines = newLines;
         }}
