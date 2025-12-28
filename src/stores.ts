@@ -1,3 +1,4 @@
+
 import { writable } from "svelte/store";
 
 // Math tools stores
@@ -24,3 +25,6 @@ export const toggleCollapseAllTrigger = writable(0);
 
 // Currently selected point id in field rendering, format: 'point-<line+1>-<idx>' or 'point-0-0' for start
 export const selectedPointId = writable<string | null>(null);
+
+// New Store for Show Sidebar if it was missing in original stores but used in App.svelte
+export const showSidebar = writable(true);

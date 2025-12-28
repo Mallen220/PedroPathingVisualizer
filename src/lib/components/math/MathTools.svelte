@@ -1,3 +1,4 @@
+
 <script lang="ts">
   import {
     showRuler,
@@ -5,13 +6,14 @@
     showGrid,
     protractorLockToRobot,
     gridSize,
-  } from "../stores";
+  } from "../../../stores";
   import type * as d3 from "d3";
 
   export let x: d3.ScaleLinear<number, number, number>;
   export let y: d3.ScaleLinear<number, number, number>;
-  export let twoElement: HTMLDivElement;
+  export let twoElement: HTMLDivElement | HTMLElement;
   export let robotXY: { x: number; y: number };
+  export let robotHeading: number = 0; // Providing a default or binding it
 
   let rulerStart = { x: 20, y: 72 };
   let rulerEnd = { x: 80, y: 72 };

@@ -353,10 +353,10 @@
                   max="36"
                   step="0.5"
                   on:input={(e) =>
-                    handleNumberInput(e.target.value, "rWidth", 1, 36)}
+                    handleNumberInput(e.currentTarget.value, "rWidth", 1, 36)}
                   on:change={(e) =>
                     handleNumberInput(
-                      e.target.value,
+                      e.currentTarget.value,
                       "rWidth",
                       1,
                       36,
@@ -385,10 +385,10 @@
                   max="36"
                   step="0.5"
                   on:input={(e) =>
-                    handleNumberInput(e.target.value, "rHeight", 1, 36)}
+                    handleNumberInput(e.currentTarget.value, "rHeight", 1, 36)}
                   on:change={(e) =>
                     handleNumberInput(
-                      e.target.value,
+                      e.currentTarget.value,
                       "rHeight",
                       1,
                       36,
@@ -417,10 +417,10 @@
                   max="24"
                   step="0.5"
                   on:input={(e) =>
-                    handleNumberInput(e.target.value, "safetyMargin", 0, 24)}
+                    handleNumberInput(e.currentTarget.value, "safetyMargin", 0, 24)}
                   on:change={(e) =>
                     handleNumberInput(
-                      e.target.value,
+                      e.currentTarget.value,
                       "safetyMargin",
                       0,
                       24,
@@ -678,7 +678,7 @@
                     min="0"
                     step="1"
                     on:input={(e) =>
-                      handleNumberInput(e.target.value, "xVelocity", 0)}
+                      handleNumberInput(e.currentTarget.value, "xVelocity", 0)}
                     class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -697,7 +697,7 @@
                     min="0"
                     step="1"
                     on:input={(e) =>
-                      handleNumberInput(e.target.value, "yVelocity", 0)}
+                      handleNumberInput(e.currentTarget.value, "yVelocity", 0)}
                     class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -740,7 +740,7 @@
                   min="0"
                   step="1"
                   on:input={(e) =>
-                    handleNumberInput(e.target.value, "maxVelocity", 0)}
+                    handleNumberInput(e.currentTarget.value, "maxVelocity", 0)}
                   class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -761,7 +761,7 @@
                     min="0"
                     step="1"
                     on:input={(e) =>
-                      handleNumberInput(e.target.value, "maxAcceleration", 0)}
+                      handleNumberInput(e.currentTarget.value, "maxAcceleration", 0)}
                     class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -780,7 +780,7 @@
                     min="0"
                     step="1"
                     on:input={(e) =>
-                      handleNumberInput(e.target.value, "maxDeceleration", 0)}
+                      handleNumberInput(e.currentTarget.value, "maxDeceleration", 0)}
                     class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -804,7 +804,7 @@
                   min="0"
                   step="0.1"
                   on:input={(e) =>
-                    handleNumberInput(e.target.value, "kFriction", 0)}
+                    handleNumberInput(e.currentTarget.value, "kFriction", 0)}
                   class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1209,7 +1209,7 @@
                     bind:value={settings.optimizationIterations}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        e.currentTarget.value,
                         "optimizationIterations",
                         10,
                         3000,
@@ -1247,7 +1247,7 @@
                     bind:value={settings.optimizationPopulationSize}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        e.currentTarget.value,
                         "optimizationPopulationSize",
                         10,
                         200,
@@ -1285,7 +1285,7 @@
                     bind:value={settings.optimizationMutationRate}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        e.currentTarget.value,
                         "optimizationMutationRate",
                         0.01,
                         1,
@@ -1324,7 +1324,7 @@
                     bind:value={settings.optimizationMutationStrength}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        e.currentTarget.value,
                         "optimizationMutationStrength",
                         0.1,
                         20,
