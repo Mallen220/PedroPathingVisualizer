@@ -49,18 +49,22 @@
   // --- Props / Bindings for Parent ---
   export let startPoint: Point;
   export let lines: Line[];
-  export const shapes: Shape[] = []; // Not manipulated here, but needed for completeness if we expand
+  export let shapes: Shape[] = [];
   export let sequence: SequenceItem[];
   export let settings: Settings;
 
   // UI State
   export let robotXY: BasePoint = { x: 0, y: 0 };
   export let robotHeading: number = 0;
-  export const previewOptimizedLines: Line[] | null = null;
+  export let previewOptimizedLines: Line[] | null = null;
   export let animationDuration: number = 0;
 
-  export const x: any = null;
-  export const y: any = null;
+  // Scales (passed from parent)
+  export let x: any = null;
+  export let y: any = null;
+
+  // Output prop for visualization
+  export let timePrediction: any = null;
 
   // --- Derived ---
   $: timePrediction = calculatePathTime(startPoint, lines, settings, sequence);

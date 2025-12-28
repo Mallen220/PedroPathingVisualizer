@@ -77,6 +77,7 @@
 
   let dataController: DataController;
   let fileOperations: FileOperations;
+  let timePrediction: any = null;
 
   // --- Handlers ---
 
@@ -151,6 +152,7 @@
     bind:robotXY
     bind:robotHeading
     bind:animationDuration
+    bind:timePrediction
     {x} {y}
 />
 
@@ -272,6 +274,7 @@
                              {settings}
                              {previewOptimizedLines}
                              {sequence}
+                             {timePrediction}
                          />
 
                          <MathTools {x} {y} {twoElement} {robotXY} {robotHeading} />

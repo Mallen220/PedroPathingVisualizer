@@ -1,6 +1,6 @@
 
 import type { Line } from "../types";
-import { getRandomColor } from "./draw"; // or whereever it is
+import { getRandomColor } from "./draw";
 
 export function normalizeLines(input: Line[]): Line[] {
     return (input || []).map((line) => ({
