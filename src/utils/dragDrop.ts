@@ -10,6 +10,39 @@ export function calculateDragPosition(
   return e.clientY < midY ? "top" : "bottom";
 }
 
+export function getClosestTarget(
+  e: DragEvent,
+  selector: string,
+  container: HTMLElement,
+): { element: HTMLElement; position: DragPosition } | null {
+  const elements = Array.from(container.querySelectorAll(selector));
+  if (elements.length === 0) return null;
+
+  let closest: HTMLElement | null = null;
+  let closestDist = Infinity;
+
+  // We only care about vertical distance
+  const mouseY = e.clientY;
+
+  elements.forEach((el) => {
+    const rect = el.getBoundingClientRect();
+    const centerY = rect.top + rect.height / 2;
+    const dist = Math.abs(mouseY - centerY);
+    if (dist < closestDist) {
+      closestDist = dist;
+      closest = el as HTMLElement;
+    }
+  });
+
+  if (!closest) return null;
+
+  const rect = (closest as HTMLElement).getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+  const position = mouseY < midY ? "top" : "bottom";
+
+  return { element: closest as HTMLElement, position };
+}
+
 export function reorderSequence<T>(
   sequence: T[],
   fromIndex: number,

@@ -11,6 +11,7 @@
   import {
     calculateDragPosition,
     reorderSequence,
+    getClosestTarget,
     type DragPosition,
   } from "../utils/dragDrop";
   import { getRandomColor } from "../utils";
@@ -381,8 +382,10 @@
   function handleDragOver(e: DragEvent, index: number) {
     if (draggingIndex === null) return;
 
+    // Use currentTarget to calculate position relative to the item being hovered
     const position = calculateDragPosition(e, e.currentTarget as HTMLElement);
     e.preventDefault();
+    e.stopPropagation(); // Stop propagation so container doesn't recalculate
 
     if (dragOverIndex !== index || dragPosition !== position) {
       dragOverIndex = index;
@@ -392,6 +395,7 @@
 
   function handleDrop(e: DragEvent, index: number) {
     e.preventDefault();
+    e.stopPropagation(); // Handle drop locally
     if (draggingIndex === null || draggingIndex === index) {
       handleDragEnd();
       return;
@@ -403,6 +407,59 @@
       sequence,
       draggingIndex,
       index,
+      dragPosition,
+    );
+    sequence = newSequence;
+    syncLinesToSequence(newSequence);
+    recordChange?.();
+
+    handleDragEnd();
+  }
+
+  function handleContainerDragOver(e: DragEvent) {
+    if (draggingIndex === null) return;
+    e.preventDefault();
+
+    // Find closest list item
+    const target = getClosestTarget(
+      e,
+      '[role="listitem"]',
+      e.currentTarget as HTMLElement,
+    );
+    if (!target) return;
+
+    // Get the index from the data attribute we added
+    const index = parseInt(target.element.getAttribute("data-index") || "-1");
+    if (index === -1) return;
+
+    if (dragOverIndex !== index || dragPosition !== target.position) {
+      dragOverIndex = index;
+      dragPosition = target.position;
+    }
+  }
+
+  function handleContainerDrop(e: DragEvent) {
+    e.preventDefault();
+    // If we dropped on the container, use the last valid dragOverIndex/Position
+    // derived from handleContainerDragOver
+    if (
+      draggingIndex === null ||
+      dragOverIndex === null ||
+      dragPosition === null
+    ) {
+      handleDragEnd();
+      return;
+    }
+
+    if (draggingIndex === dragOverIndex) {
+      handleDragEnd();
+      return;
+    }
+
+    const newSequence = reorderSequence(
+      sequence,
+      draggingIndex,
+      dragOverIndex,
       dragPosition,
     );
     sequence = newSequence;
@@ -946,6 +1003,7 @@
             : (item.locked ?? false)}
         <div
           role="listitem"
+          data-index={sIdx}
           class="w-full transition-all duration-200 rounded-lg"
           draggable={!isLocked}
           on:dragstart={(e) => handleDragStart(e, sIdx)}

@@ -3,6 +3,7 @@
   import {
     calculateDragPosition,
     reorderSequence,
+    getClosestTarget,
     type DragPosition,
   } from "../../utils/dragDrop";
   import {
@@ -257,11 +258,66 @@
     if (index === -1 && position === "top") return;
 
     e.preventDefault(); // Necessary to allow dropping
+    e.stopPropagation();
 
     if (dragOverIndex !== index || dragPosition !== position) {
       dragOverIndex = index;
       dragPosition = position;
     }
+  }
+
+  function handleContainerDragOver(e: DragEvent) {
+    if (draggingIndex === null) return;
+    e.preventDefault();
+
+    // Use a custom selector for rows that have sequence data
+    // We target tr elements that have data-seq-index
+    const target = getClosestTarget(
+      e,
+      "tr[data-seq-index]",
+      e.currentTarget as HTMLElement,
+    );
+    if (!target) return;
+
+    const index = parseInt(target.element.getAttribute("data-seq-index") || "");
+    if (isNaN(index)) return;
+
+    // Start Point special case: cannot drop before it (index -1, top)
+    if (index === -1 && target.position === "top") return;
+
+    if (dragOverIndex !== index || dragPosition !== target.position) {
+      dragOverIndex = index;
+      dragPosition = target.position;
+    }
+  }
+
+  function handleContainerDrop(e: DragEvent) {
+    e.preventDefault();
+    if (
+      draggingIndex === null ||
+      dragOverIndex === null ||
+      dragPosition === null
+    ) {
+      handleDragEnd();
+      return;
+    }
+
+    if (draggingIndex === dragOverIndex) {
+      handleDragEnd();
+      return;
+    }
+
+    const newSequence = reorderSequence(
+      sequence,
+      draggingIndex,
+      dragOverIndex,
+      dragPosition,
+    );
+    sequence = newSequence;
+    syncLinesToSequence(newSequence);
+    recordChange();
+
+    handleDragEnd();
   }
 
   function handleDragEnd() {
@@ -367,6 +423,7 @@
   }
   function handleDrop(e: DragEvent, index: number) {
     e.preventDefault();
+    e.stopPropagation();
     if (draggingIndex === null || draggingIndex === index) {
       handleDragEnd();
       return;
@@ -459,6 +516,11 @@
     <table
       class="w-full text-left bg-white dark:bg-neutral-900 border-collapse"
     >
+      <tbody
+        class="divide-y divide-neutral-100 dark:divide-neutral-800"
+        on:dragover={handleContainerDragOver}
+        on:drop={handleContainerDrop}
+      ></tbody>
       <thead
         class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-semibold"
       >
@@ -472,9 +534,14 @@
           <th class="px-3 py-2 border-b dark:border-neutral-700 w-10"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800">
+      <tbody
+        class="divide-y divide-neutral-100 dark:divide-neutral-800"
+        on:dragover={handleContainerDragOver}
+        on:drop={handleContainerDrop}
+      >
         <!-- Start Point -->
         <tr
+          data-seq-index="-1"
           class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-150"
           class:selected={$selectedPointId === "point-0-0"}
           on:click={() => {
@@ -542,6 +609,7 @@
               {@html debugPointRow(line, undefined)}
               {@const endPointId = `point-${lineIdx + 1}-0`}
               <tr
+                data-seq-index={seqIndex}
                 draggable={!line.locked}
                 on:dragstart={(e) => handleDragStart(e, seqIndex)}
                 on:dragover={(e) => handleDragOver(e, seqIndex)}
@@ -754,6 +822,7 @@
             <!-- Wait Item -->
             {@const seqIndex = findSequenceIndex(item)}
             <tr
+              data-seq-index={seqIndex}
               draggable={!item.locked}
               on:dragstart={(e) => handleDragStart(e, seqIndex)}
               on:dragover={(e) => handleDragOver(e, seqIndex)}
