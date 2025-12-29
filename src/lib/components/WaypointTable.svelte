@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { Point, Line, ControlPoint, SequenceItem } from "../../types";
   import {
+    calculateDragPosition,
+    reorderSequence,
+    type DragPosition,
+  } from "../../utils/dragDrop";
+  import {
     snapToGrid,
     showGrid,
     gridSize,
@@ -230,7 +235,7 @@
   // Drag and drop state
   let draggingIndex: number | null = null;
   let dragOverIndex: number | null = null;
-  let dragPosition: "top" | "bottom" | null = null;
+  let dragPosition: DragPosition | null = null;
 
   // One-time repair flag for missing sequence items
   let repairedOnce = false;
@@ -246,9 +251,7 @@
   function handleDragOver(e: DragEvent, index: number) {
     if (draggingIndex === null) return;
 
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const midY = rect.top + rect.height / 2;
-    const position = e.clientY < midY ? "top" : "bottom";
+    const position = calculateDragPosition(e, e.currentTarget as HTMLElement);
 
     // Start Point special case: cannot drop before it (index -1, top)
     if (index === -1 && position === "top") return;
@@ -369,33 +372,14 @@
       return;
     }
 
-    const fromIndex = draggingIndex;
-    let toIndex = index;
+    if (!dragPosition) return;
 
-    // Logic to reorder sequence
-    const item = sequence[fromIndex];
-    const newSequence = [...sequence];
-
-    // Remove from old position
-    newSequence.splice(fromIndex, 1);
-
-    // Calculate new position
-    // If we removed from before the target, the target index shifts down by 1
-
-    let insertIndex = toIndex;
-    if (fromIndex < toIndex) {
-      insertIndex--;
-    }
-
-    if (dragPosition === "bottom") {
-      insertIndex++;
-    }
-
-    // Safety clamp
-    if (insertIndex < 0) insertIndex = 0;
-    if (insertIndex > newSequence.length) insertIndex = newSequence.length;
-
-    newSequence.splice(insertIndex, 0, item);
+    const newSequence = reorderSequence(
+      sequence,
+      draggingIndex,
+      index,
+      dragPosition,
+    );
     sequence = newSequence;
     syncLinesToSequence(newSequence);
     recordChange();

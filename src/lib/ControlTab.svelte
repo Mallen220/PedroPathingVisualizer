@@ -8,6 +8,11 @@
     SequenceItem,
   } from "../types";
   import _ from "lodash";
+  import {
+    calculateDragPosition,
+    reorderSequence,
+    type DragPosition,
+  } from "../utils/dragDrop";
   import { getRandomColor } from "../utils";
   import ObstaclesSection from "./components/ObstaclesSection.svelte";
   import RobotPositionDisplay from "./components/RobotPositionDisplay.svelte";
@@ -344,6 +349,74 @@
 
   const makeId = () =>
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+  // Drag and drop state
+  let draggingIndex: number | null = null;
+  let dragOverIndex: number | null = null;
+  let dragPosition: DragPosition | null = null;
+
+  function handleDragStart(e: DragEvent, index: number) {
+    // Check if item is locked
+    const item = sequence[index];
+    let isLocked = false;
+    if (item.kind === "path") {
+      const line = lines.find((l) => l.id === item.lineId);
+      isLocked = line?.locked ?? false;
+    } else {
+      isLocked = item.locked ?? false;
+    }
+
+    if (isLocked) {
+      e.preventDefault();
+      return;
+    }
+
+    draggingIndex = index;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      // Optional: set custom drag image if needed
+    }
+  }
+
+  function handleDragOver(e: DragEvent, index: number) {
+    if (draggingIndex === null) return;
+
+    const position = calculateDragPosition(e, e.currentTarget as HTMLElement);
+    e.preventDefault();
+
+    if (dragOverIndex !== index || dragPosition !== position) {
+      dragOverIndex = index;
+      dragPosition = position;
+    }
+  }
+
+  function handleDrop(e: DragEvent, index: number) {
+    e.preventDefault();
+    if (draggingIndex === null || draggingIndex === index) {
+      handleDragEnd();
+      return;
+    }
+
+    if (!dragPosition) return;
+
+    const newSequence = reorderSequence(
+      sequence,
+      draggingIndex,
+      index,
+      dragPosition,
+    );
+    sequence = newSequence;
+    syncLinesToSequence(newSequence);
+    recordChange?.();
+
+    handleDragEnd();
+  }
+
+  function handleDragEnd() {
+    draggingIndex = null;
+    dragOverIndex = null;
+    dragPosition = null;
+  }
 
   // Ensure default named paths are renumbered to match the displayed order when
   // new paths are inserted at the beginning/middle/end of the list.
@@ -867,7 +940,24 @@
 
       <!-- Unified sequence render: paths and waits -->
       {#each sequence as item, sIdx}
-        <div class="w-full">
+        {@const isLocked =
+          item.kind === "path"
+            ? (lines.find((l) => l.id === item.lineId)?.locked ?? false)
+            : (item.locked ?? false)}
+        <div
+          role="listitem"
+          class="w-full transition-all duration-200 rounded-lg"
+          draggable={!isLocked}
+          on:dragstart={(e) => handleDragStart(e, sIdx)}
+          on:dragover={(e) => handleDragOver(e, sIdx)}
+          on:drop={(e) => handleDrop(e, sIdx)}
+          on:dragend={handleDragEnd}
+          class:border-t-4={dragOverIndex === sIdx && dragPosition === "top"}
+          class:border-b-4={dragOverIndex === sIdx && dragPosition === "bottom"}
+          class:border-blue-500={dragOverIndex === sIdx}
+          class:dark:border-blue-400={dragOverIndex === sIdx}
+          class:opacity-50={draggingIndex === sIdx}
+        >
           {#if item.kind === "path"}
             {#each lines.filter((l) => l.id === item.lineId) as ln (ln.id)}
               <PathLineSection
