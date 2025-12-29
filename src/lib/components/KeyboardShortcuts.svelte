@@ -100,6 +100,7 @@
   function addNewLine() {
     const newLine: Line = {
       id: `line-${Math.random().toString(36).slice(2)}`,
+      name: "",
       endPoint: {
         x: _.random(36, 108),
         y: _.random(36, 108),
