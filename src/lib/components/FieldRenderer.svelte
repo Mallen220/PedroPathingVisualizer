@@ -207,6 +207,8 @@
 
   // Paths (Lines)
   $: path = (() => {
+    // Reference selectedLineId to trigger updates when selection changes
+    const currentSelectedId = $selectedLineId;
     let _path: (Path | PathLine)[] = [];
     lines.forEach((line, idx) => {
       if (!line || !line.endPoint) return;
@@ -288,7 +290,8 @@
       }
       lineElem.id = `line-${idx + 1}`;
       lineElem.stroke = line.color;
-      lineElem.linewidth = x(LINE_WIDTH);
+      const isSelected = line.id === currentSelectedId;
+      lineElem.linewidth = isSelected ? x(LINE_WIDTH * 2.5) : x(LINE_WIDTH);
       lineElem.noFill();
       if (line.locked) {
         lineElem.dashes = [x(2), x(2)];
