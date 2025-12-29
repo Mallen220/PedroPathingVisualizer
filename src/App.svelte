@@ -192,6 +192,13 @@
       } catch (err) {
         console.warn("ensureSequenceConsistency failed", err);
       }
+
+      // Remove loading screen
+      const loader = document.getElementById("loading-screen");
+      if (loader) {
+        loader.style.opacity = "0";
+        setTimeout(() => loader.remove(), 500);
+      }
     }, 500);
 
     // Electron Menu Action Listener
