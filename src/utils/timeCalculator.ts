@@ -180,7 +180,10 @@ function analyzePathSegment(
     const angle = Math.atan2(d1.y, d1.x) * (180 / Math.PI);
     if (prevAngle !== null) {
       const diff = Math.abs(getAngularDifference(prevAngle, angle));
-      tangentRotation += diff;
+      // Filter out tiny noise which might accumulate
+      if (diff > 0.01) {
+        tangentRotation += diff;
+      }
     }
     prevAngle = angle;
   }
@@ -356,11 +359,10 @@ export function calculatePathTime(
     }
 
     // 2. Angular Velocity Limit for Curve Following (v = w * r)
-    // Only applies if heading is tangential (robot must rotate to follow curve)
-    if (line.endPoint.heading === "tangential") {
-      const angVelLimit = settings.aVelocity * analysis.minRadius;
-      if (angVelLimit < maxVel) maxVel = angVelLimit;
-    }
+    // Limits the speed based on the robot's maximum angular velocity and the path curvature.
+    // This applies to the path vector rotation regardless of chassis heading mode.
+    const angVelLimit = settings.aVelocity * analysis.minRadius;
+    if (angVelLimit < maxVel) maxVel = angVelLimit;
 
     let translationTime = 0;
     if (useMotionProfile) {
