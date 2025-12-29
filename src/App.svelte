@@ -613,7 +613,11 @@
       <button
         class="w-2 cursor-col-resize flex justify-center items-center hover:bg-purple-500/50 active:bg-purple-600 transition-colors rounded-sm select-none z-40 border-none bg-transparent p-0 m-0"
         on:mousedown={() => startResize("horizontal")}
+        on:dblclick={() => {
+          userFieldLimit = null;
+        }}
         aria-label="Resize Sidebar"
+        title="Drag to resize. Double-click to reset to default width"
       >
         <div
           class="w-[2px] h-8 bg-neutral-400 dark:bg-neutral-600 rounded-full"
@@ -627,7 +631,11 @@
         class="h-2 w-full cursor-row-resize flex justify-center items-center hover:bg-purple-500/50 active:bg-purple-600 transition-colors rounded-sm select-none z-40 border-none bg-transparent p-0 m-0"
         on:mousedown={() => startResize("vertical")}
         on:touchstart={() => startResize("vertical")}
+        on:dblclick={() => {
+          userFieldHeightLimit = null;
+        }}
         aria-label="Resize Tab"
+        title="Drag to resize. Double-click to reset to default height"
       >
         <div
           class="h-[2px] w-8 bg-neutral-400 dark:bg-neutral-600 rounded-full"
