@@ -15,27 +15,177 @@ import {
 } from "./math";
 
 /**
- * Calculate the length of a curve by sampling points
+ * Calculates the first derivative of a quadratic Bezier curve at t
+ * B(t) = (1-t)^2 P0 + 2(1-t)t P1 + t^2 P2
+ * B'(t) = 2(1-t)(P1-P0) + 2t(P2-P1)
  */
-function calculateCurveLength(
+function getQuadraticDerivative(
+  t: number,
+  p0: BasePoint,
+  p1: BasePoint,
+  p2: BasePoint,
+): { x: number; y: number } {
+  const x = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
+  const y = 2 * (1 - t) * (p1.y - p0.y) + 2 * t * (p2.y - p1.y);
+  return { x, y };
+}
+
+/**
+ * Calculates the second derivative of a quadratic Bezier curve at t
+ * B''(t) = 2(P2 - 2P1 + P0)
+ */
+function getQuadraticSecondDerivative(
+  t: number,
+  p0: BasePoint,
+  p1: BasePoint,
+  p2: BasePoint,
+): { x: number; y: number } {
+  const x = 2 * (p2.x - 2 * p1.x + p0.x);
+  const y = 2 * (p2.y - 2 * p1.y + p0.y);
+  return { x, y };
+}
+
+/**
+ * Calculates the first derivative of a cubic Bezier curve at t
+ * B(t) = (1-t)^3 P0 + 3(1-t)^2 t P1 + 3(1-t) t^2 P2 + t^3 P3
+ * B'(t) = 3(1-t)^2 (P1-P0) + 6(1-t)t (P2-P1) + 3t^2 (P3-P2)
+ */
+function getCubicDerivative(
+  t: number,
+  p0: BasePoint,
+  p1: BasePoint,
+  p2: BasePoint,
+  p3: BasePoint,
+): { x: number; y: number } {
+  const mt = 1 - t;
+  const k1 = 3 * mt * mt;
+  const k2 = 6 * mt * t;
+  const k3 = 3 * t * t;
+
+  const x = k1 * (p1.x - p0.x) + k2 * (p2.x - p1.x) + k3 * (p3.x - p2.x);
+  const y = k1 * (p1.y - p0.y) + k2 * (p2.y - p1.y) + k3 * (p3.y - p2.y);
+  return { x, y };
+}
+
+/**
+ * Calculates the second derivative of a cubic Bezier curve at t
+ * B''(t) = 6(1-t)(P2 - 2P1 + P0) + 6t(P3 - 2P2 + P1)
+ */
+function getCubicSecondDerivative(
+  t: number,
+  p0: BasePoint,
+  p1: BasePoint,
+  p2: BasePoint,
+  p3: BasePoint,
+): { x: number; y: number } {
+  const mt = 1 - t;
+  const k1 = 6 * mt;
+  const k2 = 6 * t;
+
+  const term1x = p2.x - 2 * p1.x + p0.x;
+  const term1y = p2.y - 2 * p1.y + p0.y;
+  const term2x = p3.x - 2 * p2.x + p1.x;
+  const term2y = p3.y - 2 * p2.y + p1.y;
+
+  const x = k1 * term1x + k2 * term2x;
+  const y = k1 * term1y + k2 * term2y;
+  return { x, y };
+}
+
+/**
+ * Calculate curvature at t.
+ * kappa = |x'y'' - y'x''| / (x'^2 + y'^2)^(3/2)
+ * Radius = 1 / kappa
+ */
+function getCurvatureRadius(
+  d1: { x: number; y: number },
+  d2: { x: number; y: number },
+): number {
+  const numerator = Math.abs(d1.x * d2.y - d1.y * d2.x);
+  const denominator = Math.pow(d1.x * d1.x + d1.y * d1.y, 1.5);
+  if (numerator < 1e-6) return Infinity; // Straight line
+  return denominator / numerator;
+}
+
+interface PathAnalysis {
+  length: number;
+  minRadius: number;
+  tangentRotation: number;
+}
+
+/**
+ * Analyzes a path segment (Line, Quadratic, or Cubic)
+ */
+function analyzePathSegment(
   start: BasePoint,
   controlPoints: BasePoint[],
   end: BasePoint,
-  samples: number = 100,
-): number {
+  samples: number = 50,
+): PathAnalysis {
   let length = 0;
-  let prevPoint: BasePoint = start;
+  let minRadius = Infinity;
+  let prevPoint = start;
+  let tangentRotation = 0;
+  let prevAngle: number | null = null;
 
-  for (let i = 1; i <= samples; i++) {
+  // Determine curve type
+  const isLine = controlPoints.length === 0;
+  const isQuadratic = controlPoints.length === 1;
+  const isCubic = controlPoints.length === 2; // Or more (clamped to cubic logic for now if 2+)
+
+  for (let i = 0; i <= samples; i++) {
     const t = i / samples;
     const point = getCurvePoint(t, [start, ...controlPoints, end]);
-    const dx = point.x - prevPoint.x;
-    const dy = point.y - prevPoint.y;
-    length += Math.sqrt(dx * dx + dy * dy);
+
+    // Length
+    if (i > 0) {
+      const dx = point.x - prevPoint.x;
+      const dy = point.y - prevPoint.y;
+      length += Math.sqrt(dx * dx + dy * dy);
+    }
     prevPoint = point;
+
+    // Derivatives for Curvature and Tangent
+    let d1 = { x: 0, y: 0 };
+    let d2 = { x: 0, y: 0 };
+
+    if (isLine) {
+      d1 = { x: end.x - start.x, y: end.y - start.y };
+      d2 = { x: 0, y: 0 }; // Zero curvature
+    } else if (isQuadratic) {
+      d1 = getQuadraticDerivative(t, start, controlPoints[0], end);
+      d2 = getQuadraticSecondDerivative(t, start, controlPoints[0], end);
+    } else if (isCubic) {
+      d1 = getCubicDerivative(
+        t,
+        start,
+        controlPoints[0],
+        controlPoints[1],
+        end,
+      );
+      d2 = getCubicSecondDerivative(
+        t,
+        start,
+        controlPoints[0],
+        controlPoints[1],
+        end,
+      );
+    }
+
+    // Curvature Radius
+    const radius = getCurvatureRadius(d1, d2);
+    if (radius < minRadius) minRadius = radius;
+
+    // Tangent Angle
+    const angle = Math.atan2(d1.y, d1.x) * (180 / Math.PI);
+    if (prevAngle !== null) {
+      const diff = Math.abs(getAngularDifference(prevAngle, angle));
+      tangentRotation += diff;
+    }
+    prevAngle = angle;
   }
 
-  return length;
+  return { length, minRadius, tangentRotation };
 }
 
 /**
@@ -48,6 +198,9 @@ function calculateMotionProfileTime(
   maxDec?: number,
 ): number {
   const deceleration = maxDec || maxAcc;
+
+  // Avoid division by zero
+  if (maxVel <= 0 || maxAcc <= 0 || deceleration <= 0) return 0;
 
   const accDist = (maxVel * maxVel) / (2 * maxAcc);
   const decDist = (maxVel * maxVel) / (2 * deceleration);
@@ -94,8 +247,6 @@ export function calculatePathTime(
   let currentHeading = 0;
 
   // Initialize heading based on start point settings
-  // Note: This initialization is technically overridden by the idx===0 check below
-  // to ensure no initial turning, but kept for fallback logic.
   if (startPoint.heading === "linear") currentHeading = startPoint.startDeg;
   else if (startPoint.heading === "constant")
     currentHeading = startPoint.degrees;
@@ -151,14 +302,20 @@ export function calculatePathTime(
 
     const line = lineById.get(item.lineId);
     if (!line || !line.endPoint) {
-      // Skip missing or malformed lines in sequence
       return;
     }
     const prevPoint = lastPoint;
 
-    // --- ROTATION CHECK ---
+    // --- ROTATION CHECK (Initial Turn-to-Face or Wait) ---
+    // If we need to be at a specific heading before starting the path segment
     const requiredStartHeading = getLineStartHeading(line, prevPoint);
     if (idx === 0) currentHeading = requiredStartHeading;
+
+    // Wait logic: If the current heading is significantly different from the start heading of the line
+    // we simulate a "wait" turn.
+    // Note: If the previous line ended at 90 and this one starts at 90, diff is 0.
+    // If the previous line ended at 90 and this one starts at 180 (e.g. sharp corner in Tangential mode),
+    // we assume we must stop and turn.
     const diff = Math.abs(
       getAngularDifference(currentHeading, requiredStartHeading),
     );
@@ -178,25 +335,73 @@ export function calculatePathTime(
       currentHeading = requiredStartHeading;
     }
 
-    // --- TRAVEL ---
-    const length = calculateCurveLength(
+    // --- TRAVEL ANALYSIS ---
+    const analysis = analyzePathSegment(
       prevPoint,
       line.controlPoints as any,
       line.endPoint as any,
     );
+    const length = analysis.length;
     segmentLengths.push(length);
-    let segmentTime = 0;
+
+    // Calculate Translation Time (Physical Limits)
+    let maxVel = settings.maxVelocity || 100;
+    // 1. Friction Limit (Centripetal: v = sqrt(k * g * r))
+    if (settings.kFriction && settings.kFriction > 0) {
+      // 386.22 in/s^2 is gravity
+      const frictionLimit = Math.sqrt(
+        settings.kFriction * 386.22 * analysis.minRadius,
+      );
+      if (frictionLimit < maxVel) maxVel = frictionLimit;
+    }
+
+    // 2. Angular Velocity Limit for Curve Following (v = w * r)
+    // Only applies if heading is tangential (robot must rotate to follow curve)
+    if (line.endPoint.heading === "tangential") {
+      const angVelLimit = settings.aVelocity * analysis.minRadius;
+      if (angVelLimit < maxVel) maxVel = angVelLimit;
+    }
+
+    let translationTime = 0;
     if (useMotionProfile) {
-      segmentTime = calculateMotionProfileTime(
+      translationTime = calculateMotionProfileTime(
         length,
-        settings.maxVelocity!,
+        maxVel,
         settings.maxAcceleration!,
         settings.maxDeceleration,
       );
     } else {
       const avgVelocity = (settings.xVelocity + settings.yVelocity) / 2;
-      segmentTime = length / avgVelocity;
+      translationTime = length / avgVelocity;
     }
+
+    // Calculate Rotation Time (Simultaneous Heading Change)
+    // We need to know the Total Rotation required during this segment.
+    let rotationRequired = 0;
+    const endHeading = getLineEndHeading(line, prevPoint);
+
+    if (line.endPoint.heading === "tangential") {
+      // For tangential, the robot rotates as the curve turns.
+      // We use the accumulated tangent rotation from analysis.
+      rotationRequired = analysis.tangentRotation;
+    } else if (line.endPoint.heading === "constant") {
+      // No rotation during movement (unless previous was different, which is handled by initial Wait)
+      rotationRequired = 0;
+    } else if (line.endPoint.heading === "linear") {
+      // Linear interpolation from start heading to end heading
+      // start heading is `requiredStartHeading` (which we are at)
+      // end heading is `endHeading`
+      // For linear heading, we use the absolute difference of the raw values
+      // to respect multi-turn rotations (e.g. 0 to 720)
+      rotationRequired = Math.abs(endHeading - requiredStartHeading);
+    }
+
+    const rotationTime =
+      (rotationRequired * (Math.PI / 180)) / settings.aVelocity;
+
+    // The segment takes the maximum of translation time (slowed by physics) and rotation time
+    const segmentTime = Math.max(translationTime, rotationTime);
+
     segmentTimes.push(segmentTime);
     const lineIndex = lines.findIndex((l) => l.id === line.id);
     timeline.push({
@@ -207,7 +412,9 @@ export function calculatePathTime(
       lineIndex,
     });
     currentTime += segmentTime;
-    currentHeading = getLineEndHeading(line, prevPoint);
+
+    // Update state
+    currentHeading = endHeading;
     lastPoint = line.endPoint as Point;
   });
 
