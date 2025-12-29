@@ -524,7 +524,6 @@
       name: "Wait",
       durationMs: 1000,
       locked: false,
-      color: getRandomColor(),
     } as SequenceItem;
     sequence = [...sequence, wait];
 
@@ -541,7 +540,6 @@
       name: "Wait",
       durationMs: 1000,
       locked: false,
-      color: getRandomColor(),
     } as SequenceItem;
     sequence = [wait, ...sequence];
 
@@ -603,7 +601,6 @@
       name: "Wait",
       durationMs: 0,
       locked: false,
-      color: getRandomColor(),
     });
     sequence = newSeq;
   }
@@ -939,7 +936,6 @@
                   name: "Wait",
                   durationMs: 0,
                   locked: false,
-                  color: getRandomColor(),
                 });
                 sequence = newSeq;
               }}

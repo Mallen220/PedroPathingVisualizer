@@ -15,6 +15,7 @@
   import { tick } from "svelte";
   import ObstaclesSection from "./ObstaclesSection.svelte";
   import TrashIcon from "./icons/TrashIcon.svelte";
+  import ColorPicker from "./ColorPicker.svelte";
 
   export let recordChange: () => void;
   // Handler passed from parent to toggle optimization dialog
@@ -131,14 +132,6 @@
   function updateWaitName(item: SequenceItem, name: string) {
     if (item.kind === "wait") {
       item.name = name;
-      sequence = sequence; // Trigger reactivity
-      recordChange();
-    }
-  }
-
-  function updateWaitColor(item: SequenceItem, color: string) {
-    if (item.kind === "wait") {
-      item.color = color;
       sequence = sequence; // Trigger reactivity
       recordChange();
     }
@@ -602,10 +595,8 @@
                 </td>
                 <td class="px-3 py-2">
                   <div class="flex flex-row items-center gap-2">
-                    <input
-                      type="color"
-                      class="w-6 h-6 p-0 border-0 rounded cursor-pointer"
-                      value={line.color}
+                    <ColorPicker
+                      bind:color={line.color}
                       on:input={(e) =>
                         // @ts-ignore
                         updateLineColor(line.id, e.target.value)}
@@ -811,27 +802,15 @@
                 </svg>
               </td>
               <td class="px-3 py-2">
-                <div class="flex flex-row items-center gap-2">
-                  <input
-                    type="color"
-                    class="w-6 h-6 p-0 border-0 rounded cursor-pointer"
-                    value={item.color}
-                    on:input={(e) =>
-                      // @ts-ignore
-                      updateWaitColor(item, e.target.value)}
-                    disabled={item.locked}
-                    title="Wait Color"
-                  />
-                  <input
-                    class="w-full max-w-[140px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
-                    value={item.name}
-                    on:input={(e) =>
-                      // @ts-ignore
-                      updateWaitName(item, e.target.value)}
-                    disabled={item.locked}
-                    placeholder="Wait Name"
-                  />
-                </div>
+                <input
+                  class="w-full max-w-[160px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
+                  value={item.name}
+                  on:input={(e) =>
+                    // @ts-ignore
+                    updateWaitName(item, e.target.value)}
+                  disabled={item.locked}
+                  placeholder="Wait Name"
+                />
               </td>
               <td class="px-3 py-2">
                 <input

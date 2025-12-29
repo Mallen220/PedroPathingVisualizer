@@ -76,7 +76,6 @@ export type SequenceWaitItem = {
   id: string;
   name: string;
   durationMs: number;
-  color?: string;
   locked?: boolean;
   eventMarkers?: EventMarker[];
 };

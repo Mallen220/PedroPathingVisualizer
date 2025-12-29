@@ -42,13 +42,6 @@ export function sanitizeSequence(
     (s) => s.kind !== "path" || lineIds.has((s as any).lineId),
   );
 
-  // Normalize wait items to ensure they have a color
-  pruned.forEach((s) => {
-    if (s.kind === "wait" && !(s as any).color) {
-      (s as any).color = getRandomColor();
-    }
-  });
-
   // Append any lines that are missing from the sequence
   const presentIds = new Set(
     pruned.filter((s) => s.kind === "path").map((s) => (s as any).lineId),
