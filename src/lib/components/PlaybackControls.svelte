@@ -35,6 +35,7 @@
 >
   <button
     title="Play/Pause"
+    aria-label={playing ? "Pause animation" : "Play animation"}
     on:click={() => {
       if (playing) {
         pause();
@@ -79,6 +80,8 @@
   <!-- Loop Toggle Button -->
   <button
     title={loopAnimation ? "Disable Loop" : "Enable Loop"}
+    aria-label="Loop animation"
+    aria-pressed={loopAnimation}
     on:click={() => {
       loopAnimation = !loopAnimation;
     }}
@@ -200,6 +203,7 @@
       min="0"
       max="100"
       step="0.000001"
+      aria-label="Animation progress"
       class="w-full appearance-none slider focus:outline-none"
       on:input={(e) => handleSeek(parseFloat(e.target.value))}
     />
