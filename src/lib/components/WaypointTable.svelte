@@ -423,8 +423,9 @@
           if (line.waitBeforeName || line.waitBeforeMs) {
             xVal += ` (${line.waitBeforeName || line.waitBeforeMs})`;
           }
+          const lineIdx = lines.findIndex((l) => l.id === line.id);
           rows.push(
-            `| ${line.name || `Path`} | ${xVal} | ${line.endPoint.y.toString()} |`,
+            `| ${line.name || `Path ${lineIdx + 1}`} | ${xVal} | ${line.endPoint.y.toString()} |`,
           );
 
           // Control Points
