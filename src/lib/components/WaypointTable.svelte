@@ -136,6 +136,23 @@
     }
   }
 
+  function updateWaitColor(item: SequenceItem, color: string) {
+    if (item.kind === "wait") {
+      item.color = color;
+      sequence = sequence; // Trigger reactivity
+      recordChange();
+    }
+  }
+
+  function updateLineColor(lineId: string, color: string) {
+    const line = lines.find((l) => l.id === lineId);
+    if (line) {
+      line.color = color;
+      lines = lines; // Trigger reactivity
+      recordChange();
+    }
+  }
+
   function updateWaitDuration(item: SequenceItem, duration: number) {
     if (item.kind === "wait") {
       item.durationMs = duration;
@@ -584,15 +601,27 @@
                   </svg>
                 </td>
                 <td class="px-3 py-2">
-                  <input
-                    class="w-full max-w-[160px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
-                    value={line.name || `Path ${lineIdx + 1}`}
-                    on:input={(e) =>
-                      // @ts-ignore
-                      updateLineName(item.lineId, e.target.value)}
-                    disabled={line.locked}
-                    placeholder="Path Name"
-                  />
+                  <div class="flex flex-row items-center gap-2">
+                    <input
+                      type="color"
+                      class="w-6 h-6 p-0 border-0 rounded cursor-pointer"
+                      value={line.color}
+                      on:input={(e) =>
+                        // @ts-ignore
+                        updateLineColor(line.id, e.target.value)}
+                      disabled={line.locked}
+                      title="Path Color"
+                    />
+                    <input
+                      class="w-full max-w-[140px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+                      value={line.name || `Path ${lineIdx + 1}`}
+                      on:input={(e) =>
+                        // @ts-ignore
+                        updateLineName(item.lineId, e.target.value)}
+                      disabled={line.locked}
+                      placeholder="Path Name"
+                    />
+                  </div>
                 </td>
                 <td class="px-3 py-2">
                   <div class="flex items-center gap-2">
@@ -782,15 +811,27 @@
                 </svg>
               </td>
               <td class="px-3 py-2">
-                <input
-                  class="w-full max-w-[160px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
-                  value={item.name}
-                  on:input={(e) =>
-                    // @ts-ignore
-                    updateWaitName(item, e.target.value)}
-                  disabled={item.locked}
-                  placeholder="Wait Name"
-                />
+                <div class="flex flex-row items-center gap-2">
+                  <input
+                    type="color"
+                    class="w-6 h-6 p-0 border-0 rounded cursor-pointer"
+                    value={item.color}
+                    on:input={(e) =>
+                      // @ts-ignore
+                      updateWaitColor(item, e.target.value)}
+                    disabled={item.locked}
+                    title="Wait Color"
+                  />
+                  <input
+                    class="w-full max-w-[140px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
+                    value={item.name}
+                    on:input={(e) =>
+                      // @ts-ignore
+                      updateWaitName(item, e.target.value)}
+                    disabled={item.locked}
+                    placeholder="Wait Name"
+                  />
+                </div>
               </td>
               <td class="px-3 py-2">
                 <input
