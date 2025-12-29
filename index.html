@@ -9,8 +9,43 @@
   <body
     class="h-full w-full bg-neutral-100 font-poppins dark:bg-neutral-950 dark:text-white"
   >
+
+    <div id="loading-screen">
+      <div class="loader-container">
+        <img src="/icon.png" alt="App Icon" class="app-icon" />
+        <div class="loader"></div>
+        <h1>Pedro Pathing Visualizer</h1>
+        <p>Loading...</p>
+        <p class="version-text" id="app-version">Loading version...</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
     <script>
+      // Load app version dynamically
+      if (window.electronAPI && window.electronAPI.getAppVersion) {
+        window.electronAPI
+          .getAppVersion()
+          .then((version) => {
+            const versionElement = document.getElementById("app-version");
+            if (versionElement) {
+              versionElement.textContent = `v${version}`;
+            }
+          })
+          .catch((error) => {
+            console.error("Failed to load app version:", error);
+            const versionElement = document.getElementById("app-version");
+            if (versionElement) {
+              versionElement.textContent = "";
+            }
+          });
+      } else {
+        // If not in Electron, hide the version text
+        const versionElement = document.getElementById("app-version");
+        if (versionElement) {
+          versionElement.textContent = "";
+        }
+      }
+
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("sw.js").then(
           (registration) => {

@@ -506,6 +506,10 @@ ipcMain.handle("app:get-app-data-path", () => {
   return app.getPath("userData");
 });
 
+ipcMain.handle("app:get-version", () => {
+  return app.getVersion();
+});
+
 // Add to existing IPC handlers
 ipcMain.handle("file:rename", async (event, oldPath, newPath) => {
   try {

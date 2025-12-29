@@ -39,4 +39,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Menu action listener
   onMenuAction: (callback) =>
     ipcRenderer.on("menu-action", (_event, action) => callback(action)),
+
+  // Get app version
+  getAppVersion: () => ipcRenderer.invoke("app:get-version"),
 });
