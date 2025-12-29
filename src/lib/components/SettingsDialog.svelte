@@ -347,6 +347,29 @@
             >
               <div>
                 <label
+                  for="robot-length"
+                  class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                >
+                  Robot Length (in)
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Length of the robot base
+                  </div>
+                </label>
+                <input
+                  id="robot-length"
+                  type="number"
+                  bind:value={settings.rLength}
+                  min="1"
+                  max="36"
+                  step="0.5"
+                  on:change={(e) =>
+                    handleNumberInput(e.target.value, "rLength", 1, 36, true)}
+                  class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
                   for="robot-width"
                   class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
@@ -364,29 +387,6 @@
                   step="0.5"
                   on:change={(e) =>
                     handleNumberInput(e.target.value, "rWidth", 1, 36, true)}
-                  class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label
-                  for="robot-height"
-                  class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-                >
-                  Robot Height (in)
-                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
-                    Height of the robot base
-                  </div>
-                </label>
-                <input
-                  id="robot-height"
-                  type="number"
-                  bind:value={settings.rHeight}
-                  min="1"
-                  max="36"
-                  step="0.5"
-                  on:change={(e) =>
-                    handleNumberInput(e.target.value, "rHeight", 1, 36, true)}
                   class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

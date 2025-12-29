@@ -25,8 +25,8 @@
     POINT_RADIUS,
     LINE_WIDTH,
     FIELD_SIZE,
+    DEFAULT_ROBOT_LENGTH,
     DEFAULT_ROBOT_WIDTH,
-    DEFAULT_ROBOT_HEIGHT,
   } from "../../config";
   import {
     getCurvePoint,
@@ -367,8 +367,8 @@
       const ghostPoints = generateGhostPathPoints(
         startPoint,
         lines,
+        settings.rLength,
         settings.rWidth,
-        settings.rHeight,
         50,
       );
       if (ghostPoints.length >= 3) {
@@ -429,8 +429,8 @@
       const layers = generateOnionLayers(
         startPoint,
         lines,
+        settings.rLength,
         settings.rWidth,
-        settings.rHeight,
         spacing,
       );
       layers.forEach((layer, idx) => {
@@ -1070,7 +1070,7 @@
       src={settings.robotImage || "/robot.png"}
       alt="Robot"
       style={`position: absolute; top: ${robotXY.y}px;
-left: ${robotXY.x}px; transform: translate(-50%, -50%) rotate(${robotHeading}deg); z-index: 20; width: ${x(settings.rWidth || DEFAULT_ROBOT_WIDTH)}px; height: ${x(settings.rHeight || DEFAULT_ROBOT_HEIGHT)}px; pointer-events: none;`}
+left: ${robotXY.x}px; transform: translate(-50%, -50%) rotate(${robotHeading}deg); z-index: 20; width: ${x(settings.rLength || DEFAULT_ROBOT_LENGTH)}px; height: ${x(settings.rWidth || DEFAULT_ROBOT_WIDTH)}px; pointer-events: none;`}
       draggable="false"
       on:error={(e) => {
         // @ts-ignore

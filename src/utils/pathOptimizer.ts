@@ -200,8 +200,8 @@ export class PathOptimizer {
         state.x,
         state.y,
         state.heading,
+        this.settings.rLength + (this.settings.safetyMargin || 0) * 2,
         this.settings.rWidth + (this.settings.safetyMargin || 0) * 2,
-        this.settings.rHeight + (this.settings.safetyMargin || 0) * 2,
       );
 
       let isColliding = false;

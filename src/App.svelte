@@ -56,8 +56,8 @@
   import {
     DEFAULT_SETTINGS,
     FIELD_SIZE,
+    DEFAULT_ROBOT_LENGTH,
     DEFAULT_ROBOT_WIDTH,
-    DEFAULT_ROBOT_HEIGHT,
   } from "./config";
 
   // Electron API
@@ -110,8 +110,8 @@
   let previewOptimizedLines: any[] | null = null;
 
   // --- Robot Dimensions ---
+  $: robotLength = settings?.rLength || DEFAULT_ROBOT_LENGTH;
   $: robotWidth = settings?.rWidth || DEFAULT_ROBOT_WIDTH;
-  $: robotHeight = settings?.rHeight || DEFAULT_ROBOT_HEIGHT;
 
   // --- History ---
   const history = createHistory();
@@ -432,8 +432,8 @@
           ? `/fields/${settings.fieldMap}`
           : "/fields/decode.webp",
         robotImageSrc: settings.robotImage || "/robot.png",
+        robotLengthPx: x(robotLength),
         robotWidthPx: x(robotWidth),
-        robotHeightPx: x(robotHeight),
         getRobotState: (p) =>
           calculateRobotState(
             p,
@@ -545,8 +545,8 @@
       bind:shapes={$shapesStore}
       bind:sequence={$sequenceStore}
       bind:settings={$settingsStore}
+      bind:robotLength
       bind:robotWidth
-      bind:robotHeight
       bind:showSidebar
       bind:isLargeScreen
       {saveProject}
@@ -629,8 +629,8 @@
         bind:startPoint={$startPointStore}
         bind:lines={$linesStore}
         bind:sequence={$sequenceStore}
+        bind:robotLength
         bind:robotWidth
-        bind:robotHeight
         bind:settings={$settingsStore}
         bind:percent={$percentStore}
         bind:robotXY={$robotXYStore}

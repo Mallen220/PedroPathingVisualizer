@@ -106,23 +106,23 @@ export function polygonCenter(vertices: BasePoint[]): number[] {
  * @param x - Robot center X position (in inches)
  * @param y - Robot center Y position (in inches)
  * @param heading - Robot heading in degrees
+ * @param length - Robot length in inches (extends forward-backward from center)
  * @param width - Robot width in inches (extends left-right from center)
- * @param height - Robot height in inches (extends forward-backward from center)
  * @returns Array of 4 corner points in order: [front-left, front-right, back-right, back-left]
  */
 export function getRobotCorners(
   x: number,
   y: number,
   heading: number,
+  length: number,
   width: number,
-  height: number,
 ): BasePoint[] {
   // Convert heading from degrees to radians
   const headingRad = (heading * Math.PI) / 180;
 
   // Half dimensions
+  const hl = length / 2;
   const hw = width / 2;
-  const hh = height / 2;
 
   // Calculate rotation components
   const cos = Math.cos(headingRad);
@@ -130,13 +130,20 @@ export function getRobotCorners(
 
   // Corner offsets relative to center (before rotation)
   // Define corners in local robot frame:
-  // - width extends perpendicular to heading direction (left/right)
-  // - height extends along heading direction (forward/backward)
+  // - width extends perpendicular to heading direction (left/right) -> X local
+  // - length extends along heading direction (forward/backward) -> Y local
+
+  // Previously: dx: -hw (Old Length/2), dy: -hh (Old Width/2)
+  // New: hl = Length/2, hw = Width/2
+  // We want to preserve alignment:
+  // dx corresponds to Length (hl).
+  // dy corresponds to Width (hw).
+
   const corners = [
-    { dx: -hw, dy: -hh }, // front-left (forward, left)
-    { dx: hw, dy: -hh }, // front-right (forward, right)
-    { dx: hw, dy: hh }, // back-right (backward, right)
-    { dx: -hw, dy: hh }, // back-left (backward, left)
+    { dx: -hl, dy: -hw }, // front-left
+    { dx: hl, dy: -hw }, // front-right
+    { dx: hl, dy: hw }, // back-right
+    { dx: -hl, dy: hw }, // back-left
   ];
 
   // Rotate and translate corners

@@ -46,12 +46,22 @@ function migrateSettings(stored: Partial<StoredSettings>): Settings {
     return defaults;
   }
 
+  // Manual migration for rWidth/rHeight -> rLength/rWidth
+  // If stored settings has rHeight (Old Width) and rWidth (Old Length)
+  const sourceSettings = { ...stored.settings } as any;
+  if ("rHeight" in sourceSettings && !("rLength" in sourceSettings)) {
+    console.log("Migrating rWidth/rHeight to rLength/rWidth");
+    sourceSettings.rLength = sourceSettings.rWidth; // Old rWidth was Length
+    sourceSettings.rWidth = sourceSettings.rHeight; // Old rHeight was Width
+    delete sourceSettings.rHeight;
+  }
+
   // Always merge with defaults to ensure new settings are included
   // and removed settings are not persisted
   const migrated: Settings = { ...defaults };
 
   // Copy only the properties that exist in both objects
-  Object.keys(stored.settings).forEach((key) => {
+  Object.keys(sourceSettings).forEach((key) => {
     if (key in migrated) {
       // Special-case merging for keyBindings so newly added defaults appear
       if (key === "keyBindings" && Array.isArray(stored.settings.keyBindings)) {
@@ -77,7 +87,7 @@ function migrateSettings(stored: Partial<StoredSettings>): Settings {
         migrated.keyBindings = merged;
       } else {
         // @ts-ignore - We know the key exists in Settings
-        migrated[key] = stored.settings[key];
+        migrated[key] = sourceSettings[key];
       }
     }
   });

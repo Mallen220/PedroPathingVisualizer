@@ -331,16 +331,16 @@ export function createAnimationController(
  * Creates swept area by connecting consecutive robot corners properly
  * @param startPoint - The starting point of the path
  * @param lines - The path lines to trace
+ * @param robotLength - Robot length in inches
  * @param robotWidth - Robot width in inches
- * @param robotHeight - Robot height in inches
  * @param samples - Number of samples along the path (default 50)
  * @returns Array of points forming the boundary of the robot's swept path
  */
 export function generateGhostPathPoints(
   startPoint: Point,
   lines: Line[],
+  robotLength: number,
   robotWidth: number,
-  robotHeight: number,
   samples: number = 200, // Higher default for smoother turns
 ): BasePoint[] {
   if (lines.length === 0) return [];
@@ -395,7 +395,7 @@ export function generateGhostPathPoints(
       const headingRad = (heading * Math.PI) / 180;
       const nx = -Math.sin(headingRad);
       const ny = Math.cos(headingRad);
-      const halfW = robotWidth / 2;
+      const halfW = robotWidth / 2; // Using robotWidth for side rails logic (width is transverse)
 
       const leftPoint = {
         x: robotPosInches.x + nx * halfW,
@@ -426,8 +426,8 @@ export function generateGhostPathPoints(
       single.center.x,
       single.center.y,
       heading,
+      robotLength,
       robotWidth,
-      robotHeight,
     );
     return corners;
   }
@@ -498,16 +498,16 @@ export function generateGhostPathPoints(
  * Returns an array of robot states (position, heading, and corner points) for drawing
  * @param startPoint - The starting point of the path
  * @param lines - The path lines to trace
+ * @param robotLength - Robot length in inches
  * @param robotWidth - Robot width in inches
- * @param robotHeight - Robot height in inches
  * @param spacing - Distance in inches between each robot trace (default 6)
  * @returns Array of robot states with corner points for rendering
  */
 export function generateOnionLayers(
   startPoint: Point,
   lines: Line[],
+  robotLength: number,
   robotWidth: number,
-  robotHeight: number,
   spacing: number = 6,
 ): Array<{ x: number; y: number; heading: number; corners: BasePoint[] }> {
   if (lines.length === 0) return [];
@@ -615,8 +615,8 @@ export function generateOnionLayers(
           robotPosInches.x,
           robotPosInches.y,
           heading,
+          robotLength,
           robotWidth,
-          robotHeight,
         );
 
         layers.push({

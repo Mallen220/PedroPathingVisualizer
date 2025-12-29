@@ -4,8 +4,8 @@ import { getRandomColor } from "../utils";
 /**
  * Default robot dimensions
  */
+export const DEFAULT_ROBOT_LENGTH = 16;
 export const DEFAULT_ROBOT_WIDTH = 16;
-export const DEFAULT_ROBOT_HEIGHT = 16;
 
 /**
  * Default canvas drawing settings
@@ -299,8 +299,8 @@ export const DEFAULT_SETTINGS: Settings = {
   yVelocity: 30,
   aVelocity: Math.PI,
   kFriction: 0.4,
+  rLength: DEFAULT_ROBOT_LENGTH,
   rWidth: DEFAULT_ROBOT_WIDTH,
-  rHeight: DEFAULT_ROBOT_HEIGHT,
   safetyMargin: 6,
   maxVelocity: 40,
   maxAcceleration: 30,

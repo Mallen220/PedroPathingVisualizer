@@ -94,8 +94,8 @@ export interface Settings {
   yVelocity: number;
   aVelocity: number;
   kFriction: number;
+  rLength: number;
   rWidth: number;
-  rHeight: number;
   safetyMargin: number;
   maxVelocity: number; // inches/sec
   maxAcceleration: number; // inches/sec²

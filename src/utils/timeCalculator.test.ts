@@ -12,8 +12,8 @@ describe("Time Calculator", () => {
     maxDeceleration: 5,
     fieldMap: "decode.webp",
     kFriction: 0.4,
+    rLength: 18,
     rWidth: 18,
-    rHeight: 18,
     safetyMargin: 1,
     theme: "auto",
   };

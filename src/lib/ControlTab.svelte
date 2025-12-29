@@ -35,8 +35,8 @@
   export let startPoint: Point;
   export let lines: Line[];
   export let sequence: SequenceItem[];
+  export let robotLength: number = 16;
   export let robotWidth: number = 16;
-  export let robotHeight: number = 16;
   export let robotXY: BasePoint;
   export let robotHeading: number;
   export let x: d3.ScaleLinear<number, number, number>;
@@ -225,8 +225,8 @@
   export let activeTab: "path" | "field" | "table" = "path";
 
   // Reference exported but unused props to silence Svelte unused-export warnings
+  $: robotLength;
   $: robotWidth;
-  $: robotHeight;
 
   // Compute timeline markers for the UI (start of each travel segment)
   $: timePrediction = calculatePathTime(startPoint, lines, settings, sequence);

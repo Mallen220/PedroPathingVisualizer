@@ -32,8 +32,8 @@
   export let lines: Line[];
   export let shapes: Shape[];
   export let sequence: SequenceItem[];
+  export let robotLength: number;
   export let robotWidth: number;
-  export let robotHeight: number;
   export let settings: Settings;
 
   export let showSidebar = true;
@@ -146,8 +146,8 @@
   }
 
   $: if (settings) {
-    settings.rHeight = robotHeight;
     settings.rWidth = robotWidth;
+    settings.rLength = robotLength;
   }
 
   function handleClickOutside(event: MouseEvent) {

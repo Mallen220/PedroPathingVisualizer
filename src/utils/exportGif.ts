@@ -17,8 +17,8 @@ export interface ExportGifOptions {
   backgroundImageSrc?: string; /** Optional robot overlay image to draw on top of frames */
   robotImageSrc?: string;
   /** Robot display size in pixels */
+  robotLengthPx?: number;
   robotWidthPx?: number;
-  robotHeightPx?: number;
   /** Function to compute robot state (x,y in pixels and heading in degrees) for a given percent (0..100) */
   getRobotState?: (percent: number) => {
     x: number;
@@ -183,10 +183,11 @@ export async function exportPathToGif(
               // Rotate by heading (convert deg -> rad)
               ctx.rotate((state.heading * Math.PI) / 180);
 
-              const rw = options.robotWidthPx ?? (robotImage.width || 0);
-              const rh = options.robotHeightPx ?? (robotImage.height || 0);
+              const rw = options.robotLengthPx ?? (robotImage.width || 0);
+              const rh = options.robotWidthPx ?? (robotImage.height || 0);
 
               // Draw centered
+              // rw (Length) corresponds to X-local, rh (Width) corresponds to Y-local
               ctx.drawImage(robotImage, -rw / 2, -rh / 2, rw, rh);
               ctx.restore();
             }
