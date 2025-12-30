@@ -127,6 +127,14 @@
       "provider": "github",
       "owner": "Mallen220",
       "repo": "PedroPathingVisualizer"
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "pp",
+        "name": "PedroPathing Project",
+        "description": "Pedro Pathing Visualizer Project",
+        "icon": "build/icon.png"
+      }
+    ]
   }
 }

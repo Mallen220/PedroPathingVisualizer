@@ -40,6 +40,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onMenuAction: (callback) =>
     ipcRenderer.on("menu-action", (_event, action) => callback(action)),
 
+  // Open file path listener
+  onOpenFilePath: (callback) =>
+    ipcRenderer.on("open-file-path", (_event, path) => callback(path)),
+
+  // Notify main process that renderer is ready
+  rendererReady: () => ipcRenderer.send("renderer-ready"),
+
   // Get app version
   getAppVersion: () => ipcRenderer.invoke("app:get-version"),
 });

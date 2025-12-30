@@ -15,6 +15,18 @@ let mainWindow;
 let server;
 let serverPort = 34567;
 let appUpdater;
+let fileToOpen = null;
+
+// Handle File Association (macOS)
+app.on("will-finish-launching", () => {
+  app.on("open-file", (event, path) => {
+    event.preventDefault();
+    fileToOpen = path;
+    if (mainWindow) {
+      mainWindow.webContents.send("open-file-path", path);
+    }
+  });
+});
 
 /**
  * Try to start the HTTP server on `serverPort`, and if it's already in use
@@ -112,6 +124,10 @@ const createWindow = () => {
 
   // Load the app from the local server
   mainWindow.loadURL(`http://localhost:${serverPort}`);
+
+  // Handle file opening when window is ready
+  // Note: we wait for renderer-ready IPC message now instead of did-finish-load
+  // to prevent race conditions
 
   // Handle "Save As" dialog native behavior
   mainWindow.webContents.session.on(
@@ -298,17 +314,45 @@ const createMenu = (mainWindow) => {
   Menu.setApplicationMenu(menu);
 };
 
-app.on("ready", async () => {
-  await startServer();
-  createWindow();
+const gotTheLock = app.requestSingleInstanceLock();
 
-  // Check for updates after a short delay to ensure window is ready
-  setTimeout(() => {
-    if (appUpdater) {
-      appUpdater.checkForUpdates();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+
+      // Find the file in commandLine
+      const file = commandLine.find((arg) => arg.endsWith(".pp"));
+      if (file) {
+        mainWindow.webContents.send("open-file-path", file);
+      }
     }
-  }, 3000);
-});
+  });
+
+  // Handle startup file (Windows/Linux)
+  if (process.platform !== "darwin") {
+    const file = process.argv.find((arg) => arg.endsWith(".pp"));
+    if (file) {
+      fileToOpen = file;
+    }
+  }
+
+  app.on("ready", async () => {
+    await startServer();
+    createWindow();
+
+    // Check for updates after a short delay to ensure window is ready
+    setTimeout(() => {
+      if (appUpdater) {
+        appUpdater.checkForUpdates();
+      }
+    }, 3000);
+  });
+}
 
 // CRITICAL: Satisfies "when the project closes it should auto close"
 app.on("window-all-closed", () => {
@@ -428,6 +472,14 @@ ipcMain.handle("directory:save-settings", async (event, settings) => {
 ipcMain.handle("directory:get-saved-directory", async () => {
   const settings = await loadDirectorySettings();
   return settings.autoPathsDirectory || "";
+});
+
+// Handle renderer ready event
+ipcMain.on("renderer-ready", (event) => {
+  if (fileToOpen && mainWindow) {
+    mainWindow.webContents.send("open-file-path", fileToOpen);
+    fileToOpen = null;
+  }
 });
 
 // Add to existing IPC handlers
