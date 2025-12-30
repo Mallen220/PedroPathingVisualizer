@@ -24,6 +24,7 @@
   import KeyboardShortcutsDialog from "./components/KeyboardShortcutsDialog.svelte";
   import ExportCodeDialog from "./components/ExportCodeDialog.svelte";
   import { calculatePathTime, formatTime } from "../utils";
+  import { exportProjectAsText } from "../utils/fileHandlers";
   import { showShortcuts } from "../stores";
 
   export let loadFile: (evt: any) => any;
@@ -787,6 +788,15 @@
               class="block w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
             >
               Sequential Command
+            </button>
+            <button
+              on:click={() => {
+                exportMenuOpen = false;
+                exportProjectAsText();
+              }}
+              class="block w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+            >
+              Text File
             </button>
             <button
               on:click={() => {
