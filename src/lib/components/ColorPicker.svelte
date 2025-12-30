@@ -13,6 +13,7 @@
     bind:value={color}
     class="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
     {title}
+    aria-label={title}
     {disabled}
     on:input
     on:change

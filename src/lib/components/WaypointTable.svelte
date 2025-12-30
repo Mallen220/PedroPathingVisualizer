@@ -505,6 +505,7 @@
       </button>
       <button
         title="Optimize Path"
+        aria-label="Optimize Path"
         on:click={() => onToggleOptimization && onToggleOptimization()}
         class="flex flex-row items-center gap-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-purple-500"
       >
@@ -733,6 +734,7 @@
                   <!-- Left slot: lock/unlock button always visible -->
                   <button
                     title={line.locked ? "Unlock Path" : "Lock Path"}
+                    aria-label={line.locked ? "Unlock Path" : "Lock Path"}
                     on:click|stopPropagation={() => {
                       line.locked = !line.locked;
                       lines = [...lines];
@@ -779,6 +781,7 @@
                     <button
                       on:click|stopPropagation={() => deleteLine(line.id)}
                       title="Delete path"
+                      aria-label="Delete path"
                       class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded transition-colors text-neutral-400 hover:text-red-600 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                     >
                       <TrashIcon className="size-4" strokeWidth={2} />
@@ -846,6 +849,7 @@
                         on:click|stopPropagation={() =>
                           deleteControlPoint(line, j)}
                         title="Delete control point"
+                        aria-label="Delete control point"
                         class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded transition-colors text-neutral-400 hover:text-red-600 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                       >
                         <TrashIcon className="size-4" strokeWidth={2} />
@@ -926,6 +930,7 @@
                     if (recordChange) recordChange();
                   }}
                   title={item.locked ? "Unlock wait" : "Lock wait"}
+                  aria-label={item.locked ? "Unlock wait" : "Lock wait"}
                   class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
                   aria-pressed={item.locked}
                 >
@@ -967,6 +972,7 @@
                   <button
                     on:click|stopPropagation={() => deleteWait(seqIndex)}
                     title="Delete wait"
+                    aria-label="Delete wait"
                     class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded transition-colors text-neutral-400 hover:text-red-600 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   >
                     <TrashIcon className="size-4" strokeWidth={2} />
