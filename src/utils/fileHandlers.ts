@@ -79,39 +79,57 @@ export async function handleExternalFileOpen(path: string) {
   try {
     const savedDir = await electronAPI.getSavedDirectory?.();
 
-    if (savedDir && savedDir.trim() !== "") {
-      const filename = path.split(/[/\\]/).pop();
-
-      if (filename) {
-        const separator = savedDir.includes("\\") ? "\\" : "/";
-        const destPath =
-          savedDir.endsWith(separator)
-            ? savedDir + filename
-            : savedDir + separator + filename;
-
-        if (path !== destPath) {
-          if (electronAPI.fileExists && (await electronAPI.fileExists(destPath))) {
-             if (confirm(`File "${filename}" already exists in your project folder. Overwrite it with the opened file?`)) {
-                await electronAPI.copyFile?.(path, destPath);
-                loadRecentFile(destPath);
-                return;
-             } else {
-                loadRecentFile(destPath);
-                return;
-             }
-          } else {
-             await electronAPI.copyFile?.(path, destPath);
-             loadRecentFile(destPath);
-             return;
-          }
-        }
-      }
+    // If no project directory is set, warn user and open original
+    if (!savedDir || savedDir.trim() === "") {
+      alert(
+        "Warning: No project directory configured.\n\nThis file is being opened from its original location, which may cause performance issues or disable file management features.\n\nPlease set a Project Directory using the File Manager.",
+      );
+      loadRecentFile(path);
+      return;
     }
 
-    // Fallback: just open the file as is
-    loadRecentFile(path);
+    const filename = path.split(/[/\\]/).pop();
+    if (!filename) {
+      loadRecentFile(path);
+      return;
+    }
+
+    const separator = savedDir.includes("\\") ? "\\" : "/";
+    const destPath =
+      savedDir.endsWith(separator)
+        ? savedDir + filename
+        : savedDir + separator + filename;
+
+    // Check if the file is already in the right place (simple string check)
+    if (path === destPath) {
+      loadRecentFile(path);
+      return;
+    }
+
+    // It's an external file. Attempt to copy/import.
+    if (electronAPI.fileExists && (await electronAPI.fileExists(destPath))) {
+      // File already exists in project dir
+      if (
+        confirm(
+          `File "${filename}" already exists in your project folder.\n\nClick OK to OVERWRITE it with the opened file.\nClick Cancel to open the EXISTING file from your project folder.`,
+        )
+      ) {
+        await electronAPI.copyFile?.(path, destPath);
+        loadRecentFile(destPath);
+      } else {
+        // User chose not to overwrite -> open the existing one in project dir
+        loadRecentFile(destPath);
+      }
+    } else {
+      // File doesn't exist in project dir. Auto-copy it.
+      await electronAPI.copyFile?.(path, destPath);
+      // Optional: Inform user
+      // alert(`File imported to project directory:\n${destPath}`);
+      loadRecentFile(destPath);
+    }
   } catch (err) {
     console.error("Error handling external file open:", err);
+    alert("Error processing file: " + (err as Error).message);
     loadRecentFile(path);
   }
 }
