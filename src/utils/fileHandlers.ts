@@ -203,7 +203,8 @@ export async function handleExternalFileOpen(filePath: string) {
     // We check if filePath starts with savedDir.
     // Handle potential slash mismatch (Windows vs POSIX)
     const normFilePath = filePath.replace(/\\/g, "/").toLowerCase();
-    const normSavedDir = savedDir.replace(/\\/g, "/").toLowerCase();
+    let normSavedDir = savedDir.replace(/\\/g, "/").toLowerCase();
+    if (!normSavedDir.endsWith("/")) normSavedDir += "/";
 
     if (normFilePath.startsWith(normSavedDir)) {
       // Already in directory

@@ -112,7 +112,8 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "perMachine": true
     },
     "linux": {
       "target": [
@@ -125,11 +126,12 @@
     },
     "fileAssociations": [
       {
-        "ext": "pp",
+        "ext": ["pp"],
         "name": "PedroPathing Project",
         "description": "Pedro Pathing Project File",
         "icon": "build/icon.png",
-        "role": "Editor"
+        "role": "Editor",
+        "rank": "Owner"
       }
     ],
     "publish": {
