@@ -51,6 +51,7 @@
     loadFile,
     loadRecentFile,
     exportAsPP,
+    handleExternalFileOpen,
   } from "./utils/fileHandlers";
 
   // Types
@@ -67,6 +68,8 @@
     onMenuAction?: (callback: (action: string) => void) => void;
     showSaveDialog?: (options: any) => Promise<string | null>;
     writeFileBase64?: (path: string, content: string) => Promise<boolean>;
+    rendererReady?: () => Promise<void>;
+    onOpenFilePath?: (callback: (path: string) => void) => void;
   }
   const electronAPI = (window as any).electronAPI as ElectronAPI | undefined;
 
@@ -225,53 +228,67 @@
     }, 500);
 
     // Electron Menu Action Listener
-    if (electronAPI && electronAPI.onMenuAction) {
-      electronAPI.onMenuAction((action) => {
-        // Some actions are handled in KeyboardShortcuts via props or bindings,
-        // but menu clicks come here.
-        // We can invoke the functions directly.
-        switch (action) {
-          case "save-project":
-            saveProject();
-            break;
-          case "save-as":
-            saveFileAs();
-            break;
-          case "open-file":
-            const input = document.getElementById("file-upload");
-            if (input) input.click();
-            break;
-          case "export-gif":
-            exportGif();
-            break;
-          case "export-pp":
-            // Open the Export Code dialog pre-selected to JSON (.pp) format
-            exportDialogState.set({ isOpen: true, format: "json" });
-            break;
-          case "export-java":
-            exportDialogState.set({ isOpen: true, format: "java" });
-            break;
-          case "export-points":
-            exportDialogState.set({ isOpen: true, format: "points" });
-            break;
-          case "export-sequential":
-            exportDialogState.set({ isOpen: true, format: "sequential" });
-            break;
-          case "undo":
-            if (canUndo) undoAction();
-            break;
-          case "redo":
-            if (canRedo) redoAction();
-            break;
-          case "open-settings":
-            showSettings.set(true);
-            break;
-          case "open-shortcuts":
-            showShortcuts.set(true);
-            break;
-          // ... other cases ...
-        }
-      });
+    if (electronAPI) {
+      // Listen for external file opens BEFORE signaling ready
+      if (electronAPI.onOpenFilePath) {
+        electronAPI.onOpenFilePath((filePath) => {
+          handleExternalFileOpen(filePath);
+        });
+      }
+
+      // Signal main process that we are ready to receive file paths
+      if (electronAPI.rendererReady) {
+        electronAPI.rendererReady();
+      }
+
+      if (electronAPI.onMenuAction) {
+        electronAPI.onMenuAction((action) => {
+          // Some actions are handled in KeyboardShortcuts via props or bindings,
+          // but menu clicks come here.
+          // We can invoke the functions directly.
+          switch (action) {
+            case "save-project":
+              saveProject();
+              break;
+            case "save-as":
+              saveFileAs();
+              break;
+            case "open-file":
+              const input = document.getElementById("file-upload");
+              if (input) input.click();
+              break;
+            case "export-gif":
+              exportGif();
+              break;
+            case "export-pp":
+              // Open the Export Code dialog pre-selected to JSON (.pp) format
+              exportDialogState.set({ isOpen: true, format: "json" });
+              break;
+            case "export-java":
+              exportDialogState.set({ isOpen: true, format: "java" });
+              break;
+            case "export-points":
+              exportDialogState.set({ isOpen: true, format: "points" });
+              break;
+            case "export-sequential":
+              exportDialogState.set({ isOpen: true, format: "sequential" });
+              break;
+            case "undo":
+              if (canUndo) undoAction();
+              break;
+            case "redo":
+              if (canRedo) redoAction();
+              break;
+            case "open-settings":
+              showSettings.set(true);
+              break;
+            case "open-shortcuts":
+              showShortcuts.set(true);
+              break;
+            // ... other cases ...
+          }
+        });
+      }
     }
   });
 

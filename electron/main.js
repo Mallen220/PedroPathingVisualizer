@@ -17,6 +17,15 @@ let server;
 let serverPort = 34567;
 let appUpdater;
 
+// Variable to store the pending file path if opened before renderer is ready
+let pendingFilePath = null;
+
+// Handle macOS open-file event (triggered when app is launching or running)
+app.on("open-file", (event, path) => {
+  event.preventDefault();
+  handleOpenedFile(path);
+});
+
 // Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -26,10 +35,25 @@ if (!gotTheLock) {
   app.on("second-instance", (event, commandLine, workingDirectory) => {
     // Someone tried to run a second instance, we should create a new window
     createWindow();
+
+    // Check for file arguments in the second instance command line
+    // Windows/Linux: The file path is usually the last argument or specifically passed
+    const lastArg = commandLine[commandLine.length - 1];
+    if (lastArg && lastArg.endsWith(".pp")) {
+      handleOpenedFile(lastArg);
+    }
   });
 
   // App initialization
   app.on("ready", async () => {
+    // Check for file arguments on initial launch (Windows/Linux)
+    if (process.platform !== "darwin" && process.argv.length >= 2) {
+      const lastArg = process.argv[process.argv.length - 1];
+      if (lastArg && lastArg.endsWith(".pp")) {
+        pendingFilePath = lastArg;
+      }
+    }
+
     await startServer();
     createWindow();
     createMenu();
@@ -51,6 +75,32 @@ if (!gotTheLock) {
       }
     }, 3000);
   });
+}
+
+/**
+ * Handle a file path opened from OS
+ */
+function handleOpenedFile(filePath) {
+  if (!filePath) return;
+
+  // If we have windows, send to the focused one or the first one
+  const win = BrowserWindow.getFocusedWindow() || windows.values().next().value;
+  if (win) {
+    // If window exists, send immediately (or check if it's ready? The renderer will just ignore if not hooked up yet,
+    // but usually if window is open, it's loaded. To be safe, we can try sending.)
+    // However, if the app is just starting, the renderer might not be ready.
+    // The robust way is to store it and let the renderer ask for it, OR send it if we know it's ready.
+    // For simplicity, we'll store it in pendingFilePath and also try to send it if a window exists.
+    pendingFilePath = filePath;
+    win.webContents.send("open-file-path", filePath);
+
+    // Focus the window
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  } else {
+    // No window yet, store it
+    pendingFilePath = filePath;
+  }
 }
 
 /**
@@ -431,6 +481,34 @@ const saveDirectorySettings = async (settings) => {
     return false;
   }
 };
+
+// IPC Handlers
+
+// Add handler for renderer ready signal
+ipcMain.handle("renderer-ready", async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (pendingFilePath) {
+    win.webContents.send("open-file-path", pendingFilePath);
+    pendingFilePath = null;
+  }
+  return true;
+});
+
+// Add handler for file copy
+ipcMain.handle("file:copy", async (event, srcPath, destPath) => {
+  try {
+     // Check if new path already exists
+     // (Using fs.copyFile triggers overwrite by default, so we might want to check existence if we want to prompt,
+     // but the prompt logic is likely in the renderer. The renderer asks user, then calls this.)
+
+    await fs.copyFile(srcPath, destPath);
+    return true;
+  } catch (error) {
+    console.error("Error copying file:", error);
+    throw error;
+  }
+});
+
 
 // Update the existing ipcMain.handle for "file:get-directory"
 ipcMain.handle("file:get-directory", async () => {

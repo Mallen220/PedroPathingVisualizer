@@ -40,6 +40,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
   exportPP: (content, defaultName) =>
     ipcRenderer.invoke("export:pp", { content, defaultName }),
 
+  // File Copy
+  copyFile: (srcPath, destPath) =>
+    ipcRenderer.invoke("file:copy", srcPath, destPath),
+
+  // Renderer ready signal
+  rendererReady: () => ipcRenderer.invoke("renderer-ready"),
+
+  // Open file path listener
+  onOpenFilePath: (callback) =>
+    ipcRenderer.on("open-file-path", (_event, filePath) => callback(filePath)),
+
   // Menu action listener
   onMenuAction: (callback) =>
     ipcRenderer.on("menu-action", (_event, action) => callback(action)),

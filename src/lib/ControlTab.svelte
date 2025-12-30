@@ -48,6 +48,7 @@
   export let changePlaybackSpeedBy: (delta: number) => void;
   export let resetPlaybackSpeed: () => void;
   export let setPlaybackSpeed: (factor: number, autoPlay?: boolean) => void;
+  export let resetAnimation: () => void;
 
   export let shapes: Shape[];
   export let recordChange: () => void;
