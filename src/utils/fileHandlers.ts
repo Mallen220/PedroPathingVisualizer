@@ -18,8 +18,10 @@ interface ExtendedElectronAPI {
   ) => Promise<boolean>;
   showSaveDialog?: (options: any) => Promise<string | null>;
   getDirectory?: () => Promise<string>;
+  getSavedDirectory?: () => Promise<string>;
   fileExists?: (filePath: string) => Promise<boolean>;
   readFile?: (filePath: string) => Promise<string>;
+  copyFile?: (sourcePath: string, destPath: string) => Promise<boolean>;
   onMenuAction?: (callback: (action: string) => void) => void;
 }
 const electronAPI = (window as any).electronAPI as
@@ -68,6 +70,49 @@ export async function loadRecentFile(path: string) {
   } catch (err) {
     console.error("Error loading recent file:", err);
     alert("Failed to load file: " + (err as Error).message);
+  }
+}
+
+export async function handleExternalFileOpen(path: string) {
+  if (!electronAPI) return;
+
+  try {
+    const savedDir = await electronAPI.getSavedDirectory?.();
+
+    if (savedDir && savedDir.trim() !== "") {
+      const filename = path.split(/[/\\]/).pop();
+
+      if (filename) {
+        const separator = savedDir.includes("\\") ? "\\" : "/";
+        const destPath =
+          savedDir.endsWith(separator)
+            ? savedDir + filename
+            : savedDir + separator + filename;
+
+        if (path !== destPath) {
+          if (electronAPI.fileExists && (await electronAPI.fileExists(destPath))) {
+             if (confirm(`File "${filename}" already exists in your project folder. Overwrite it with the opened file?`)) {
+                await electronAPI.copyFile?.(path, destPath);
+                loadRecentFile(destPath);
+                return;
+             } else {
+                loadRecentFile(destPath);
+                return;
+             }
+          } else {
+             await electronAPI.copyFile?.(path, destPath);
+             loadRecentFile(destPath);
+             return;
+          }
+        }
+      }
+    }
+
+    // Fallback: just open the file as is
+    loadRecentFile(path);
+  } catch (err) {
+    console.error("Error handling external file open:", err);
+    loadRecentFile(path);
   }
 }
 

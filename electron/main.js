@@ -493,6 +493,16 @@ ipcMain.handle("file:create-directory", async (event, dirPath) => {
   }
 });
 
+ipcMain.handle("file:copy", async (event, sourcePath, destPath) => {
+  try {
+    await fs.copyFile(sourcePath, destPath);
+    return true;
+  } catch (error) {
+    console.error("Error copying file:", error);
+    throw error;
+  }
+});
+
 ipcMain.handle("file:get-directory-stats", async (event, dirPath) => {
   // Validate input
   if (!dirPath || typeof dirPath !== "string" || dirPath.trim() === "") {

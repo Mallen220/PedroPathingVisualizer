@@ -50,6 +50,7 @@
     saveFileAs,
     loadFile,
     loadRecentFile,
+    handleExternalFileOpen,
   } from "./utils/fileHandlers";
 
   // Types
@@ -265,7 +266,7 @@
 
       if (electronAPI.onOpenFilePath) {
         electronAPI.onOpenFilePath((path) => {
-          loadRecentFile(path);
+          handleExternalFileOpen(path);
         });
       }
 

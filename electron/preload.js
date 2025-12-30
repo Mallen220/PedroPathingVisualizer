@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   writeFile: (filePath, content) =>
     ipcRenderer.invoke("file:write", filePath, content),
   deleteFile: (filePath) => ipcRenderer.invoke("file:delete", filePath),
+  copyFile: (sourcePath, destPath) =>
+    ipcRenderer.invoke("file:copy", sourcePath, destPath),
   fileExists: (filePath) => ipcRenderer.invoke("file:exists", filePath),
 
   // Directory settings operations
