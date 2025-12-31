@@ -49,12 +49,18 @@ export class TemplateEngine {
 
       if (!openTagMatch) {
         // No more tags, just replace variables in the rest
-        result += this.replaceVariables(content.substring(currentIndex), context);
+        result += this.replaceVariables(
+          content.substring(currentIndex),
+          context,
+        );
         break;
       }
 
       // Add text before the tag
-      result += this.replaceVariables(content.substring(currentIndex, openTagMatch.index), context);
+      result += this.replaceVariables(
+        content.substring(currentIndex, openTagMatch.index),
+        context,
+      );
       currentIndex = openTagMatch.index;
 
       const tagType = openTagMatch.type; // 'if' or 'each'
@@ -62,13 +68,22 @@ export class TemplateEngine {
       const tagLength = openTagMatch.length;
 
       // Find closing tag, accounting for nesting
-      const blockEnd = this.findMatchingCloseTag(content, currentIndex + tagLength, tagType);
+      const blockEnd = this.findMatchingCloseTag(
+        content,
+        currentIndex + tagLength,
+        tagType,
+      );
 
       if (blockEnd === -1) {
-        throw new Error(`Unclosed #${tagType} tag starting at index ${currentIndex}`);
+        throw new Error(
+          `Unclosed #${tagType} tag starting at index ${currentIndex}`,
+        );
       }
 
-      const innerContent = content.substring(currentIndex + tagLength, blockEnd);
+      const innerContent = content.substring(
+        currentIndex + tagLength,
+        blockEnd,
+      );
 
       if (tagType === "each") {
         result += this.processEach(tagContent, innerContent, context);
@@ -82,7 +97,10 @@ export class TemplateEngine {
     return result;
   }
 
-  private findNextTag(content: string, startIndex: number): { type: string, content: string, index: number, length: number } | null {
+  private findNextTag(
+    content: string,
+    startIndex: number,
+  ): { type: string; content: string; index: number; length: number } | null {
     const eachIdx = content.indexOf("#each", startIndex);
     const ifIdx = content.indexOf("#if", startIndex);
 
@@ -91,14 +109,17 @@ export class TemplateEngine {
     if (eachIdx !== -1 && (ifIdx === -1 || eachIdx < ifIdx)) {
       // #each is first
       const lineEnd = content.indexOf("\n", eachIdx);
-      const tagText = content.substring(eachIdx, lineEnd === -1 ? content.length : lineEnd);
+      const tagText = content.substring(
+        eachIdx,
+        lineEnd === -1 ? content.length : lineEnd,
+      );
       const params = tagText.substring(5).trim();
 
       return {
         type: "each",
         content: params,
         index: eachIdx,
-        length: tagText.length // Consumes the tag but NOT the newline. Wait, logic says processBlock appends text BEFORE tag.
+        length: tagText.length, // Consumes the tag but NOT the newline. Wait, logic says processBlock appends text BEFORE tag.
         // If we want to preserve formatting, we should probably strip the tag but keep the structure?
         // But user put the tag on a line.
         // If we just remove the tag text, we might leave a blank line?
@@ -137,19 +158,26 @@ export class TemplateEngine {
     } else {
       // #if is first
       const lineEnd = content.indexOf("\n", ifIdx);
-      const tagText = content.substring(ifIdx, lineEnd === -1 ? content.length : lineEnd);
+      const tagText = content.substring(
+        ifIdx,
+        lineEnd === -1 ? content.length : lineEnd,
+      );
       const params = tagText.substring(3).trim();
 
       return {
         type: "if",
         content: params,
         index: ifIdx,
-        length: tagText.length
+        length: tagText.length,
       };
     }
   }
 
-  private findMatchingCloseTag(content: string, startIndex: number, type: string): number {
+  private findMatchingCloseTag(
+    content: string,
+    startIndex: number,
+    type: string,
+  ): number {
     let depth = 0;
     let index = startIndex;
 
@@ -201,10 +229,16 @@ export class TemplateEngine {
     return current;
   }
 
-  private processEach(expression: string, body: string, context: Context): string {
+  private processEach(
+    expression: string,
+    body: string,
+    context: Context,
+  ): string {
     const match = expression.match(/^(.*?)\s+as\s+(\w+)(?:\s*,\s*(\w+))?$/);
     if (!match) {
-      throw new Error(`Invalid #each syntax: '${expression}'. Expected 'collection as item' or 'collection as item, index'`);
+      throw new Error(
+        `Invalid #each syntax: '${expression}'. Expected 'collection as item' or 'collection as item, index'`,
+      );
     }
 
     const collectionPath = match[1];
@@ -219,7 +253,7 @@ export class TemplateEngine {
     }
 
     if (!Array.isArray(collection)) {
-       throw new Error(`Variable '${collectionPath}' is not an array.`);
+      throw new Error(`Variable '${collectionPath}' is not an array.`);
     }
 
     let result = "";
@@ -231,47 +265,52 @@ export class TemplateEngine {
 
       result += this.processBlock(body, {
         data: itemData,
-        parent: context
+        parent: context,
       });
     });
 
     return result;
   }
 
-  private processIf(expression: string, body: string, context: Context): string {
+  private processIf(
+    expression: string,
+    body: string,
+    context: Context,
+  ): string {
     const condition = this.evaluateCondition(expression, context);
     const splitIndex = this.findElseIndex(body);
 
     if (condition) {
-      const trueBlock = splitIndex !== -1 ? body.substring(0, splitIndex) : body;
+      const trueBlock =
+        splitIndex !== -1 ? body.substring(0, splitIndex) : body;
       return this.processBlock(trueBlock, context);
     } else {
       if (splitIndex !== -1) {
-          const falseBlock = body.substring(splitIndex + 5); // 5 is length of #else
-          return this.processBlock(falseBlock, context);
+        const falseBlock = body.substring(splitIndex + 5); // 5 is length of #else
+        return this.processBlock(falseBlock, context);
       }
       return "";
     }
   }
 
   private findElseIndex(content: string): number {
-      let depth = 0;
-      let index = 0;
-      while (index < content.length) {
-          if (content.substring(index).startsWith("#if")) {
-              depth++;
-              index += 3;
-          } else if (content.substring(index).startsWith("/if")) {
-              depth--;
-              index += 3;
-          } else if (content.substring(index).startsWith("#else")) {
-              if (depth === 0) return index;
-              index += 5;
-          } else {
-              index++;
-          }
+    let depth = 0;
+    let index = 0;
+    while (index < content.length) {
+      if (content.substring(index).startsWith("#if")) {
+        depth++;
+        index += 3;
+      } else if (content.substring(index).startsWith("/if")) {
+        depth--;
+        index += 3;
+      } else if (content.substring(index).startsWith("#else")) {
+        if (depth === 0) return index;
+        index += 5;
+      } else {
+        index++;
       }
-      return -1;
+    }
+    return -1;
   }
 
   private evaluateCondition(expression: string, context: Context): boolean {
@@ -284,20 +323,26 @@ export class TemplateEngine {
     const operators = ["==", "!=", ">=", "<=", ">", "<"];
 
     for (const op of operators) {
-        if (expression.includes(op)) {
-            const [left, right] = expression.split(op).map(s => s.trim());
-            const leftVal = this.resolveValOrLiteral(left, context);
-            const rightVal = this.resolveValOrLiteral(right, context);
+      if (expression.includes(op)) {
+        const [left, right] = expression.split(op).map((s) => s.trim());
+        const leftVal = this.resolveValOrLiteral(left, context);
+        const rightVal = this.resolveValOrLiteral(right, context);
 
-            switch (op) {
-                case "==": return leftVal == rightVal;
-                case "!=": return leftVal != rightVal;
-                case ">": return Number(leftVal) > Number(rightVal);
-                case "<": return Number(leftVal) < Number(rightVal);
-                case ">=": return Number(leftVal) >= Number(rightVal);
-                case "<=": return Number(leftVal) <= Number(rightVal);
-            }
+        switch (op) {
+          case "==":
+            return leftVal == rightVal;
+          case "!=":
+            return leftVal != rightVal;
+          case ">":
+            return Number(leftVal) > Number(rightVal);
+          case "<":
+            return Number(leftVal) < Number(rightVal);
+          case ">=":
+            return Number(leftVal) >= Number(rightVal);
+          case "<=":
+            return Number(leftVal) <= Number(rightVal);
         }
+      }
     }
 
     const val = this.resolveValOrLiteral(expression, context);
