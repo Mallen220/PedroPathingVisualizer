@@ -273,9 +273,6 @@
             case "export-sequential":
               exportDialogState.set({ isOpen: true, format: "sequential" });
               break;
-            case "export-custom":
-              exportDialogState.set({ isOpen: true, format: "custom" });
-              break;
             case "undo":
               if (canUndo) undoAction();
               break;

@@ -1,5 +1,6 @@
 import type { Point, Line, SequenceItem, Shape } from "../types";
 import { renderTemplate } from "./templateEngine";
+import type { RenderResult } from "./templateEngine";
 export { validateTemplate } from "./templateEngine";
 
 interface TemplateContext {
@@ -14,33 +15,40 @@ interface TemplateContext {
   paths: Array<any>;
   markers: Array<{ name: string }>;
   sequence: Array<any>;
+  shapes: Array<Shape>;
+  project: {
+    startPoint: Point;
+    lines: Line[];
+    shapes: Shape[];
+    sequence: SequenceItem[];
+  };
 }
 
 export function generateCustomCode(
   startPoint: Point,
   lines: Line[],
   sequence: SequenceItem[] | undefined,
+  shapes: Shape[] | undefined,
   template: string,
   mode: "full" | "class-body" = "full",
   packageName: string = "com.example",
   className: string = "AutoPath",
-): string {
+): RenderResult {
   const context = prepareTemplateContext(
     startPoint,
     lines,
     sequence,
+    shapes,
     packageName,
     className,
   );
 
-  // If mode is "class-body", we might want to wrap it,
-  // BUT the user prompt says: "Users will provide a Java template... The choice between these two modes must be explicitly togglable... The program will then... Render the final Java file by evaluating the template"
-  // It implies the user provides the WHOLE template for that mode.
-  // Wait, if "Only a class body" is selected, the user provides just the body. The system MUST wrap it.
-
   let finalTemplate = template;
+  let offsetLines = 0;
+
   if (mode === "class-body") {
-    finalTemplate = `package {{ packageName }};
+    // We wrap it, so line numbers in error report will be offset.
+    const prefix = `package {{ packageName }};
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -51,26 +59,38 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 @Autonomous(name = "{{ className }}", group = "Autonomous")
 public class {{ className }} extends OpMode {
 
-${template}
-
-}
 `;
+    // Count newlines in prefix to adjust error line report if we wanted to map back to user template
+    // But since the user only edits the body, we might want to adjust the reported line number BACK by this amount.
+    offsetLines = (prefix.match(/\n/g) || []).length;
+
+    finalTemplate = `${prefix}${template}
+
+}`;
   }
 
-  return renderTemplate(finalTemplate, context);
+  const result = renderTemplate(finalTemplate, context);
+
+  // Adjust error line if needed
+  if (result.error && mode === "class-body") {
+    result.error.line = Math.max(1, result.error.line - offsetLines);
+  }
+
+  return result;
 }
 
-function prepareTemplateContext(
+export function prepareTemplateContext(
   startPoint: Point,
   lines: Line[],
   sequence: SequenceItem[] | undefined,
+  shapes: Shape[] | undefined,
   packageName: string,
   className: string,
 ): TemplateContext {
   const formattedStartPoint = {
     x: startPoint.x,
     y: startPoint.y,
-    heading: (startPoint as any).startDeg ?? 0, // Simplified, assume linear/constant provides startDeg
+    heading: (startPoint as any).startDeg ?? 0,
     headingRad: (Math.PI / 180) * ((startPoint as any).startDeg ?? 0),
   };
 
@@ -82,7 +102,7 @@ function prepareTemplateContext(
     return {
       name: cleanName,
       index: idx,
-      startPoint: idx === 0 ? formattedStartPoint : lines[idx - 1].endPoint, // Crude approximation, real start is prev end
+      startPoint: idx === 0 ? formattedStartPoint : lines[idx - 1].endPoint,
       endPoint: {
         x: line.endPoint.x,
         y: line.endPoint.y,
@@ -120,7 +140,6 @@ function prepareTemplateContext(
         hasNext: !isLast,
       };
     } else {
-      // Find path name
       const line = lines.find((l) => l.id === (item as any).lineId);
       const name = line
         ? (line.name || `path${lines.indexOf(line) + 1}`).replace(
@@ -159,5 +178,12 @@ function prepareTemplateContext(
     paths,
     markers,
     sequence: processedSequence,
+    shapes: shapes || [],
+    project: {
+      startPoint,
+      lines,
+      shapes: shapes || [],
+      sequence: seqSource,
+    },
   };
 }

@@ -17,7 +17,7 @@
   import {
     generateCustomCode,
     validateTemplate,
-  } from "../../utils/templateExporter"; // Add imports
+  } from "../../utils/templateExporter";
   import { tick, onMount } from "svelte";
   import { loadSettings, saveSettings } from "../../utils/settingsPersistence";
 
@@ -26,12 +26,11 @@
   export let lines: Line[];
   export let sequence: SequenceItem[];
   export let shapes: Shape[] = [];
-  // Accept settings via binding from parent (do not initialize as `const undefined`)
-  export let settings: Settings;
+  export const settings = undefined as Settings | undefined;
 
   let exportFullCode = false;
   let exportFormat: "java" | "points" | "sequential" | "json" | "custom" =
-    "java"; // Add custom
+    "java";
   let sequentialClassName = "AutoPath";
   let targetLibrary: "SolversLib" | "NextFTC" = "SolversLib";
   const DEFAULT_PACKAGE =
@@ -41,8 +40,35 @@
   // Custom Template State
   let customTemplate = "";
   let customTemplateMode: "full" | "class-body" = "full";
-  let customTemplateErrors: string[] = [];
+  let renderError: { message: string; line: number } | null = null;
   let isEditingTemplate = true;
+  let editorRef: HTMLTextAreaElement;
+
+  // Autocomplete State
+  let showAutocomplete = false;
+  let autocompleteQuery = "";
+  let autocompleteIndex = 0;
+  let autocompletePosition = { top: 0, left: 0 };
+  let autocompleteOptions: string[] = [];
+  // Hardcoded schema for now, or could generate from context
+  const TEMPLATE_VARS = [
+    "packageName",
+    "className",
+    "startPoint.x",
+    "startPoint.y",
+    "startPoint.heading",
+    "paths",
+    "markers",
+    "sequence",
+    "shapes",
+    "project.startPoint",
+    "project.lines",
+    "project.shapes",
+    "project.sequence",
+    "loop.index",
+    "loop.first",
+    "loop.last",
+  ];
 
   let exportedCode = "";
   let currentLanguage: typeof java | typeof plaintext | typeof json = java;
@@ -53,7 +79,7 @@
   // Search State
   let showSearch = false;
   let searchQuery = "";
-  let searchMatches: number[] = []; // Array of line numbers (0-indexed)
+  let searchMatches: number[] = [];
   let currentMatchIndex = -1;
   let searchInputRef: HTMLInputElement;
 
@@ -99,14 +125,12 @@
     }
   }
 
-  // Save package name to settings
   async function savePackageName() {
     const settings = await loadSettings();
     settings.javaPackageName = packageName;
     await saveSettings(settings);
   }
 
-  // Save custom template settings
   async function saveCustomTemplateSettings() {
     const settings = await loadSettings();
     settings.customTemplate = customTemplate;
@@ -115,6 +139,7 @@
   }
 
   async function refreshCode() {
+    renderError = null;
     try {
       if (exportFormat === "java") {
         exportedCode = await generateJavaCode(
@@ -147,23 +172,23 @@
         currentLanguage = json;
       } else if (exportFormat === "custom") {
         // Generate custom code
-        exportedCode = generateCustomCode(
+        const result = generateCustomCode(
           startPoint,
           lines,
           sequence,
+          shapes,
           customTemplate,
           customTemplateMode,
           packageName,
           sequentialClassName,
         );
+        exportedCode = result.result;
+        if (result.error) {
+          renderError = result.error;
+        }
         currentLanguage = java;
-        // Validate
-        // We validate against a mock context or real context?
-        // generateCustomCode does not throw validation errors, it returns code.
-        // But we want to show errors if any during editing.
       }
 
-      // Re-run search if active
       if (searchQuery) {
         performSearch();
       }
@@ -175,18 +200,125 @@
     }
   }
 
-  // Debounced template update
   let debounceTimer: any;
-  function handleTemplateChange() {
+  function handleTemplateChange(e: Event) {
+    handleAutocompleteInput(e);
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
       await saveCustomTemplateSettings();
       await refreshCode();
-      // Also validate
-      // We can use the exposed validateTemplate from engine, but we need context
-      // For now, refreshCode handles rendering errors by embedding them in comments
     }, 500);
   }
+
+  // --- Autocomplete Logic ---
+  function handleAutocompleteInput(e: any) {
+    if (!editorRef) return;
+
+    const val = editorRef.value;
+    const cursorPos = editorRef.selectionEnd;
+
+    // Check if we just typed {{ or are inside one
+    const lastOpenBraces = val.lastIndexOf("{{", cursorPos);
+    const lastCloseBraces = val.lastIndexOf("}}", cursorPos);
+
+    if (
+      lastOpenBraces !== -1 &&
+      lastOpenBraces < cursorPos &&
+      lastCloseBraces < lastOpenBraces
+    ) {
+      // We are inside {{ }}
+      showAutocomplete = true;
+      const query = val.slice(lastOpenBraces + 2, cursorPos).trim();
+      autocompleteQuery = query;
+
+      // Filter options
+      autocompleteOptions = TEMPLATE_VARS.filter((v) =>
+        v.toLowerCase().includes(query.toLowerCase()),
+      );
+      autocompleteIndex = 0;
+
+      // Calculate position
+      // This is tricky with a textarea. Simple heuristic: relative to cursor if possible, or fixed.
+      // For now, fixed position near top of editor or bottom?
+      // Let's use getCaretCoordinates if we can, but simpler:
+      // Just put it near the caret (approximation)
+      // Actually, let's just show it in a fixed spot overlaying the textarea for MVP robustness.
+    } else {
+      showAutocomplete = false;
+    }
+  }
+
+  function handleEditorKeydown(e: KeyboardEvent) {
+    if (showAutocomplete) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        autocompleteIndex =
+          (autocompleteIndex + 1) % autocompleteOptions.length;
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        autocompleteIndex =
+          (autocompleteIndex - 1 + autocompleteOptions.length) %
+          autocompleteOptions.length;
+      } else if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertAutocomplete(autocompleteOptions[autocompleteIndex]);
+      } else if (e.key === "Escape") {
+        showAutocomplete = false;
+      }
+    }
+  }
+
+  function insertAutocomplete(value: string) {
+    if (!editorRef || !value) return;
+    const val = editorRef.value;
+    const cursorPos = editorRef.selectionEnd;
+    const lastOpenBraces = val.lastIndexOf("{{", cursorPos);
+
+    const newVal =
+      val.slice(0, lastOpenBraces + 2) +
+      value +
+      " " +
+      val.slice(cursorPos); // Add space for easier typing
+    customTemplate = newVal;
+    showAutocomplete = false;
+
+    // Restore cursor and focus
+    tick().then(() => {
+      editorRef.focus();
+      const newCursorPos = lastOpenBraces + 2 + value.length;
+      editorRef.setSelectionRange(newCursorPos, newCursorPos);
+    });
+
+    handleTemplateChange({} as any); // Trigger save/refresh
+  }
+
+  function insertVariable(variable: string) {
+    if (!editorRef) return;
+    const val = editorRef.value;
+    const start = editorRef.selectionStart;
+    const end = editorRef.selectionEnd;
+
+    // Check if we are already inside brackets
+    // Simple check
+    const textBefore = val.slice(0, start);
+    // If textBefore ends with {{ or {{ plus spaces, just insert var.
+    // Otherwise wrap in {{ }}
+    let toInsert = variable;
+    if (!/\{\{\s*$/.test(textBefore)) {
+      toInsert = `{{ ${variable} }}`;
+    }
+
+    const newVal = val.slice(0, start) + toInsert + val.slice(end);
+    customTemplate = newVal;
+
+    tick().then(() => {
+      editorRef.focus();
+      const newPos = start + toInsert.length;
+      editorRef.setSelectionRange(newPos, newPos);
+    });
+    handleTemplateChange({} as any);
+  }
+  // --------------------------
 
   export async function openWithFormat(
     format: "java" | "points" | "sequential" | "json" | "custom",
@@ -226,6 +358,10 @@
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
+      if (showAutocomplete) {
+        showAutocomplete = false;
+        return; // Don't close dialog
+      }
       if (showSearch) {
         showSearch = false;
         searchQuery = "";
@@ -293,7 +429,6 @@
     }
   }
 
-  // Count lines for display
   $: lineCount = exportedCode.split("\n").length;
 </script>
 
@@ -697,24 +832,99 @@
       <!-- Code Content -->
       <div class="relative flex-1 min-h-0 bg-[#282b2e] overflow-hidden group">
         {#if exportFormat === "custom" && isEditingTemplate}
-          <!-- Template Editor -->
-          <div class="absolute inset-0 flex flex-col">
+          <!-- Template Editor Container -->
+          <div class="flex h-full">
+            <!-- Sidebar: Variable Reference -->
             <div
-              class="flex justify-between items-center px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 text-xs"
+              class="w-48 bg-neutral-50 dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 flex flex-col overflow-hidden"
             >
-              <span class="text-neutral-500 font-mono">Template Editor</span>
-              <div class="flex gap-2">
-                <span class="text-neutral-400"
-                  >Supported: {`{{ var }}, {% for %}, {% if %}`}</span
-                >
+              <div
+                class="p-3 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-neutral-700"
+              >
+                Variables
+              </div>
+              <div class="flex-1 overflow-auto p-2">
+                {#each TEMPLATE_VARS as variable}
+                  <button
+                    class="w-full text-left px-2 py-1.5 text-xs font-mono text-blue-600 dark:text-blue-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded transition-colors truncate"
+                    title={variable}
+                    on:click={() => insertVariable(variable)}
+                  >
+                    {variable}
+                  </button>
+                {/each}
               </div>
             </div>
-            <textarea
-              class="flex-1 w-full p-4 bg-[#282b2e] text-neutral-200 font-mono text-sm resize-none focus:outline-none"
-              spellcheck="false"
-              bind:value={customTemplate}
-              on:input={handleTemplateChange}
-            ></textarea>
+
+            <!-- Editor -->
+            <div class="flex-1 flex flex-col relative">
+              <div
+                class="flex justify-between items-center px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 text-xs"
+              >
+                <span class="text-neutral-500 font-mono">Template Editor</span>
+                <div class="flex gap-2">
+                  <span class="text-neutral-400"
+                    >Supported: {`{{ var }}, {% for %}, {% if %}`}</span
+                  >
+                </div>
+              </div>
+
+              <!-- Error Banner -->
+              {#if renderError}
+                <div
+                  class="bg-red-500/10 border-b border-red-500/20 px-4 py-2 flex items-start gap-3"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    class="w-5 h-5 text-red-500 shrink-0 mt-0.5"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <div class="text-sm text-red-500">
+                    <span class="font-bold">Error on line {renderError.line}:</span
+                    >
+                    {renderError.message}
+                  </div>
+                </div>
+              {/if}
+
+              <div class="relative flex-1">
+                <!-- Autocomplete Popup -->
+                {#if showAutocomplete && autocompleteOptions.length > 0}
+                  <div
+                    class="absolute z-50 top-12 left-12 w-64 max-h-48 overflow-y-auto bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-xl"
+                  >
+                    {#each autocompleteOptions as option, idx}
+                      <button
+                        class="w-full text-left px-3 py-2 text-xs font-mono {idx ===
+                        autocompleteIndex
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'}"
+                        on:click={() => insertAutocomplete(option)}
+                        on:mouseenter={() => (autocompleteIndex = idx)}
+                      >
+                        {option}
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+
+                <textarea
+                  bind:this={editorRef}
+                  class="absolute inset-0 w-full h-full p-4 bg-[#282b2e] text-neutral-200 font-mono text-sm resize-none focus:outline-none"
+                  spellcheck="false"
+                  bind:value={customTemplate}
+                  on:input={handleTemplateChange}
+                  on:keydown={handleEditorKeydown}
+                ></textarea>
+              </div>
+            </div>
           </div>
         {:else}
           <div
@@ -722,14 +932,12 @@
             class="absolute inset-0 overflow-auto custom-scrollbar p-4 pb-20"
           >
             <!-- Highlight Layer for Search Results -->
-            <!-- We render invisible text that matches layout, but with highlighted backgrounds -->
             <div
               class="absolute top-4 left-4 right-4 bottom-20 pointer-events-none select-none font-mono text-sm leading-relaxed"
               aria-hidden="true"
               style="transform: translateY(1.0em);"
             >
               {#each exportedCode.split("\n") as line, i}
-                <!-- Data attribute used for scrolling to this line -->
                 <div
                   data-line-index={i}
                   class="w-full {searchMatches.includes(i)

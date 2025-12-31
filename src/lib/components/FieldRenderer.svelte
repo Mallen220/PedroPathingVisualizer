@@ -363,12 +363,12 @@
   // Ghost Path
   $: ghostPathElement = (() => {
     let ghostPath: Path | null = null;
-    if (settings?.showGhostPaths && lines.length > 0) {
+    if (settings.showGhostPaths && lines.length > 0) {
       const ghostPoints = generateGhostPathPoints(
         startPoint,
         lines,
-        settings?.rLength || DEFAULT_ROBOT_LENGTH,
-        settings?.rWidth || DEFAULT_ROBOT_WIDTH,
+        settings.rLength,
+        settings.rWidth,
         50,
       );
       if (ghostPoints.length >= 3) {
@@ -424,13 +424,13 @@
   // Onion Layers
   $: onionLayerElements = (() => {
     let onionLayers: Path[] = [];
-    if (settings?.showOnionLayers && lines.length > 0) {
-      const spacing = settings?.onionLayerSpacing || 6;
+    if (settings.showOnionLayers && lines.length > 0) {
+      const spacing = settings.onionLayerSpacing || 6;
       const layers = generateOnionLayers(
         startPoint,
         lines,
-        settings?.rLength || DEFAULT_ROBOT_LENGTH,
-        settings?.rWidth || DEFAULT_ROBOT_WIDTH,
+        settings.rLength,
+        settings.rWidth,
         spacing,
       );
       layers.forEach((layer, idx) => {
