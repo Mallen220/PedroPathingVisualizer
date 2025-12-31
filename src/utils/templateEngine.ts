@@ -161,9 +161,9 @@ function parseAndRender(tokens: Token[], context: Context): string {
         const val = evaluateExpression(token.content, context);
         // Explicitly handle undefined -> error string marker
         if (val === undefined) {
-           output += `<<UNDEFINED: ${token.content}>>`;
+          output += `<<UNDEFINED: ${token.content}>>`;
         } else {
-           output += val;
+          output += val;
         }
         i++;
       } else if (token.type === "block_start") {
@@ -215,10 +215,10 @@ function parseAndRender(tokens: Token[], context: Context): string {
               output += parseAndRender(loopTokens, loopContext);
             });
           } else {
-             // Collection undefined or not array
-             if (collection === undefined) {
-                 output += `<<UNDEFINED COLLECTION: ${collectionPath}>>`;
-             }
+            // Collection undefined or not array
+            if (collection === undefined) {
+              output += `<<UNDEFINED COLLECTION: ${collectionPath}>>`;
+            }
           }
 
           i = j + 1;
@@ -357,48 +357,48 @@ function evaluateExpression(expr: string, context: Context): any {
 
   // Helper to find split index for lowest precedence operators
   function findSplitIndex(str: string, ops: string[]): number {
-      let bracketDepth = 0;
-      // Iterate backwards to find right-most operator for left-associativity
-      for (let i = str.length - 1; i >= 0; i--) {
-          if (str[i] === ']') bracketDepth++;
-          else if (str[i] === '[') bracketDepth--;
-          else if (bracketDepth === 0 && ops.includes(str[i])) {
-              return i;
-          }
+    let bracketDepth = 0;
+    // Iterate backwards to find right-most operator for left-associativity
+    for (let i = str.length - 1; i >= 0; i--) {
+      if (str[i] === "]") bracketDepth++;
+      else if (str[i] === "[") bracketDepth--;
+      else if (bracketDepth === 0 && ops.includes(str[i])) {
+        return i;
       }
-      return -1;
+    }
+    return -1;
   }
 
   // Level 1: +, -
-  let splitIdx = findSplitIndex(expr, ['+', '-']);
+  let splitIdx = findSplitIndex(expr, ["+", "-"]);
   if (splitIdx !== -1) {
-      const left = expr.substring(0, splitIdx).trim();
-      const right = expr.substring(splitIdx + 1).trim();
-      const op = expr[splitIdx];
+    const left = expr.substring(0, splitIdx).trim();
+    const right = expr.substring(splitIdx + 1).trim();
+    const op = expr[splitIdx];
 
-      const lVal: any = evaluateExpression(left, context);
-      const rVal: any = evaluateExpression(right, context);
+    const lVal: any = evaluateExpression(left, context);
+    const rVal: any = evaluateExpression(right, context);
 
-      if (lVal === undefined || rVal === undefined) return undefined;
+    if (lVal === undefined || rVal === undefined) return undefined;
 
-      if (op === '+') return lVal + rVal;
-      if (op === '-') return lVal - rVal;
+    if (op === "+") return lVal + rVal;
+    if (op === "-") return lVal - rVal;
   }
 
   // Level 2: *, /
-  splitIdx = findSplitIndex(expr, ['*', '/']);
+  splitIdx = findSplitIndex(expr, ["*", "/"]);
   if (splitIdx !== -1) {
-      const left = expr.substring(0, splitIdx).trim();
-      const right = expr.substring(splitIdx + 1).trim();
-      const op = expr[splitIdx];
+    const left = expr.substring(0, splitIdx).trim();
+    const right = expr.substring(splitIdx + 1).trim();
+    const op = expr[splitIdx];
 
-      const lVal: any = evaluateExpression(left, context);
-      const rVal: any = evaluateExpression(right, context);
+    const lVal: any = evaluateExpression(left, context);
+    const rVal: any = evaluateExpression(right, context);
 
-      if (lVal === undefined || rVal === undefined) return undefined;
+    if (lVal === undefined || rVal === undefined) return undefined;
 
-      if (op === '*') return lVal * rVal;
-      if (op === '/') return lVal / rVal;
+    if (op === "*") return lVal * rVal;
+    if (op === "/") return lVal / rVal;
   }
 
   // Fallback: variable path

@@ -805,6 +805,34 @@
             >
               Export GIF
             </button>
+
+            <!-- Quick access template button -->
+            <button
+              title="Open Custom Template Exporter"
+              aria-label="Custom template exporter"
+              on:click={() => handleExport("custom")}
+              class="ml-2 p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="size-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 20h9"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16 4H8v4H4v8h16V8h-4V4z"
+                />
+              </svg>
+            </button>
           </div>
         {/if}
       </div>
