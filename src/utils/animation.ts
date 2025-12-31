@@ -77,11 +77,45 @@ export function calculateRobotState(
     const currentLine = lines[lineIdx];
     const prevPoint = lineIdx === 0 ? startPoint : lines[lineIdx - 1].endPoint;
 
-    // Calculate progress (0.0 to 1.0) within this specific travel event
-    const timeProgress =
-      (currentSeconds - activeEvent.startTime) / activeEvent.duration;
-    // Apply Easing only to the movement
-    const linePercent = easeInOutQuad(Math.max(0, Math.min(1, timeProgress)));
+    let linePercent = 0;
+
+    // Use detailed motion profile if available
+    if (activeEvent.motionProfile && activeEvent.motionProfile.length > 0) {
+      const profile = activeEvent.motionProfile;
+      const relativeTime = Math.max(0, currentSeconds - activeEvent.startTime);
+
+      // Find the segment in the profile
+      // Profile maps index (0 to samples) to cumulative time (seconds)
+      // profile[0] = 0.
+      let i = 0;
+      // Linear scan is safe enough for ~100 samples
+      while (i < profile.length - 1 && relativeTime > profile[i + 1]) {
+        i++;
+      }
+
+      // Interpolate t
+      const tStart = i / (profile.length - 1);
+      const tEnd = (i + 1) / (profile.length - 1);
+      const timeStart = profile[i];
+      const timeEnd = profile[i + 1] || timeStart; // Safety fallback
+
+      let localProgress = 0;
+      if (timeEnd > timeStart) {
+        localProgress = (relativeTime - timeStart) / (timeEnd - timeStart);
+      }
+
+      linePercent = tStart + localProgress * (tEnd - tStart);
+    } else {
+      // Fallback to linear time interpolation
+      // Calculate progress (0.0 to 1.0) within this specific travel event
+      const timeProgress =
+        (currentSeconds - activeEvent.startTime) / activeEvent.duration;
+      // Apply Easing only to the movement
+      linePercent = easeInOutQuad(Math.max(0, Math.min(1, timeProgress)));
+    }
+
+    // Clamp
+    linePercent = Math.max(0, Math.min(1, linePercent));
 
     // Calculate Position
     const robotInchesXY = getCurvePoint(linePercent, [

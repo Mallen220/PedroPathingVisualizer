@@ -172,11 +172,12 @@ function analyzePathSegment(
 
 /**
  * Calculates time for a motion profile over a path with varying constraints.
+ * Returns both total time and the cumulative time profile.
  */
 function calculateMotionProfileDetailed(
   steps: PathStep[],
   settings: Settings,
-): number {
+): { totalTime: number; profile: number[] } {
   const maxVelGlobal = settings.maxVelocity || 100;
   const maxAcc = settings.maxAcceleration || 30;
   const maxDec = settings.maxDeceleration || maxAcc;
@@ -184,7 +185,7 @@ function calculateMotionProfileDetailed(
   const aVelocity = settings.aVelocity || Math.PI;
 
   const n = steps.length;
-  if (n === 0) return 0;
+  if (n === 0) return { totalTime: 0, profile: [0] };
 
   const vAtPoints = new Float64Array(n + 1);
   vAtPoints[0] = 0;
@@ -219,8 +220,10 @@ function calculateMotionProfileDetailed(
     }
   }
 
-  // 3. Integrate Time
+  // 3. Integrate Time and Build Profile
+  const profile: number[] = [0];
   let totalTime = 0;
+
   for (let i = 0; i < n; i++) {
     const vStart = vAtPoints[i];
     const vEnd = vAtPoints[i + 1];
@@ -240,10 +243,12 @@ function calculateMotionProfileDetailed(
     const dtRotation = (steps[i].rotation * (Math.PI / 180)) / aVelocity;
 
     // Take the maximum time required (slower of the two)
-    totalTime += Math.max(dtLinear, dtRotation);
+    const dt = Math.max(dtLinear, dtRotation);
+    totalTime += dt;
+    profile.push(totalTime);
   }
 
-  return totalTime;
+  return { totalTime, profile };
 }
 
 /**
@@ -380,11 +385,12 @@ export function calculatePathTime(
     segmentLengths.push(length);
 
     let translationTime = 0;
+    let motionProfile: number[] | undefined = undefined;
+
     if (useMotionProfile) {
-      translationTime = calculateMotionProfileDetailed(
-        analysis.steps,
-        settings,
-      );
+      const result = calculateMotionProfileDetailed(analysis.steps, settings);
+      translationTime = result.totalTime;
+      motionProfile = result.profile;
     } else {
       const avgVelocity = (settings.xVelocity + settings.yVelocity) / 2;
       translationTime = length / avgVelocity;
@@ -426,6 +432,7 @@ export function calculatePathTime(
       startTime: currentTime,
       endTime: currentTime + segmentTime,
       lineIndex,
+      motionProfile: motionProfile,
     });
     currentTime += segmentTime;
 

@@ -140,6 +140,8 @@ export interface TimelineEvent {
   startHeading?: number;
   targetHeading?: number;
   atPoint?: BasePoint;
+  // Detailed motion profile for travel events: maps step index to cumulative time
+  motionProfile?: number[];
 }
 
 export interface TimePrediction {
