@@ -14,6 +14,7 @@
     getClosestTarget,
     type DragPosition,
   } from "../utils/dragDrop";
+  import { duplicatePathLine } from "../utils/pathOperations";
   import { getRandomColor } from "../utils";
   import ObstaclesSection from "./components/ObstaclesSection.svelte";
   import RobotPositionDisplay from "./components/RobotPositionDisplay.svelte";
@@ -743,6 +744,43 @@
     recordChange();
   }
 
+  function duplicateLine(lineIndex: number, seqIndex: number) {
+    const result = duplicatePathLine(
+      lines,
+      sequence,
+      startPoint,
+      lineIndex,
+      seqIndex,
+    );
+    lines = result.lines;
+    sequence = result.sequence;
+
+    // Update UI state
+    collapsedSections.lines.splice(
+      lineIndex + 1,
+      0,
+      collapsedSections.lines[lineIndex],
+    ); // Copy collapsed state
+    collapsedSections.controlPoints.splice(
+      lineIndex + 1,
+      0,
+      collapsedSections.controlPoints[lineIndex],
+    );
+    collapsedEventMarkers.splice(
+      lineIndex + 1,
+      0,
+      collapsedEventMarkers[lineIndex],
+    );
+
+    // Force reactivity
+    collapsedSections = { ...collapsedSections };
+    collapsedEventMarkers = [...collapsedEventMarkers];
+    recordChange();
+
+    // Select the new line
+    selectedLineId.set(result.newLine.id!);
+  }
+
   function syncLinesToSequence(newSeq: SequenceItem[]) {
     const pathOrder = newSeq
       .filter((item) => item.kind === "path")
@@ -1002,6 +1040,11 @@
                 }
                 onRemove={() =>
                   removeLine(lines.findIndex((l) => l.id === ln.id))}
+                onDuplicate={() =>
+                  duplicateLine(
+                    lines.findIndex((l) => l.id === ln.id),
+                    sIdx,
+                  )}
                 onInsertAfter={() => insertLineAfter(sIdx)}
                 onAddWaitAfter={() => insertWaitAfter(sIdx)}
                 onMoveUp={() => moveSequenceItem(sIdx, -1)}
