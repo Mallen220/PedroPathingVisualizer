@@ -309,70 +309,111 @@ export const DEFAULT_SETTINGS: Settings = {
   fieldRotation: 0,
   robotImage: "/robot.png",
   javaPackageName: "org.firstinspires.ftc.teamcode.Commands.AutoCommands",
-  customTemplate: `package {{ packageName }};
+  customTemplate: `/* ============================================================= *
+ *           Pedro Pathing Visualizer — Auto-Generated           *
+ *                                                               *
+ *  Version: {{ version }}.                                              *
+ *  Copyright (c) {{ year }} Matthew Allen                             *
+ *                                                               *
+ *  THIS FILE IS AUTO-GENERATED — DO NOT EDIT MANUALLY.          *
+ *  Changes will be overwritten when regenerated.                *
+ * ============================================================= */
 
+package {{ packageName }};
+
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.pathing.PathChain;
+import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "{{ className }}", group = "Autonomous")
+@Configurable // Panels
 public class {{ className }} extends OpMode {
 
-    private Follower follower;
-    private int pathState;
+  private TelemetryManager panelsTelemetry; // Panels Telemetry instance
+  public Follower follower; // Pedro Pathing follower instance
+  private int pathState; // Current autonomous path state (state machine)
+  private Paths paths; // Paths defined in the Paths class
+
+  @Override
+  public void init() {
+    panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+
+    follower = Constants.createFollower(hardwareMap);
+    follower.setStartingPose(new Pose({{ startPoint.x }}, {{ startPoint.y }}, Math.toRadians({{ startPoint.heading }})));
+
+    paths = new Paths(follower); // Build paths
+
+    panelsTelemetry.debug("Status", "Initialized");
+    panelsTelemetry.update(telemetry);
+  }
+
+  @Override
+  public void loop() {
+    follower.update(); // Update Pedro Pathing
+    pathState = autonomousPathUpdate(); // Update autonomous state machine
+
+    // Log values to Panels and Driver Station
+    panelsTelemetry.debug("Path State", pathState);
+    panelsTelemetry.debug("X", follower.getPose().getX());
+    panelsTelemetry.debug("Y", follower.getPose().getY());
+    panelsTelemetry.debug("Heading", follower.getPose().getHeading());
+    panelsTelemetry.update(telemetry);
+  }
+
+  public static class Paths {
 
     {% for path in paths %}
-    private PathChain {{ path.name }};
+    public PathChain {{ path.name }};
     {% endfor %}
 
-    @Override
-    public void init() {
-        follower = new Follower(hardwareMap);
-        follower.setStartingPose(new Pose({{ startPoint.x }}, {{ startPoint.y }}, Math.toRadians({{ startPoint.heading }})));
-
-        buildPaths();
-    }
-
-    @Override
-    public void start() {
-        pathState = 0;
-        follower.followPath({{ paths[0].name }}, true);
-    }
-
-    @Override
-    public void loop() {
-        follower.update();
-        autonomousPathUpdate();
-    }
-
-    private void autonomousPathUpdate() {
-        switch (pathState) {
-            {% for item in sequence %}
-            case {{ loop.index }}:
-                // Logic for {{ item.type }}
-                {% if item.type == "path" %}
-                if (!follower.isBusy()) {
-                    {% if item.hasNext %}
-                    follower.followPath({{ item.nextPathName }});
-                    pathState = {{ loop.index + 1 }};
-                    {% else %}
-                    requestOpModeStop();
-                    pathState = -1;
-                    {% endif %}
-                }
-                {% endif %}
-                break;
+    public Paths(Follower follower) {
+      {% for path in paths %}
+      {{ path.name }} = follower
+        .pathBuilder()
+        .addPath(
+          {% if path.controlPoints.length == 0 %}
+          new BezierLine(new Pose({{ path.startPoint.xFixed }}, {{ path.startPoint.yFixed }}), new Pose({{ path.endPoint.xFixed }}, {{ path.endPoint.yFixed }}))
+          {% else %}
+          new BezierCurve(
+            new Pose({{ path.startPoint.xFixed }}, {{ path.startPoint.yFixed }}),
+            {% for cp in path.controlPoints %}
+            new Pose({{ cp.xFixed }}, {{ cp.yFixed }}),
             {% endfor %}
-        }
-    }
+            new Pose({{ path.endPoint.xFixed }}, {{ path.endPoint.yFixed }})
+          )
+          {% endif %}
+        )
+        {% if path.endPoint.heading == "linear" %}
+        .setLinearHeadingInterpolation(Math.toRadians({{ path.endPoint.startDeg }}), Math.toRadians({{ path.endPoint.endDeg }}))
+        {% endif %}
+        {% if path.endPoint.heading == "constant" %}
+        .setConstantHeadingInterpolation(Math.toRadians({{ path.endPoint.degrees }}))
+        {% endif %}
+        {% if path.endPoint.heading == "tangential" %}
+        .setTangentHeadingInterpolation()
+        {% endif %}
+        {% if path.reversed %}
+        .setReversed(true)
+        {% endif %}
+        .build();
 
-    private void buildPaths() {
-        {% for path in paths %}
-        // Building {{ path.name }}
-        {% endfor %}
+      {% endfor %}
     }
+  }
+
+  public int autonomousPathUpdate() {
+    // Event markers will automatically trigger at their positions
+    // Make sure to register NamedCommands in your RobotContainer
+    return pathState;
+  }
 }
 `,
   customTemplateMode: "full",

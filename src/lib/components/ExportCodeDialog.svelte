@@ -26,6 +26,7 @@
   export let lines: Line[];
   export let sequence: SequenceItem[];
   export let shapes: Shape[] = [];
+  export const settings = undefined as Settings | undefined;
 
   let exportFullCode = false;
   let exportFormat: "java" | "points" | "sequential" | "json" | "custom" =
@@ -274,7 +275,10 @@
     const lastOpenBraces = val.lastIndexOf("{{", cursorPos);
 
     const newVal =
-      val.slice(0, lastOpenBraces + 2) + value + " " + val.slice(cursorPos); // Add space for easier typing
+      val.slice(0, lastOpenBraces + 2) +
+      value +
+      " " +
+      val.slice(cursorPos); // Add space for easier typing
     customTemplate = newVal;
     showAutocomplete = false;
 
@@ -883,8 +887,7 @@
                     />
                   </svg>
                   <div class="text-sm text-red-500">
-                    <span class="font-bold"
-                      >Error on line {renderError.line}:</span
+                    <span class="font-bold">Error on line {renderError.line}:</span
                     >
                     {renderError.message}
                   </div>

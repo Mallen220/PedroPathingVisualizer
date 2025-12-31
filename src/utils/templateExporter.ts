@@ -2,6 +2,7 @@ import type { Point, Line, SequenceItem, Shape } from "../types";
 import { renderTemplate } from "./templateEngine";
 import type { RenderResult } from "./templateEngine";
 export { validateTemplate } from "./templateEngine";
+import pkg from "../../package.json";
 
 interface TemplateContext {
   packageName: string;
@@ -11,6 +12,8 @@ interface TemplateContext {
     y: number;
     heading: number;
     headingRad: number;
+    xFixed: string;
+    yFixed: string;
   };
   paths: Array<any>;
   markers: Array<{ name: string }>;
@@ -22,6 +25,8 @@ interface TemplateContext {
     shapes: Shape[];
     sequence: SequenceItem[];
   };
+  version: string;
+  year: number;
 }
 
 export function generateCustomCode(
@@ -92,24 +97,43 @@ export function prepareTemplateContext(
     y: startPoint.y,
     heading: (startPoint as any).startDeg ?? 0,
     headingRad: (Math.PI / 180) * ((startPoint as any).startDeg ?? 0),
+    xFixed: startPoint.x.toFixed(3),
+    yFixed: startPoint.y.toFixed(3),
   };
+
+  // Helper to format a point/pose
+  const formatPoint = (pt: { x: number; y: number }) => ({
+    x: pt.x,
+    y: pt.y,
+    xFixed: pt.x.toFixed(3),
+    yFixed: pt.y.toFixed(3),
+  });
 
   // Process Paths
   const paths = lines.map((line, idx) => {
     const name = line.name || `path${idx + 1}`;
     const cleanName = name.replace(/[^a-zA-Z0-9]/g, "");
 
+    const sp = idx === 0 ? formattedStartPoint : lines[idx - 1].endPoint;
+    const startPointContext = formatPoint(sp);
+
+    // Format control points
+    const controlPointsContext = line.controlPoints.map((cp) => formatPoint(cp));
+
+    const endPointContext = {
+      ...formatPoint(line.endPoint),
+      heading: (line.endPoint as any).heading || "tangent",
+      startDeg: (line.endPoint as any).startDeg ?? 0,
+      endDeg: (line.endPoint as any).endDeg ?? 0,
+      degrees: (line.endPoint as any).degrees ?? 0,
+    };
+
     return {
       name: cleanName,
       index: idx,
-      startPoint: idx === 0 ? formattedStartPoint : lines[idx - 1].endPoint,
-      endPoint: {
-        x: line.endPoint.x,
-        y: line.endPoint.y,
-        heading:
-          (line.endPoint as any).endDeg ?? (line.endPoint as any).degrees ?? 0,
-      },
-      controlPoints: line.controlPoints,
+      startPoint: startPointContext,
+      endPoint: endPointContext,
+      controlPoints: controlPointsContext,
       eventMarkers: line.eventMarkers || [],
       reversed: !!line.endPoint.reverse,
     };
@@ -185,5 +209,7 @@ export function prepareTemplateContext(
       shapes: shapes || [],
       sequence: seqSource,
     },
+    version: pkg.version,
+    year: new Date().getFullYear(),
   };
 }
