@@ -27,9 +27,7 @@
   export let lines: Line[];
   export let sequence: SequenceItem[];
   export let shapes: Shape[] = [];
-  // Accept settings via two-way binding from parent; don't initialize as a const undefined which
-  // could propagate an undefined value back to the parent when using `bind:settings`.
-  export let settings: Settings;
+  export const settings = undefined as Settings | undefined;
 
   let exportFullCode = false;
   let exportFormat: "java" | "points" | "sequential" | "json" | "template" =
@@ -47,12 +45,7 @@
   let scrollContainer: HTMLDivElement;
 
   // Template State
-  let templateCode = `// #each lines as line
-// PathChain \${line.name} = follower.pathBuilder()
-//     .addPath(...)
-//     .build();
-// /each
-`;
+  let templateCode = ``;
   let templateError: string | null = null;
   let showTemplateEditor = true;
   let templateMode: "full" | "body" = "full";
@@ -69,7 +62,7 @@
 
   const DEFAULT_FULL_TEMPLATE = `${AUTO_GENERATED_HEADER}
 
-package \${packageName};
+package {{ packageName }};
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
@@ -79,60 +72,60 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Point;
 
 public class MyCustomPath {
-    #each lines as line
-    public PathChain \${line.name};
-    /each
+    {% for line in lines %}
+    public PathChain {{ line.name }};
+    {% endfor %}
 
     public void buildPaths(Follower follower) {
-        #each lines as line
-        // Building \${line.name}
-        \${line.name} = follower.pathBuilder()
-            #if line.controlPoints.length > 0
-            // Curve with \${line.controlPoints.length} control points
+        {% for line in lines %}
+        // Building {{ line.name }}
+        {{ line.name }} = follower.pathBuilder()
+            {% if line.controlPoints.length > 0 %}
+            // Curve with {{ line.controlPoints.length }} control points
             .addPath(new BezierCurve(
-                new Point(\${line.endPoint.x}, \${line.endPoint.y}),
-                #each line.controlPoints as cp
-                new Point(\${cp.x}, \${cp.y}),
-                /each
-                new Point(\${line.endPoint.x}, \${line.endPoint.y})
+                new Point({{ line.endPoint.x }}, {{ line.endPoint.y }}),
+                {% for cp in line.controlPoints %}
+                new Point({{ cp.x }}, {{ cp.y }}),
+                {% endfor %}
+                new Point({{ line.endPoint.x }}, {{ line.endPoint.y }})
             ))
-            #else
+            {% else %}
             // Straight line
             .addPath(new BezierLine(
-                new Point(\${line.endPoint.x}, \${line.endPoint.y})
+                new Point({{ line.endPoint.x }}, {{ line.endPoint.y }})
             ))
-            /if
-            .setConstantHeadingInterpolation(\${line.endPoint.heading})
+            {% endif %}
+            .setConstantHeadingInterpolation({{ line.endPoint.heading }})
             .build();
 
-        /each
+        {% endfor %}
     }
 }
 `;
 
-  const DEFAULT_BODY_TEMPLATE = `    #each lines as line
-    public PathChain \${line.name};
-    /each
+  const DEFAULT_BODY_TEMPLATE = `    {% for line in lines %}
+    public PathChain {{ line.name }};
+    {% endfor %}
 
     public void buildPaths(Follower follower) {
-        #each lines as line
-        \${line.name} = follower.pathBuilder()
-            #if line.controlPoints.length > 0
+        {% for line in lines %}
+        {{ line.name }} = follower.pathBuilder()
+            {% if line.controlPoints.length > 0 %}
             .addPath(new BezierCurve(
-                new Point(\${line.endPoint.x}, \${line.endPoint.y}),
-                #each line.controlPoints as cp
-                new Point(\${cp.x}, \${cp.y}),
-                /each
-                new Point(\${line.endPoint.x}, \${line.endPoint.y})
+                new Point({{ line.endPoint.x }}, {{ line.endPoint.y }}),
+                {% for cp in line.controlPoints %}
+                new Point({{ cp.x }}, {{ cp.y }}),
+                {% endfor %}
+                new Point({{ line.endPoint.x }}, {{ line.endPoint.y }})
             ))
-            #else
+            {% else %}
             .addPath(new BezierLine(
-                new Point(\${line.endPoint.x}, \${line.endPoint.y})
+                new Point({{ line.endPoint.x }}, {{ line.endPoint.y }})
             ))
-            /if
-            .setConstantHeadingInterpolation(\${line.endPoint.heading})
+            {% endif %}
+            .setConstantHeadingInterpolation({{ line.endPoint.heading }})
             .build();
-        /each
+        {% endfor %}
     }
 `;
 
@@ -247,9 +240,12 @@ public class MyCustomPath {
           startPoint,
           lines,
           sequence,
+          shapes,
+          settings,
           pkg,
           date: new Date(),
           packageName,
+          className: sequentialClassName
         };
         const engine = new TemplateEngine(templateCode, data);
         let rendered = await engine.render();

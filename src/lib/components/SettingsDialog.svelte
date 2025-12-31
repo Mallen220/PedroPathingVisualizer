@@ -11,8 +11,7 @@
   import type { Settings } from "../../types";
 
   export let isOpen = false;
-  // Ensure we always have a settings object to bind to in the template
-  export let settings: Settings = { ...DEFAULT_SETTINGS };
+  export let settings: Settings;
 
   // Track which sections are collapsed
   let collapsedSections = {
