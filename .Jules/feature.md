@@ -1,6 +1,8 @@
-# Feature Journal
+# Project Journal
 
-## 2024-05-22 - Initial Setup
+This journal records critical codebase constraints, failed ideas, and recurring patterns to improve future feature work. It is not a changelog.
 
-**Learning:** The project uses `.pp` files to store path data.
-**Action:** When implementing features that modify data, ensure backward compatibility or migration for existing `.pp` files.
+## Format
+
+**Learning:** [Insight]
+**Action:** [How to apply next time]
