@@ -211,7 +211,8 @@ function calculateMotionProfileDetailed(
   const maxAcc = settings.maxAcceleration || 30;
   const maxDec = settings.maxDeceleration || maxAcc;
   const kFriction = settings.kFriction || 0;
-  const aVelocity = settings.aVelocity || Math.PI;
+  // Ensure aVelocity is finite and non-zero to avoid Infinity
+  const aVelocity = Math.max(settings.aVelocity, 0.001);
 
   const n = steps.length;
   if (n === 0) return { totalTime: 0, profile: [0] };
@@ -269,11 +270,8 @@ function calculateMotionProfileDetailed(
 
     // Check rotation constraint
     // We convert degrees to radians for aVelocity (radians/sec)
-    // Guard against aVelocity = 0 (Infinity result)
-    let dtRotation = 0;
-    if (aVelocity > 1e-9) {
-      dtRotation = (steps[i].rotation * (Math.PI / 180)) / aVelocity;
-    }
+    // aVelocity is guarded >= 0.001
+    const dtRotation = (steps[i].rotation * (Math.PI / 180)) / aVelocity;
 
     // Take the maximum time required (slower of the two)
     const dt = Math.max(dtLinear, dtRotation);
@@ -306,6 +304,12 @@ export function calculatePathTime(
   const useMotionProfile =
     settings.maxVelocity !== undefined &&
     settings.maxAcceleration !== undefined;
+
+  // Guard aVelocity globally in this scope
+  const safeSettings = {
+    ...settings,
+    aVelocity: Math.max(settings.aVelocity, 0.001),
+  };
 
   const segmentLengths: number[] = [];
   const segmentTimes: number[] = [];
@@ -396,7 +400,7 @@ export function calculatePathTime(
     if (diff > 0.1) {
       // Convert diff to rotation time
       const diffRad = diff * (Math.PI / 180);
-      const rotTime = diffRad / settings.aVelocity;
+      const rotTime = diffRad / safeSettings.aVelocity;
       timeline.push({
         type: "wait",
         duration: rotTime,
@@ -427,7 +431,10 @@ export function calculatePathTime(
     let headingProfile: number[] | undefined = undefined;
 
     if (useMotionProfile) {
-      const result = calculateMotionProfileDetailed(analysis.steps, settings);
+      const result = calculateMotionProfileDetailed(
+        analysis.steps,
+        safeSettings,
+      );
       translationTime = result.totalTime;
       motionProfile = result.profile;
 
@@ -439,7 +446,7 @@ export function calculatePathTime(
         }
       }
     } else {
-      const avgVelocity = (settings.xVelocity + settings.yVelocity) / 2;
+      const avgVelocity = (safeSettings.xVelocity + safeSettings.yVelocity) / 2;
       translationTime = length / avgVelocity;
     }
 
@@ -477,7 +484,7 @@ export function calculatePathTime(
     if (!Number.isFinite(endHeading)) endHeading = currentHeading;
 
     const rotationTime =
-      (rotationRequired * (Math.PI / 180)) / settings.aVelocity;
+      (rotationRequired * (Math.PI / 180)) / safeSettings.aVelocity;
 
     const segmentTime = Math.max(translationTime, rotationTime);
 
@@ -511,7 +518,10 @@ export function calculatePathTime(
 }
 
 export function formatTime(totalSeconds: number): string {
+  // Handle NaN or Infinity
+  if (!Number.isFinite(totalSeconds)) return "Infinite";
   if (totalSeconds <= 0) return "0.000s";
+
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   if (minutes > 0) {
