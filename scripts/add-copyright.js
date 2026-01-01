@@ -1,19 +1,3 @@
-/*
- * Copyright 2025 Matthew Allen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -22,7 +6,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 
-const COPYRIGHT_YEAR = "2025";
+// Allow overriding year for testing/rollover simulation via env var
+const CURRENT_YEAR =
+  process.env.FORCE_YEAR || new Date().getFullYear().toString();
 const COPYRIGHT_OWNER = "Matthew Allen";
 
 const EXTENSIONS_TO_CHECK = [
@@ -68,10 +54,7 @@ const IGNORED_FILES = [
 const BLOCK_COMMENT_START = "/*";
 const BLOCK_COMMENT_END = "*/";
 
-const APACHE_HEADER_TEMPLATE = `
- * Copyright ${COPYRIGHT_YEAR} ${COPYRIGHT_OWNER}
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+const APACHE_LICENSE_TEXT = `Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -81,7 +64,12 @@ const APACHE_HEADER_TEMPLATE = `
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License.`;
+
+const APACHE_HEADER_TEMPLATE = `
+ * Copyright ${CURRENT_YEAR} ${COPYRIGHT_OWNER}
+ *
+ * ${APACHE_LICENSE_TEXT}
  `;
 
 // HTML style
@@ -107,83 +95,106 @@ function getHeaderForFile(ext) {
   return STANDARD_HEADER;
 }
 
-function hasCorrectHeader(content, ext) {
-  // Check if it has the specific 2025 copyright header
-  // AND if it is the correct type for the file (e.g., svelte uses HTML comment)
-  if (!content.includes(`Copyright ${COPYRIGHT_YEAR} ${COPYRIGHT_OWNER}`)) {
-    return false;
-  }
-
-  if (ext === ".svelte") {
-    // Must use HTML comments
-    return (
-      content.includes("<!--") &&
-      content.includes("Licensed under the Apache License")
-    );
-  }
-
-  return true;
-}
-
 function processFile(filePath) {
   const ext = path.extname(filePath);
   if (!EXTENSIONS_TO_CHECK.includes(ext)) return;
 
   let content = fs.readFileSync(filePath, "utf8");
+  let updated = false;
 
-  // Fix for previous run on svelte files: remove JS style header if present
+  // 1. Fix incorrect headers (specifically JS-style in Svelte)
   if (ext === ".svelte") {
-    // Look for the JS style header that was incorrectly added
-    // The previous run added STANDARD_HEADER at the top, or possibly after <script> depending on where it landed?
-    // Actually, I was prepending it.
-    // Prettier might have moved it.
-    // The mangled one looks like: /* * Copyright 2025 ... */
-
-    // We can try to regex remove it.
-    // It starts with /* and ends with */ and contains "Licensed under the Apache License"
-    // We need to be careful not to remove other comments.
-    // But this header is huge.
-
-    // Simple approach: if it has "Licensed under the Apache License" inside /* */, remove it.
     const jsHeaderRegex =
       /\/\*[\s\S]*?Licensed under the Apache License[\s\S]*?\*\//;
-
     if (jsHeaderRegex.test(content)) {
       content = content.replace(jsHeaderRegex, "").trimStart();
       console.log(`Removed incorrect header from: ${filePath}`);
-      // Fall through to add correct header
+      updated = true;
     }
-
-    // Also check if we already have the HTML header but it's not at the top?
-    // If hasCorrectHeader is true, we assume it's good.
   }
 
-  if (hasCorrectHeader(content, ext)) {
+  // 2. Check for existing "Copyright [Year] Matthew Allen"
+  // Regex to match "Copyright YYYY Matthew Allen" or "Copyright YYYY-YYYY Matthew Allen"
+  // We want to capture the year part to see if it needs update.
+  const copyrightRegex = new RegExp(
+    `Copyright\\s+([0-9]{4})(?:-[0-9]{4})?\\s+${COPYRIGHT_OWNER}`,
+  );
+  const match = content.match(copyrightRegex);
+
+  if (match) {
+    const existingYear = match[1];
+    // Header exists. Check if year matches current.
+    if (existingYear !== CURRENT_YEAR) {
+      // Update year.
+      // We can either update it to "CURRENT_YEAR" or range "EXISTING-CURRENT".
+      // For this task, we assume strictly updating to current year is the goal based on "2025->2026" prompt.
+      // Replace the entire match with new Copyright line
+      const newCopyrightLine = `Copyright ${CURRENT_YEAR} ${COPYRIGHT_OWNER}`;
+
+      // Be careful replacing. content.replace(regex) replaces the first occurrence.
+      // The match string is "Copyright 2025 Matthew Allen".
+      // We want to replace it with "Copyright 2026 Matthew Allen".
+
+      content = content.replace(match[0], newCopyrightLine);
+      console.log(
+        `Updated year (${existingYear} -> ${CURRENT_YEAR}) in: ${filePath}`,
+      );
+      updated = true;
+    }
+
+    // Also verify strict style for Svelte if we found a match but it wasn't caught by the jsHeaderRegex?
+    // The match doesn't tell us if it's inside <!-- --> or /* */.
+    // But `jsHeaderRegex` above should have caught the bad block comment.
+    // So if we are here, and it's svelte, it's likely in an HTML comment or text.
+    // If logic above works, we are good.
+
+    if (updated) {
+      fs.writeFileSync(filePath, content, "utf8");
+    }
     return;
   }
 
-  const header = getHeaderForFile(ext);
-  let newContent = content;
-
-  if (ext === ".sh") {
-    // Handle shebang
-    if (content.startsWith("#!")) {
-      const lines = content.split("\n");
-      // Keep shebang
-      const shebang = lines[0];
-      const rest = lines.slice(1).join("\n");
-      newContent = `${shebang}\n\n${header}\n${rest}`;
-    } else {
-      newContent = `${header}\n\n${content}`;
+  // 3. No copyright found (or at least not matching our owner). Add new header.
+  // (Unless it has "Licensed under..." but different owner? We skip those to be safe or just prepend?)
+  // We'll stick to: if no "Copyright ... Matthew Allen", we add our header.
+  // But wait, what if it has the license but no copyright line? Or different format?
+  // Let's check for the License text to avoid double licensing if the copyright format is weird.
+  if (content.includes("Licensed under the Apache License")) {
+    // License text exists but our specific Copyright regex didn't match.
+    // Maybe it's "Copyright [yyyy] ..."?
+    if (content.includes("Copyright [yyyy] [name of copyright owner]")) {
+      content = content.replace(
+        "Copyright [yyyy] [name of copyright owner]",
+        `Copyright ${CURRENT_YEAR} ${COPYRIGHT_OWNER}`,
+      );
+      fs.writeFileSync(filePath, content, "utf8");
+      console.log(`Updated placeholder in: ${filePath}`);
+      return;
     }
-  } else {
-    // Standard prepend
-    // For svelte, ensure it's at the very top
-    newContent = `${header}\n\n${content}`;
+
+    // If we are here, it has license but we couldn't parse/find our copyright.
+    // Leave it alone to avoid mess.
+    return;
   }
 
-  fs.writeFileSync(filePath, newContent, "utf8");
-  console.log(`Added/Updated header to: ${filePath}`);
+  // Add header
+  const header = getHeaderForFile(ext);
+
+  if (ext === ".sh") {
+    if (content.startsWith("#!")) {
+      const lines = content.split("\n");
+      const shebang = lines[0];
+      const rest = lines.slice(1).join("\n");
+      content = `${shebang}\n\n${header}\n${rest}`;
+    } else {
+      content = `${header}\n\n${content}`;
+    }
+  } else {
+    content = `${header}\n\n${content}`;
+  }
+
+  fs.writeFileSync(filePath, content, "utf8");
+  console.log(`Added header to: ${filePath}`);
 }
 
 function traverseDir(dir) {
@@ -205,6 +216,6 @@ function traverseDir(dir) {
   }
 }
 
-console.log("Adding/Updating copyright headers...");
+console.log(`Adding/Updating copyright headers (Year: ${CURRENT_YEAR})...`);
 traverseDir(rootDir);
 console.log("Done.");
