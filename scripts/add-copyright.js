@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 Matthew Allen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -86,50 +102,64 @@ const SHELL_HEADER_LINES = APACHE_HEADER_TEMPLATE.split("\n")
 const SHELL_HEADER = `#\n${SHELL_HEADER_LINES}\n#`;
 
 function getHeaderForFile(ext) {
-  if (ext === ".html") return HTML_HEADER;
+  if (ext === ".html" || ext === ".svelte") return HTML_HEADER;
   if (ext === ".sh") return SHELL_HEADER;
   return STANDARD_HEADER;
 }
 
-function hasHeader(content, ext) {
-  if (ext === ".sh") {
-    return content.includes("Licensed under the Apache License");
+function hasCorrectHeader(content, ext) {
+  // Check if it has the specific 2025 copyright header
+  // AND if it is the correct type for the file (e.g., svelte uses HTML comment)
+  if (!content.includes(`Copyright ${COPYRIGHT_YEAR} ${COPYRIGHT_OWNER}`)) {
+    return false;
   }
-  return content.includes("Licensed under the Apache License");
+
+  if (ext === ".svelte") {
+    // Must use HTML comments
+    return (
+      content.includes("<!--") &&
+      content.includes("Licensed under the Apache License")
+    );
+  }
+
+  return true;
 }
 
 function processFile(filePath) {
   const ext = path.extname(filePath);
   if (!EXTENSIONS_TO_CHECK.includes(ext)) return;
 
-  const content = fs.readFileSync(filePath, "utf8");
-  if (hasHeader(content, ext)) {
-    // Header exists, maybe we should update year/owner?
-    // For now, assume if it has the license text, it is fine.
-    // To strictly "Ensure it only exists once and is updated appropriately", we could strip and re-add.
-    // But that might be aggressive.
-    // Let's check if the specific year/owner is present.
-    if (
-      content.includes(`Copyright ${COPYRIGHT_YEAR} ${COPYRIGHT_OWNER}`) ||
-      content.includes("Copyright 2025 Matthew Allen")
-    ) {
-      // If it has placeholder, we must update it.
-      if (content.includes("Copyright [yyyy] [name of copyright owner]")) {
-        // Replace placeholder with actual
-        const newContent = content.replace(
-          "Copyright [yyyy] [name of copyright owner]",
-          `Copyright ${COPYRIGHT_YEAR} ${COPYRIGHT_OWNER}`,
-        );
-        fs.writeFileSync(filePath, newContent, "utf8");
-        console.log(`Updated placeholder in: ${filePath}`);
-      }
-      return;
+  let content = fs.readFileSync(filePath, "utf8");
+
+  // Fix for previous run on svelte files: remove JS style header if present
+  if (ext === ".svelte") {
+    // Look for the JS style header that was incorrectly added
+    // The previous run added STANDARD_HEADER at the top, or possibly after <script> depending on where it landed?
+    // Actually, I was prepending it.
+    // Prettier might have moved it.
+    // The mangled one looks like: /* * Copyright 2025 ... */
+
+    // We can try to regex remove it.
+    // It starts with /* and ends with */ and contains "Licensed under the Apache License"
+    // We need to be careful not to remove other comments.
+    // But this header is huge.
+
+    // Simple approach: if it has "Licensed under the Apache License" inside /* */, remove it.
+    const jsHeaderRegex =
+      /\/\*[\s\S]*?Licensed under the Apache License[\s\S]*?\*\//;
+
+    if (jsHeaderRegex.test(content)) {
+      content = content.replace(jsHeaderRegex, "").trimStart();
+      console.log(`Removed incorrect header from: ${filePath}`);
+      // Fall through to add correct header
     }
-    // If header exists but different year/owner, we leave it (assuming legacy or intentional).
-    // Or we could update it. The prompt says "update the pre-commit code to add a copyright header... Ensure it only exists once and is updated appropriately."
-    // Let's assume we enforce OUR header.
-    // But modifying existing headers might be dangerous if they are third party.
-    // Since this is a repo-wide task, and I am the maintainer, I'll update it.
+
+    // Also check if we already have the HTML header but it's not at the top?
+    // If hasCorrectHeader is true, we assume it's good.
+  }
+
+  if (hasCorrectHeader(content, ext)) {
+    return;
   }
 
   const header = getHeaderForFile(ext);
@@ -148,19 +178,12 @@ function processFile(filePath) {
     }
   } else {
     // Standard prepend
+    // For svelte, ensure it's at the very top
     newContent = `${header}\n\n${content}`;
   }
 
-  // Remove duplicate headers if we added one (not likely with check above, but for safety)
-  // Actually, check above only returns if it finds "Licensed under..."
-  // If we are here, we are adding it.
-
-  // What if there is an existing different license?
-  // We should probably check for any "Copyright" or "License" text.
-  // But usually we just prepend.
-
   fs.writeFileSync(filePath, newContent, "utf8");
-  console.log(`Added header to: ${filePath}`);
+  console.log(`Added/Updated header to: ${filePath}`);
 }
 
 function traverseDir(dir) {
