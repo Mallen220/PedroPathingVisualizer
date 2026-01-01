@@ -85,6 +85,7 @@ interface PathStep {
   deltaLength: number;
   radius: number;
   rotation: number; // Absolute rotation change in this step (degrees)
+  heading: number; // Unwrapped heading at END of step
 }
 
 interface PathAnalysis {
@@ -93,16 +94,33 @@ interface PathAnalysis {
   tangentRotation: number;
   netRotation: number; // Signed net rotation
   steps: PathStep[];
+  startHeading: number; // Unwrapped
+}
+
+/**
+ * Unwraps target angle to be closest to reference angle.
+ */
+function unwrapAngle(target: number, reference: number): number {
+  const diff = getAngularDifference(reference, target);
+  return reference + diff;
 }
 
 /**
  * Analyzes a path segment (Line, Quadratic, or Cubic)
+ * Returns steps with LOCAL geometry (relative to start of path for headings?)
+ * Actually, we pass in the `currentHeading` context to start with?
+ * No, analyzePathSegment should be pure geometry.
+ * But we need continuous heading.
+ * We can return "stepHeadingChange" (signed).
+ * Then accumulate in calculatePathTime.
+ * OR, we pass `startHeading` to this function.
  */
 function analyzePathSegment(
   start: BasePoint,
   controlPoints: BasePoint[],
   end: BasePoint,
   samples: number = 50,
+  initialHeading: number, // Unwrapped starting heading
 ): PathAnalysis {
   const cps = controlPoints || [];
 
@@ -112,6 +130,7 @@ function analyzePathSegment(
   let tangentRotation = 0;
   let netRotation = 0;
   let prevAngle: number | null = null;
+  let currentUnwrapped = initialHeading;
 
   const isLine = cps.length === 0;
   const steps: PathStep[] = [];
@@ -147,7 +166,20 @@ function analyzePathSegment(
     let stepRotation = 0;
     if (Math.abs(d1.x) > 1e-9 || Math.abs(d1.y) > 1e-9) {
       const angle = Math.atan2(d1.y, d1.x) * (180 / Math.PI);
-      if (prevAngle !== null) {
+
+      if (prevAngle === null) {
+        // Initialize unwrapped heading based on first tangent
+        // If initialHeading is provided (from previous segment), we unwrap relative to it.
+        // Wait. initialHeading is the ROBOT'S heading at start.
+        // If the path starts with a tangent different from robot heading, that's handled by "Wait".
+        // Here we track the PATH's tangent.
+        // So we should align `currentUnwrapped` to the first tangent?
+        // No, `initialHeading` passed in is the heading *after* the Turn-To-Face.
+        // So it should match the start tangent.
+
+        // Ensure smooth transition from input heading
+        currentUnwrapped = unwrapAngle(angle, initialHeading);
+      } else {
         // Shortest difference
         const diff = getAngularDifference(prevAngle, angle);
         stepRotation = Math.abs(diff);
@@ -157,17 +189,31 @@ function analyzePathSegment(
           tangentRotation += stepRotation;
           // Accumulate signed (for heading tracking)
           netRotation += diff;
+          // Update unwrapped heading
+          currentUnwrapped += diff;
         }
       }
       prevAngle = angle;
     }
 
     if (i > 0) {
-      steps.push({ deltaLength, radius, rotation: stepRotation });
+      steps.push({
+        deltaLength,
+        radius,
+        rotation: stepRotation,
+        heading: currentUnwrapped,
+      });
     }
   }
 
-  return { length, minRadius, tangentRotation, netRotation, steps };
+  return {
+    length,
+    minRadius,
+    tangentRotation,
+    netRotation,
+    steps,
+    startHeading: initialHeading,
+  };
 }
 
 /**
@@ -251,14 +297,6 @@ function calculateMotionProfileDetailed(
   return { totalTime, profile };
 }
 
-/**
- * Unwraps target angle to be closest to reference angle.
- */
-function unwrapAngle(target: number, reference: number): number {
-  const diff = getAngularDifference(reference, target);
-  return reference + diff;
-}
-
 export function calculatePathTime(
   startPoint: Point,
   lines: Line[],
@@ -283,7 +321,6 @@ export function calculatePathTime(
   let currentHeading = 0;
 
   // Initialize heading based on start point settings
-  // Note: We don't have a previous reference, so we take the raw value.
   if (startPoint.heading === "linear") currentHeading = startPoint.startDeg;
   else if (startPoint.heading === "constant")
     currentHeading = startPoint.degrees;
@@ -358,7 +395,6 @@ export function calculatePathTime(
     // Use a small epsilon
     if (diff > 0.1) {
       // Convert diff to rotation time
-      // Note: diff is already absolute difference between unwound angles
       const diffRad = diff * (Math.PI / 180);
       const rotTime = diffRad / settings.aVelocity;
       timeline.push({
@@ -375,28 +411,39 @@ export function calculatePathTime(
     }
 
     // --- TRAVEL ANALYSIS ---
+    // Pass currentHeading to start tracking
     const analysis = analyzePathSegment(
       prevPoint,
       line.controlPoints as any,
       line.endPoint as any,
       100,
+      currentHeading,
     );
     const length = analysis.length;
     segmentLengths.push(length);
 
     let translationTime = 0;
     let motionProfile: number[] | undefined = undefined;
+    let headingProfile: number[] | undefined = undefined;
 
     if (useMotionProfile) {
       const result = calculateMotionProfileDetailed(analysis.steps, settings);
       translationTime = result.totalTime;
       motionProfile = result.profile;
+
+      // Build heading profile if Tangential
+      if (line.endPoint.heading === "tangential") {
+        headingProfile = [analysis.startHeading]; // Start
+        for (const step of analysis.steps) {
+          headingProfile.push(step.heading);
+        }
+      }
     } else {
       const avgVelocity = (settings.xVelocity + settings.yVelocity) / 2;
       translationTime = length / avgVelocity;
     }
 
-    // Calculate Rotation Time
+    // Calculate Rotation Time (for non-profile logic)
     let rotationRequired = 0;
 
     // Determine End Heading (Unwound)
@@ -404,19 +451,32 @@ export function calculatePathTime(
     let endHeading = endHeadingRaw;
 
     if (line.endPoint.heading === "tangential") {
-      // For tangential, we follow the curve.
-      // Use netRotation from analysis to accumulate currentHeading
-      // This preserves winding number!
       endHeading = currentHeading + analysis.netRotation;
       rotationRequired = analysis.tangentRotation;
     } else if (line.endPoint.heading === "constant") {
-      // Rotate to specific constant heading
       endHeading = unwrapAngle(line.endPoint.degrees, currentHeading);
       rotationRequired = 0;
     } else if (line.endPoint.heading === "linear") {
-      // Linear: Interpolate from start to end.
       endHeading = unwrapAngle(line.endPoint.endDeg, currentHeading);
       rotationRequired = Math.abs(endHeading - currentHeading);
+
+      // If linear, we can generate a simple heading profile?
+      // Linear profile is just LERP.
+      // But we can generate it to match motion steps.
+      if (useMotionProfile) {
+        headingProfile = [currentHeading];
+        // We have N steps. Total N+1 points.
+        // We need to interpolate from currentHeading to endHeading based on... T? or Distance?
+        // Standard "Linear" usually means proportional to T (parameter).
+        // Since steps are uniform in T (t = i/samples), we can just linearly interpolate.
+        const samples = analysis.steps.length; // 100
+        for (let i = 1; i <= samples; i++) {
+          const ratio = i / samples;
+          headingProfile!.push(
+            currentHeading + (endHeading - currentHeading) * ratio,
+          );
+        }
+      }
     }
 
     const rotationTime =
@@ -433,6 +493,7 @@ export function calculatePathTime(
       endTime: currentTime + segmentTime,
       lineIndex,
       motionProfile: motionProfile,
+      headingProfile: headingProfile,
     });
     currentTime += segmentTime;
 

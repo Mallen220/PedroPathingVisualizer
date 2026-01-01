@@ -78,6 +78,7 @@ export function calculateRobotState(
     const prevPoint = lineIdx === 0 ? startPoint : lines[lineIdx - 1].endPoint;
 
     let linePercent = 0;
+    let interpolatedHeading: number | null = null;
 
     // Use detailed motion profile if available
     if (activeEvent.motionProfile && activeEvent.motionProfile.length > 0) {
@@ -85,10 +86,7 @@ export function calculateRobotState(
       const relativeTime = Math.max(0, currentSeconds - activeEvent.startTime);
 
       // Find the segment in the profile
-      // Profile maps index (0 to samples) to cumulative time (seconds)
-      // profile[0] = 0.
       let i = 0;
-      // Linear scan is safe enough for ~100 samples
       while (i < profile.length - 1 && relativeTime > profile[i + 1]) {
         i++;
       }
@@ -97,7 +95,7 @@ export function calculateRobotState(
       const tStart = i / (profile.length - 1);
       const tEnd = (i + 1) / (profile.length - 1);
       const timeStart = profile[i];
-      const timeEnd = profile[i + 1] || timeStart; // Safety fallback
+      const timeEnd = profile[i + 1] || timeStart;
 
       let localProgress = 0;
       if (timeEnd > timeStart) {
@@ -105,16 +103,24 @@ export function calculateRobotState(
       }
 
       linePercent = tStart + localProgress * (tEnd - tStart);
+
+      // Use detailed heading profile if available and we are using motion profile
+      if (
+        activeEvent.headingProfile &&
+        activeEvent.headingProfile.length === profile.length
+      ) {
+        const hStart = activeEvent.headingProfile[i];
+        const hEnd = activeEvent.headingProfile[i + 1];
+        // Linear interpolation of unwrapped heading
+        interpolatedHeading = hStart + (hEnd - hStart) * localProgress;
+      }
     } else {
       // Fallback to linear time interpolation
-      // Calculate progress (0.0 to 1.0) within this specific travel event
       const timeProgress =
         (currentSeconds - activeEvent.startTime) / activeEvent.duration;
-      // Apply Easing only to the movement
       linePercent = easeInOutQuad(Math.max(0, Math.min(1, timeProgress)));
     }
 
-    // Clamp
     linePercent = Math.max(0, Math.min(1, linePercent));
 
     // Calculate Position
@@ -127,37 +133,39 @@ export function calculateRobotState(
     const robotXY = { x: xScale(robotInchesXY.x), y: yScale(robotInchesXY.y) };
     let robotHeading = 0;
 
-    // Calculate Heading based on Line Type
-    switch (currentLine.endPoint.heading) {
-      case "linear":
-        robotHeading = -shortestRotation(
-          currentLine.endPoint.startDeg,
-          currentLine.endPoint.endDeg,
-          linePercent,
-        );
-        break;
-      case "constant":
-        robotHeading = -currentLine.endPoint.degrees;
-        break;
-      case "tangential":
-        const nextPointInches = getCurvePoint(
-          linePercent + (currentLine.endPoint.reverse ? -0.01 : 0.01),
-          [prevPoint, ...currentLine.controlPoints, currentLine.endPoint],
-        );
-        const nextPoint = {
-          x: xScale(nextPointInches.x),
-          y: yScale(nextPointInches.y),
-        };
-        const dx = nextPoint.x - robotXY.x;
-        const dy = nextPoint.y - robotXY.y;
+    if (interpolatedHeading !== null) {
+      robotHeading = -interpolatedHeading;
+    } else {
+      // Fallback Heading Calculation
+      switch (currentLine.endPoint.heading) {
+        case "linear":
+          robotHeading = -shortestRotation(
+            currentLine.endPoint.startDeg,
+            currentLine.endPoint.endDeg,
+            linePercent,
+          );
+          break;
+        case "constant":
+          robotHeading = -currentLine.endPoint.degrees;
+          break;
+        case "tangential":
+          const nextPointInches = getCurvePoint(
+            linePercent + (currentLine.endPoint.reverse ? -0.01 : 0.01),
+            [prevPoint, ...currentLine.controlPoints, currentLine.endPoint],
+          );
+          const nextPoint = {
+            x: xScale(nextPointInches.x),
+            y: yScale(nextPointInches.y),
+          };
+          const dx = nextPoint.x - robotXY.x;
+          const dy = nextPoint.y - robotXY.y;
 
-        if (dx !== 0 || dy !== 0) {
-          // atan2 returns angle in pixels (Y is down), so -90 is Up.
-          // This matches the -heading logic used elsewhere.
-          const angle = Math.atan2(dy, dx);
-          robotHeading = radiansToDegrees(angle);
-        }
-        break;
+          if (dx !== 0 || dy !== 0) {
+            const angle = Math.atan2(dy, dx);
+            robotHeading = radiansToDegrees(angle);
+          }
+          break;
+      }
     }
 
     return {
