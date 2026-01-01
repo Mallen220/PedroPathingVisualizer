@@ -5,10 +5,11 @@
   "main": "electron/main.js",
   "author": "Matthew Allen <allenmc220@gmail.com>",
   "email": "allenmc220@gmail.com",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "description": "A better alternative to pedro pathing visualizer",
   "type": "module",
   "scripts": {
+    "fix:headers": "node scripts/add-copyright.js",
     "version:bump": "node scripts/bump-version.js",
     "build": "vite build",
     "preview": "vite preview",
