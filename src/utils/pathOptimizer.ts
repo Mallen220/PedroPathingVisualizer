@@ -8,6 +8,7 @@ import type {
   Shape,
   TimelineEvent,
   ControlPoint,
+  CollisionMarker,
 } from "../types";
 import { calculatePathTime } from "./timeCalculator";
 import { FIELD_SIZE } from "../config";
@@ -180,13 +181,29 @@ export class PathOptimizer {
     return newLines;
   }
 
-  // Returns number of collision checks that failed
-  private getCollisionCount(timeline: TimelineEvent[], lines: Line[]): number {
-    if (this.activeShapes.length === 0) return 0;
+  // Public wrapper that matches the signature getCollisionCount used internally,
+  // but returns detailed CollisionMarkers instead of just a number.
+  public getCollisions(
+    timeline: TimelineEvent[] | null = null,
+    lines: Line[] | null = null,
+  ): CollisionMarker[] {
+    if (this.activeShapes.length === 0) return [];
+
+    // If not provided, calculate them (useful for one-off checks)
+    if (!timeline || !lines) {
+      lines = lines || this.originalLines;
+      const result = calculatePathTime(
+        this.startPoint,
+        lines,
+        this.settings,
+        this.sequence,
+      );
+      timeline = result.timeline;
+    }
 
     const totalTime = timeline[timeline.length - 1].endTime;
     const step = 0.2; // Check every 0.2 seconds for performance
-    let collisions = 0;
+    const markers: CollisionMarker[] = [];
 
     // Robot dimensions with safety margin
     const rLength =
@@ -292,9 +309,23 @@ export class PathOptimizer {
         }
         if (isColliding) break;
       }
-      if (isColliding) collisions++;
+
+      if (isColliding) {
+        markers.push({
+          x,
+          y,
+          time: t,
+          segmentIndex:
+            activeEvent.type === "travel" ? activeEvent.lineIndex : undefined,
+        });
+      }
     }
-    return collisions;
+    return markers;
+  }
+
+  // Backward-compatible method for fitness calculation that returns count only
+  private getCollisionCount(timeline: TimelineEvent[], lines: Line[]): number {
+    return this.getCollisions(timeline, lines).length;
   }
 
   private calculateFitness(lines: Line[]): number {

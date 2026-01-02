@@ -12,7 +12,9 @@
     snapToGrid,
     showSettings,
     exportDialogState,
+    collisionMarkers,
   } from "../stores";
+  import { PathOptimizer } from "../utils/pathOptimizer";
   import { getRandomColor } from "../utils";
   import {
     getDefaultStartPoint,
@@ -105,6 +107,25 @@
   function handleExport(format: "java" | "points" | "sequential" | "json") {
     exportMenuOpen = false;
     exportDialogState.set({ isOpen: true, format });
+  }
+
+  function validatePath() {
+    const optimizer = new PathOptimizer(
+      startPoint,
+      lines,
+      settings,
+      sequence,
+      shapes,
+    );
+    const markers = optimizer.getCollisions();
+    collisionMarkers.set(markers);
+    if (markers.length > 0) {
+      alert(
+        `Found ${markers.length} collisions!\nCheck the field for red markers.`,
+      );
+    } else {
+      alert("Path is valid! No collisions detected.");
+    }
   }
 
   function resetPath() {
@@ -263,6 +284,30 @@
   <!-- Actions -->
   <div class="flex flex-row justify-end items-center gap-4">
     <div class="flex items-center gap-3">
+      <!-- Validate Button -->
+      <button
+        title="Validate Path (Check Collisions)"
+        aria-label="Validate Path"
+        on:click={validatePath}
+        class="flex items-center gap-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-purple-600 dark:text-purple-400"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+          class="size-5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
+        </svg>
+        <span class="text-sm font-medium">Validate</span>
+      </button>
+
       <!-- time estimate -->
       <div class="flex items-center gap-2 text-sm">
         <div class="text-neutral-600 dark:text-neutral-300">

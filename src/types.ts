@@ -164,3 +164,10 @@ export interface FileInfo {
   modified: Date;
   error?: string;
 }
+
+export interface CollisionMarker {
+  x: number;
+  y: number;
+  time: number;
+  segmentIndex?: number;
+}

@@ -11,6 +11,7 @@
     showRuler,
     showProtractor,
     protractorLockToRobot,
+    collisionMarkers,
   } from "../../stores";
   import {
     linesStore,
@@ -89,6 +90,7 @@
   $: robotXY = $robotXYStore;
   $: robotHeading = $robotHeadingStore;
   $: sequence = $sequenceStore; // Needed for wait markers
+  $: markers = $collisionMarkers;
 
   // Helper to transform mouse coordinates based on rotation
   function getTransformedCoordinates(
@@ -585,7 +587,7 @@
 
   // Event Markers
   $: eventMarkerElements = (() => {
-    let markers: Two.Group[] = [];
+    let twoMarkers: Two.Group[] = [];
     lines.forEach((line, idx) => {
       if (
         !line ||
@@ -618,7 +620,7 @@
         circle.fill = "#a78bfa";
         circle.noStroke();
         grp.add(circle);
-        markers.push(grp);
+        twoMarkers.push(grp);
       });
     });
 
@@ -672,11 +674,48 @@
           flag.stroke = "none";
           flag.id = `wait-event-flag-${ev.waitId}-${eventIdx}`;
           markerGroup.add(markerCircle, flag);
-          markers.push(markerGroup);
+          twoMarkers.push(markerGroup);
         });
       });
     }
-    return markers;
+    return twoMarkers;
+  })();
+
+  // Collision Markers
+  $: collisionElements = (() => {
+    let elems: Two.Group[] = [];
+    if (markers && markers.length > 0) {
+      markers.forEach((marker, idx) => {
+        const group = new Two.Group();
+        const circle = new Two.Circle(x(marker.x), y(marker.y), x(2));
+        circle.fill = "rgba(239, 68, 68, 0.5)"; // Red-500 with opacity
+        circle.stroke = "#ef4444";
+        circle.linewidth = x(0.5);
+
+        const crossLength = x(1.5);
+        const l1 = new Two.Line(
+          x(marker.x) - crossLength,
+          y(marker.y) - crossLength,
+          x(marker.x) + crossLength,
+          y(marker.y) + crossLength,
+        );
+        l1.stroke = "#ffffff";
+        l1.linewidth = x(0.5);
+
+        const l2 = new Two.Line(
+          x(marker.x) + crossLength,
+          y(marker.y) - crossLength,
+          x(marker.x) - crossLength,
+          y(marker.y) + crossLength,
+        );
+        l2.stroke = "#ffffff";
+        l2.linewidth = x(0.5);
+
+        group.add(circle, l1, l2);
+        elems.push(group);
+      });
+    }
+    return elems;
   })();
 
   // Render Loop
@@ -696,6 +735,8 @@
     pointGroup.id = "point-group";
     const eventGroup = new Two.Group();
     eventGroup.id = "event-group";
+    const collisionGroup = new Two.Group();
+    collisionGroup.id = "collision-group";
 
     two.clear();
 
@@ -710,10 +751,13 @@
     points.forEach((el) => pointGroup.add(el));
     eventMarkerElements.forEach((el) => eventGroup.add(el));
 
+    collisionElements.forEach((el) => collisionGroup.add(el));
+
     two.add(shapeGroup);
     two.add(lineGroup);
     two.add(pointGroup);
     two.add(eventGroup);
+    two.add(collisionGroup);
 
     two.update();
   }
