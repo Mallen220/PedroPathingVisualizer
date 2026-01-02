@@ -1,3 +1,4 @@
+<!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import type { Point, Line, ControlPoint, SequenceItem } from "../../types";
   import {

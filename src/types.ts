@@ -1,3 +1,4 @@
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 // Exported type definitions for use in Svelte and TS modules
 
 export interface BasePoint {

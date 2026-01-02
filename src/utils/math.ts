@@ -1,3 +1,4 @@
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import type { Line, Point } from "../types";
 
 export function quadraticToCubic(

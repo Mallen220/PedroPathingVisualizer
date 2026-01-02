@@ -1,3 +1,4 @@
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 // Utility to export the current Two.js view / animation as a GIF.
 // Uses gif.js to encode frames in the renderer.
 

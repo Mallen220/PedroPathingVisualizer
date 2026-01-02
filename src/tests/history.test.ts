@@ -1,3 +1,4 @@
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import { describe, it, expect, beforeEach } from "vitest";
 import { get } from "svelte/store";
 import { createHistory, type AppState } from "../utils/history";

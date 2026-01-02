@@ -1,3 +1,4 @@
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 export function getRandomColor() {
   var letters = "56789ABCD";
   var color = "#";

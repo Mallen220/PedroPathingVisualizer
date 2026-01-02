@@ -1,3 +1,4 @@
+<!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
   import { cubicInOut } from "svelte/easing";

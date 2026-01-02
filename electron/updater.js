@@ -1,3 +1,4 @@
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import { dialog, app, shell } from "electron";
 import * as fs from "fs";
 import * as path from "path";

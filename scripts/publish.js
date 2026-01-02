@@ -1,3 +1,4 @@
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import fs from "fs/promises";
 import path from "path";
 import { spawn } from "child_process";
