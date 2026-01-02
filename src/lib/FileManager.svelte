@@ -85,6 +85,30 @@
     sortModeInitialized = true;
   });
 
+  // Resizing state
+  let sidebarWidth = 384; // default max-w-sm is roughly 384px (24rem)
+  let isResizing = false;
+
+  function startResize(e: MouseEvent) {
+    isResizing = true;
+    window.addEventListener("mousemove", handleResize);
+    window.addEventListener("mouseup", stopResize);
+  }
+
+  function handleResize(e: MouseEvent) {
+    if (isResizing) {
+      // Constrain width
+      const newWidth = Math.max(250, Math.min(e.clientX, 800));
+      sidebarWidth = newWidth;
+    }
+  }
+
+  function stopResize() {
+    isResizing = false;
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("mouseup", stopResize);
+  }
+
   // Persist session state when changed
   $: fileManagerSessionState.set({ searchQuery, viewMode });
 
@@ -534,10 +558,17 @@
 
   <!-- Sidebar -->
   <div
-    class="relative flex flex-col w-full max-w-sm h-full bg-white dark:bg-neutral-900 shadow-2xl transform transition-transform duration-300 ease-in-out border-r border-neutral-200 dark:border-neutral-800"
+    class="relative flex flex-col h-full bg-white dark:bg-neutral-900 shadow-2xl transform transition-transform duration-300 ease-in-out border-r border-neutral-200 dark:border-neutral-800"
+    style="width: {isOpen ? sidebarWidth : 384}px"
     class:translate-x-0={isOpen}
     class:-translate-x-full={!isOpen}
   >
+    <!-- Resizer Handle -->
+    <div
+      class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500 z-50 transition-colors"
+      on:mousedown={startResize}
+    ></div>
+
     <!-- Header -->
     <div
       class="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 z-20"
@@ -699,6 +730,7 @@
            files={filteredFiles}
            selectedFilePath={selectedFile?.path ?? null}
            {sortMode}
+           fieldImage={settings.fieldMap}
            on:select={(e) => (selectedFile = e.detail)}
            on:open={(e) => loadFile(e.detail)}
            on:menu-action={handleMenuAction}

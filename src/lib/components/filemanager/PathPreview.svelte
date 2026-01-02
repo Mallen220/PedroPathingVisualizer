@@ -7,6 +7,7 @@
   export let lines: Line[];
   export let width = 100;
   export let height = 100;
+  export let fieldImage: string | null = null;
 
   const FIELD_SIZE = 144;
 
@@ -43,7 +44,12 @@
 <div class="relative bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 overflow-hidden" style="width: {width}px; height: {height}px; border-radius: 4px;">
   <svg {width} {height} viewBox="0 0 {width} {height}" class="block">
     <!-- Field Background -->
-    <rect width={width} height={height} fill="none" />
+    {#if fieldImage}
+      <!-- Use preserveAspectRatio="none" to stretch if needed, or xMidYMid meet for fit -->
+      <!-- Since we are on a square field, and width/height should be square-ish, stretching is usually desired for field map -->
+      <image href={fieldImage} {width} {height} preserveAspectRatio="none" />
+    {/if}
+    <rect width={width} height={height} fill="none" stroke={fieldImage ? "none" : "#ccc"} />
 
     <!-- Path -->
     <path

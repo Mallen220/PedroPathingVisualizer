@@ -9,6 +9,7 @@
   export let selectedFilePath: string | null = null;
   export let sortMode: "name" | "date" = "name";
   export let renamingFile: FileInfo | null = null;
+  export let fieldImage: string | null = null;
 
   const dispatch = createEventDispatcher<{
     "select": FileInfo;
@@ -32,28 +33,61 @@
   }
 
   // --- Preview Loading Logic ---
-  async function loadPreview(filePath: string) {
-    if (previews[filePath] !== undefined) return; // Already loaded or loading
+  // Queue for loading previews to avoid overwhelming IPC
+  const previewQueue: string[] = [];
+  let loadingPreviews = false;
 
-    // Mark as loading (null)
-    previews[filePath] = null;
+  async function processPreviewQueue() {
+    if (loadingPreviews || previewQueue.length === 0) return;
+    loadingPreviews = true;
+
+    // Process a batch
+    const BATCH_SIZE = 3;
+    const batch = previewQueue.splice(0, BATCH_SIZE);
 
     try {
-      const content = await window.electronAPI.readFile(filePath);
-      const data = JSON.parse(content);
-      if (data.startPoint && Array.isArray(data.lines)) {
-        previews[filePath] = {
-          startPoint: data.startPoint,
-          lines: data.lines
-        };
-      } else {
-        previews[filePath] = null; // Invalid data
+      await Promise.all(batch.map(async (filePath) => {
+        // Double check if already loaded (might have been requeued or loaded elsewhere)
+        if (previews[filePath] && previews[filePath] !== null) return;
+
+        try {
+          const content = await window.electronAPI.readFile(filePath);
+          const data = JSON.parse(content);
+          if (data.startPoint && Array.isArray(data.lines)) {
+            previews[filePath] = {
+              startPoint: data.startPoint,
+              lines: data.lines
+            };
+          } else {
+            // Invalid data - mark as loaded but invalid (e.g. empty object) so we don't retry
+            previews[filePath] = { startPoint: null, lines: [] } as any;
+          }
+        } catch (e) {
+          // Failed to load - mark as invalid
+          previews[filePath] = { startPoint: null, lines: [] } as any;
+        }
+      }));
+      previews = previews; // Reactivity update
+    } finally {
+      loadingPreviews = false;
+      // Continue if there are more
+      if (previewQueue.length > 0) {
+        // Small delay to yield UI
+        setTimeout(processPreviewQueue, 10);
       }
-    } catch (e) {
-      // console.error("Failed to load preview for", filePath);
-      previews[filePath] = null;
     }
-    previews = previews; // Reactivity
+  }
+
+  async function loadPreview(filePath: string) {
+    if (previews[filePath] !== undefined) return; // Already loaded or in progress map (if we mapped it)
+
+    // Mark as pending in map to prevent duplicate queueing if observer triggers multiple times
+    // We use a specific 'pending' marker or just rely on queue set.
+    // Ideally we check if it is in queue.
+    if (previewQueue.includes(filePath)) return;
+
+    previewQueue.push(filePath);
+    processPreviewQueue();
   }
 
   function setupObserver() {
@@ -69,7 +103,7 @@
           }
         }
       });
-    }, { rootMargin: "50px" });
+    }, { rootMargin: "100px", threshold: 0.1 });
   }
 
   function observeElement(node: HTMLElement, filePath: string) {
@@ -202,8 +236,14 @@
         >
           <!-- Icon / Preview -->
           <div class="mb-2">
-             {#if previews[file.path]}
-               <PathPreview startPoint={previews[file.path].startPoint} lines={previews[file.path].lines} width={80} height={80} />
+             {#if previews[file.path] && previews[file.path].startPoint}
+               <PathPreview
+                 startPoint={previews[file.path].startPoint}
+                 lines={previews[file.path].lines}
+                 {fieldImage}
+                 width={80}
+                 height={80}
+               />
              {:else}
                <div class="w-[80px] h-[80px] flex items-center justify-center bg-neutral-50 dark:bg-neutral-900/50 rounded text-blue-500 dark:text-blue-400">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
