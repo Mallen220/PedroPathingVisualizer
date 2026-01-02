@@ -1,4 +1,4 @@
-
+// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PathOptimizer } from "../utils/pathOptimizer";
 import { pointInPolygon, getRobotCorners } from "../utils/geometry";
