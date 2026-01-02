@@ -77,7 +77,7 @@
       line.controlPoints,
       draggingIndex,
       dragOverIndex,
-      dragPosition
+      dragPosition,
     );
 
     line.controlPoints = newPoints;
@@ -188,7 +188,9 @@
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
               {#if !line.locked}
-                <div class="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+                <div
+                  class="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
@@ -239,7 +241,8 @@
                   title={line.locked ? "Locked" : "Move down"}
                   on:click|stopPropagation={() => moveControlPoint(idx, 1)}
                   class="p-1 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 bg-neutral-100/70 dark:bg-neutral-900/70 border border-neutral-200/70 dark:border-neutral-700/70 disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled={idx === line.controlPoints.length - 1 || line.locked}
+                  disabled={idx === line.controlPoints.length - 1 ||
+                    line.locked}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
