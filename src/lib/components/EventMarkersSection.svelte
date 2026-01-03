@@ -117,43 +117,19 @@
                   }
                 }}
               />
-              <!-- Using native input for direct value control to match original behavior -->
-              <input
-                type="number"
-                value={event.position}
+              <NumberInput
+                bind:value={event.position}
+                min={0}
+                max={1}
+                step={0.01}
                 disabled={line.locked}
-                min="0"
-                max="1"
-                step="0.01"
-                class="w-16 px-2 py-1 text-xs rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-16"
                 on:input={(e) => {
-                  // Don't update immediately, just show the typed value
-                }}
-                on:blur={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (isNaN(value) || value < 0 || value > 1) {
-                    // Invalid - revert to current value
-                    e.target.value = event.position;
-                    return;
-                  }
-                  // Valid - update
-                  event.position = value;
+                  // Validate bounds
+                  const val = event.position;
+                  if (val < 0) event.position = 0;
+                  if (val > 1) event.position = 1;
                   line.eventMarkers = [...line.eventMarkers];
-                }}
-                on:keydown={(e) => {
-                  if (e.key === "Enter") {
-                    const value = parseFloat(e.target.value);
-                    if (isNaN(value) || value < 0 || value > 1) {
-                      // Invalid - revert
-                      e.target.value = event.position;
-                      e.preventDefault();
-                      return;
-                    }
-                    // Valid - update
-                    event.position = value;
-                    line.eventMarkers = [...line.eventMarkers];
-                    e.target.blur(); // Trigger blur to update
-                  }
                 }}
               />
             </div>

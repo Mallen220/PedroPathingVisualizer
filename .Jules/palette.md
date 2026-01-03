@@ -17,3 +17,8 @@
 
 **Learning:** Icon-only buttons (like Next/Previous arrows) are often invisible to screen readers and automated testing tools if they lack `aria-label` attributes. This also makes programmatic verification difficult.
 **Action:** Always audit icon-only buttons for `aria-label` or `title` attributes during implementation.
+
+## 2025-02-14 - [Standardized Input Components]
+
+**Learning:** Inconsistent implementation of inputs across different sections led to gaps in accessibility (missing aria-labels) and varying UI behavior.
+**Action:** Use the standardized components in `src/lib/components/common/` which enforce accessibility props (like `aria-label`) and consistent event handling.

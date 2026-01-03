@@ -111,11 +111,13 @@
   }
 
   function handleInput(
-    e: Event,
+    e: Event | CustomEvent,
     point: Point | ControlPoint,
     field: "x" | "y",
   ) {
-    const input = e.target as HTMLInputElement;
+    // Handle both native events and CustomEvents from NumberInput
+    const nativeEvent = (e instanceof CustomEvent ? e.detail : e) as Event;
+    const input = nativeEvent.target as HTMLInputElement;
     const val = parseFloat(input.value);
     if (!isNaN(val)) {
       updatePoint(point, field, val);
