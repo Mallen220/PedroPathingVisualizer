@@ -1,7 +1,7 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <!-- src/lib/components/filemanager/FileList.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, tick } from "svelte";
   import type { FileInfo } from "../../../types";
   import FileContextMenu from "./FileContextMenu.svelte";
   import PathPreview from "./PathPreview.svelte";
@@ -13,6 +13,9 @@
   export let selectedFilePath: string | null = null;
   export let sortMode: "name" | "date" = "name";
   export let renamingFile: FileInfo | null = null;
+
+  // Track the element references for scrolling
+  let fileElements: Record<string, HTMLElement> = {};
 
   const dispatch = createEventDispatcher<{
     select: FileInfo;
@@ -41,6 +44,21 @@
 
   $: if (renamingFile) {
     renameInput = renamingFile.name.replace(/\.pp$/, "");
+  }
+
+  // Scroll to selected file when it changes
+  $: if (selectedFilePath && fileElements[selectedFilePath]) {
+    scrollToSelection();
+  }
+
+  async function scrollToSelection() {
+    await tick();
+    if (selectedFilePath && fileElements[selectedFilePath]) {
+      fileElements[selectedFilePath].scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
   }
 
   function formatFileSize(bytes: number): string {
@@ -326,6 +344,7 @@
     <div class="space-y-0.5 px-2 mt-1">
       {#each group.files as file (file.path)}
         <div
+          bind:this={fileElements[file.path]}
           use:observeElement={file.path}
           class="group flex items-center p-2 rounded-md cursor-pointer transition-colors border border-transparent
           {selectedFilePath === file.path

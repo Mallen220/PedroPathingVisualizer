@@ -620,7 +620,7 @@
   }
 
   function setupKeyBindings() {
-    hotkeys.setScope("file-manager");
+    // Note: We do NOT set scope here anymore. Scope is managed reactively.
 
     const bind = (action: string, handler: (e: KeyboardEvent) => void) => {
       const key = getKey(action);
@@ -653,16 +653,13 @@
     });
     bind("fmRefresh", () => handleRefresh());
     bind("fmSearch", () => {
-      // Logic to focus search input in FileManagerToolbar
-      // We'll emit an event or focus via DOM if possible, but simplest is to just expose a prop or use document.querySelector
       const searchInput = document.querySelector(
         'input[aria-label="Search files"]',
       ) as HTMLInputElement;
       if (searchInput) searchInput.focus();
     });
 
-    // Override Global shortcuts to prevent them from firing
-    // We bind them to do nothing in file-manager scope
+    // Explicitly block global shortcuts in this scope
     const globalConflicts = [
       "add-path",
       "add-wait",
@@ -671,20 +668,47 @@
       "save-project",
       "undo",
       "redo",
+      "increase-speed", // Block playback controls
+      "decrease-speed",
+      "step-forward",
+      "step-back",
+      "remove-selected", // Block delete global if fmDelete doesn't catch it
     ];
     globalConflicts.forEach((id) => {
       const binding = ($settingsStore.keyBindings || DEFAULT_KEY_BINDINGS).find(
         (b) => b.id === id,
       );
       if (binding) {
-        hotkeys(binding.key, "file-manager", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        });
+        // Only block if not same as fm binding
+        const usedKeys = [
+          getKey("fmUp"),
+          getKey("fmDown"),
+          getKey("fmLeft"),
+          getKey("fmRight"),
+          getKey("fmOpen"),
+          getKey("fmDelete"),
+          getKey("fmRename"),
+          getKey("fmNewFile"),
+          getKey("fmSearch"),
+          getKey("fmRefresh"),
+        ]
+          .join(",")
+          .split(",")
+          .map((k) => k.trim());
+
+        if (
+          !binding.key
+            .split(",")
+            .some((k) => usedKeys.includes(k.trim().toLowerCase()))
+        ) {
+          hotkeys(binding.key, "file-manager", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+        }
       }
     });
 
-    // Esc to close (already handled by window listener but added for completeness in hotkeys)
     hotkeys("escape", "file-manager", (e) => {
       isOpen = false;
     });
@@ -724,17 +748,13 @@
     if (nextIndex < 0) nextIndex = 0;
     if (nextIndex >= filteredFiles.length) nextIndex = filteredFiles.length - 1;
 
-    if (nextIndex !== index) {
+    if (nextIndex !== index || index === -1) {
       selectedFile = filteredFiles[nextIndex];
-      // Scroll into view logic handled by child components via reactive props
     }
   }
 
   // Manage Scope Lifecycle
   onMount(() => {
-    // We need to set up bindings. Ideally we watch settings, but onMount is likely sufficient as settings don't change often while FM is open.
-    // Better: use a reactive block to rebind if settings change?
-    // For now, onMount is consistent with how KeyboardShortcuts does it.
     setupKeyBindings();
   });
 
@@ -743,9 +763,15 @@
     hotkeys.setScope("all");
   });
 
-  // Since FileManager component is only mounted when open (due to {#if isOpen} in Navbar),
-  // onMount runs when opened, and onDestroy runs when closed.
-  // This is perfect for scope management.
+  // Reactive Scope Switching
+  $: if (isOpen) {
+    hotkeys.setScope("file-manager");
+  } else {
+    // Check if we are currently in file-manager scope before resetting
+    if (hotkeys.getScope() === "file-manager") {
+      hotkeys.setScope("all");
+    }
+  }
 </script>
 
 <div class="fixed inset-0 z-[1010] flex" class:pointer-events-none={!isOpen}>

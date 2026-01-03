@@ -12,6 +12,9 @@
   export let renamingFile: FileInfo | null = null;
   export let fieldImage: string | null = null;
 
+  // Track element references for scrolling
+  let fileElements: Record<string, HTMLElement> = {};
+
   const dispatch = createEventDispatcher<{
     select: FileInfo;
     open: FileInfo;
@@ -42,6 +45,21 @@
 
   $: if (renamingFile) {
     renameInput = renamingFile.name.replace(/\.pp$/, "");
+  }
+
+  // Scroll to selected file when it changes
+  $: if (selectedFilePath && fileElements[selectedFilePath]) {
+    scrollToSelection();
+  }
+
+  async function scrollToSelection() {
+    await tick();
+    if (selectedFilePath && fileElements[selectedFilePath]) {
+      fileElements[selectedFilePath].scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
   }
 
   // --- Preview Loading Logic ---
@@ -367,6 +385,7 @@
     <div class="grid grid-cols-3 gap-2 px-2">
       {#each group.files as file (file.path)}
         <div
+          bind:this={fileElements[file.path]}
           class="group flex flex-col items-center p-2 rounded-md cursor-pointer transition-all border relative
           {selectedFilePath === file.path
             ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 ring-1 ring-blue-300 dark:ring-blue-700'
