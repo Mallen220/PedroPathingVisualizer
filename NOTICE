@@ -25,3 +25,6 @@ src/utils/validation.ts
 src/lib/components/SettingsDialog.svelte
 vite.config.ts
 CHANGELOG.md
+src/App.svelte
+src/lib/ControlTab.svelte
+src/lib/Navbar.svelte

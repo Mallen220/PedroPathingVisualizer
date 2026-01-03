@@ -593,7 +593,9 @@
         min-height: ${!isLargeScreen ? (userFieldHeightLimit ? "0" : "60vh") : "0"};
       `}
     >
-      <div class="relative shadow-inner w-full h-full flex justify-center items-center">
+      <div
+        class="relative shadow-inner w-full h-full flex justify-center items-center"
+      >
         <FieldRenderer
           bind:this={fieldRenderer}
           width={fieldDrawSize}

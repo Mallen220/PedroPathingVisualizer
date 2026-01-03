@@ -703,7 +703,7 @@
       kind: "wait",
       id: makeId(),
       name: "Wait",
-      durationMs: 0,
+      durationMs: 1000,
       locked: false,
     });
     sequence = newSeq;
@@ -824,7 +824,9 @@
   }
 </script>
 
-<div class="flex-1 flex flex-col justify-start items-center gap-2 h-full relative">
+<div
+  class="flex-1 flex flex-col justify-start items-center gap-2 h-full relative"
+>
   <!-- Tab Switcher -->
   <div class="w-full px-2 pt-2 flex-none z-10">
     <div
@@ -843,8 +845,17 @@
           : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
         on:click={() => (activeTab = "path")}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
-          <path fill-rule="evenodd" d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z" clip-rule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="size-4"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z"
+            clip-rule="evenodd"
+          />
         </svg>
         Paths
       </button>
@@ -859,8 +870,17 @@
           : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
         on:click={() => (activeTab = "field")}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
-            <path fill-rule="evenodd" d="M2.5 4A1.5 1.5 0 0 1 4 2.5h12A1.5 1.5 0 0 1 17.5 4v12a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 16V4Zm7 4.75a.75.75 0 0 0-1.5 0v3.5a.75.75 0 0 0 1.5 0v-3.5ZM13 10a.75.75 0 0 1-.75.75H10.5a.75.75 0 0 1 0-1.5h1.75A.75.75 0 0 1 13 10ZM7.75 12.25a.75.75 0 0 0 0-1.5H6a.75.75 0 0 0 0 1.5h1.75Z" clip-rule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="size-4"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M2.5 4A1.5 1.5 0 0 1 4 2.5h12A1.5 1.5 0 0 1 17.5 4v12a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 16V4Zm7 4.75a.75.75 0 0 0-1.5 0v3.5a.75.75 0 0 0 1.5 0v-3.5ZM13 10a.75.75 0 0 1-.75.75H10.5a.75.75 0 0 1 0-1.5h1.75A.75.75 0 0 1 13 10ZM7.75 12.25a.75.75 0 0 0 0-1.5H6a.75.75 0 0 0 0 1.5h1.75Z"
+            clip-rule="evenodd"
+          />
         </svg>
         Field
       </button>
@@ -875,9 +895,20 @@
           : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
         on:click={() => (activeTab = "table")}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
-            <path fill-rule="evenodd" d="M2 3.75A.75.75 0 0 1 2.75 3h14.5a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75H2.75a.75.75 0 0 1-.75-.75V3.75ZM2.75 4.5v11h14.5v-11H2.75Z" clip-rule="evenodd" />
-            <path d="M6 7.75A.75.75 0 0 1 6.75 7h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 6 7.75ZM6 11.25a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1-.75-.75Z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="size-4"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M2 3.75A.75.75 0 0 1 2.75 3h14.5a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75H2.75a.75.75 0 0 1-.75-.75V3.75ZM2.75 4.5v11h14.5v-11H2.75Z"
+            clip-rule="evenodd"
+          />
+          <path
+            d="M6 7.75A.75.75 0 0 1 6.75 7h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 6 7.75ZM6 11.25a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1-.75-.75Z"
+          />
         </svg>
         Table
       </button>
@@ -901,19 +932,19 @@
     {#if activeTab === "table"}
       <div class="p-4 w-full">
         <WaypointTable
-            bind:this={waypointTableRef}
-            bind:startPoint
-            bind:lines
-            bind:sequence
-            {recordChange}
-            onToggleOptimization={() => (optimizationOpen = !optimizationOpen)}
-            onValidate={handleValidate}
-            {optimizationOpen}
-            {handleOptimizationApply}
-            {onPreviewChange}
-            bind:shapes
-            bind:collapsedObstacles={collapsedSections.obstacles}
-            {settings}
+          bind:this={waypointTableRef}
+          bind:startPoint
+          bind:lines
+          bind:sequence
+          {recordChange}
+          onToggleOptimization={() => (optimizationOpen = !optimizationOpen)}
+          onValidate={handleValidate}
+          {optimizationOpen}
+          {handleOptimizationApply}
+          {onPreviewChange}
+          bind:shapes
+          bind:collapsedObstacles={collapsedSections.obstacles}
+          {settings}
         />
       </div>
     {/if}
@@ -921,41 +952,41 @@
     {#if activeTab === "field"}
       <div class="p-4 w-full flex flex-col gap-6">
         <RobotPositionDisplay
-            {robotXY}
-            {robotHeading}
-            {x}
-            {y}
-            onToggleOptimization={() => (optimizationOpen = !optimizationOpen)}
-            onValidate={handleValidate}
+          {robotXY}
+          {robotHeading}
+          {x}
+          {y}
+          onToggleOptimization={() => (optimizationOpen = !optimizationOpen)}
+          onValidate={handleValidate}
         />
 
         {#if optimizationOpen}
-            <div
+          <div
             class="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-100 dark:bg-neutral-800 p-4"
             transition:slide
-            >
+          >
             <OptimizationDialog
-                bind:this={optDialogRef}
-                bind:isRunning={optIsRunning}
-                bind:optimizedLines={optOptimizedLines}
-                bind:optimizationFailed={optFailed}
-                isOpen={true}
-                useModal={false}
-                {startPoint}
-                {lines}
-                {settings}
-                {sequence}
-                {shapes}
-                onApply={handleOptimizationApply}
-                {onPreviewChange}
-                onClose={() => (optimizationOpen = false)}
+              bind:this={optDialogRef}
+              bind:isRunning={optIsRunning}
+              bind:optimizedLines={optOptimizedLines}
+              bind:optimizationFailed={optFailed}
+              isOpen={true}
+              useModal={false}
+              {startPoint}
+              {lines}
+              {settings}
+              {sequence}
+              {shapes}
+              onApply={handleOptimizationApply}
+              {onPreviewChange}
+              onClose={() => (optimizationOpen = false)}
             />
-            </div>
+          </div>
         {/if}
 
         <ObstaclesSection
-            bind:shapes
-            bind:collapsedObstacles={collapsedSections.obstacles}
+          bind:shapes
+          bind:collapsedObstacles={collapsedSections.obstacles}
         />
       </div>
     {/if}
@@ -963,37 +994,37 @@
     {#if activeTab === "path"}
       <div class="w-full flex flex-col gap-4 p-4 pb-32">
         <div class="flex items-center justify-between gap-4 w-full">
-            <StartingPointSection
+          <StartingPointSection
             bind:startPoint
             {addPathAtStart}
             {addWaitAtStart}
             {toggleCollapseAll}
             {allCollapsed}
-            />
+          />
         </div>
 
         {#if settings?.showDebugSequence}
-            <div class="p-2 text-xs text-neutral-500">
+          <div class="p-2 text-xs text-neutral-500">
             <div>
-                <strong>DEBUG (ControlTab)</strong> — lines: {lines.length},
-                sequence: {(sequence || []).length}
-            </div>
-            <div>
-                Missing: {JSON.stringify(debugMissing)}
+              <strong>DEBUG (ControlTab)</strong> — lines: {lines.length},
+              sequence: {(sequence || []).length}
             </div>
             <div>
-                Invalid refs: {JSON.stringify(debugInvalidRefs)}
+              Missing: {JSON.stringify(debugMissing)}
             </div>
+            <div>
+              Invalid refs: {JSON.stringify(debugInvalidRefs)}
             </div>
+          </div>
         {/if}
 
         <!-- Unified sequence render: paths and waits -->
-        {#each sequence as item, sIdx (item.kind === 'path' ? item.lineId : getWait(item).id)}
-            {@const isLocked =
+        {#each sequence as item, sIdx (item.kind === "path" ? item.lineId : getWait(item).id)}
+          {@const isLocked =
             item.kind === "path"
-                ? (lines.find((l) => l.id === item.lineId)?.locked ?? false)
-                : (item.locked ?? false)}
-            <div
+              ? (lines.find((l) => l.id === item.lineId)?.locked ?? false)
+              : (item.locked ?? false)}
+          <div
             role="listitem"
             data-index={sIdx}
             class="w-full transition-all duration-200 rounded-lg"
@@ -1001,90 +1032,93 @@
             on:dragstart={(e) => handleDragStart(e, sIdx)}
             on:dragend={handleDragEnd}
             class:border-t-4={dragOverIndex === sIdx && dragPosition === "top"}
-            class:border-b-4={dragOverIndex === sIdx && dragPosition === "bottom"}
+            class:border-b-4={dragOverIndex === sIdx &&
+              dragPosition === "bottom"}
             class:border-blue-500={dragOverIndex === sIdx}
             class:dark:border-blue-400={dragOverIndex === sIdx}
             class:opacity-50={draggingIndex === sIdx}
-            >
+          >
             {#if item.kind === "path"}
-                {#each lines.filter((l) => l.id === item.lineId) as ln (ln.id)}
+              {#each lines.filter((l) => l.id === item.lineId) as ln (ln.id)}
                 <PathLineSection
-                    bind:line={ln}
-                    idx={lines.findIndex((l) => l.id === ln.id)}
-                    bind:lines
-                    bind:collapsed={
+                  bind:line={ln}
+                  idx={lines.findIndex((l) => l.id === ln.id)}
+                  bind:lines
+                  bind:collapsed={
                     collapsedSections.lines[
-                        lines.findIndex((l) => l.id === ln.id)
+                      lines.findIndex((l) => l.id === ln.id)
                     ]
-                    }
-                    bind:collapsedEventMarkers={
-                    collapsedEventMarkers[lines.findIndex((l) => l.id === ln.id)]
-                    }
-                    bind:collapsedControlPoints={
+                  }
+                  bind:collapsedEventMarkers={
+                    collapsedEventMarkers[
+                      lines.findIndex((l) => l.id === ln.id)
+                    ]
+                  }
+                  bind:collapsedControlPoints={
                     collapsedSections.controlPoints[
-                        lines.findIndex((l) => l.id === ln.id)
+                      lines.findIndex((l) => l.id === ln.id)
                     ]
-                    }
-                    onRemove={() =>
+                  }
+                  onRemove={() =>
                     removeLine(lines.findIndex((l) => l.id === ln.id))}
-                    onInsertAfter={() => insertLineAfter(sIdx)}
-                    onAddWaitAfter={() => insertWaitAfter(sIdx)}
-                    onMoveUp={() => moveSequenceItem(sIdx, -1)}
-                    onMoveDown={() => moveSequenceItem(sIdx, 1)}
-                    canMoveUp={sIdx !== 0}
-                    canMoveDown={sIdx !== sequence.length - 1}
-                    {recordChange}
+                  onInsertAfter={() => insertLineAfter(sIdx)}
+                  onAddWaitAfter={() => insertWaitAfter(sIdx)}
+                  onMoveUp={() => moveSequenceItem(sIdx, -1)}
+                  onMoveDown={() => moveSequenceItem(sIdx, 1)}
+                  canMoveUp={sIdx !== 0}
+                  canMoveDown={sIdx !== sequence.length - 1}
+                  {recordChange}
                 />
-                {/each}
+              {/each}
             {:else}
-                <WaitRow
+              <WaitRow
                 id={getWait(item).id}
                 name={getWait(item).name}
                 durationMs={getWait(item).durationMs}
                 locked={getWait(item).locked ?? false}
                 onToggleLock={() => {
-                    const newSeq = [...sequence];
-                    newSeq[sIdx] = {
+                  const newSeq = [...sequence];
+                  newSeq[sIdx] = {
                     ...getWait(item),
                     locked: !(getWait(item).locked ?? false),
-                    };
-                    sequence = newSeq;
-                    recordChange?.();
+                  };
+                  sequence = newSeq;
+                  recordChange?.();
                 }}
                 onChange={(newName, newDuration) => {
-                    const newSeq = [...sequence];
-                    newSeq[sIdx] = {
+                  const newSeq = [...sequence];
+                  newSeq[sIdx] = {
                     ...getWait(item),
                     name: newName,
                     durationMs: Math.max(0, Number(newDuration) || 0),
-                    };
-                    sequence = newSeq;
+                  };
+                  sequence = newSeq;
                 }}
                 onRemove={() => {
-                    const newSeq = [...sequence];
-                    newSeq.splice(sIdx, 1);
-                    sequence = newSeq;
+                  const newSeq = [...sequence];
+                  newSeq.splice(sIdx, 1);
+                  sequence = newSeq;
                 }}
                 onInsertAfter={() => {
-                    const newSeq = [...sequence];
-                    newSeq.splice(sIdx + 1, 0, {
+                  const newSeq = [...sequence];
+                  newSeq.splice(sIdx + 1, 0, {
                     kind: "wait",
                     id: makeId(),
                     name: "Wait",
-                    durationMs: 0,
+                    durationMs: 1000,
                     locked: false,
-                    });
-                    sequence = newSeq;
+                  });
+                  sequence = newSeq;
                 }}
                 onAddPathAfter={() => insertPathAfter(sIdx)}
                 onMoveUp={() => moveSequenceItem(sIdx, -1)}
                 onMoveDown={() => moveSequenceItem(sIdx, 1)}
                 canMoveUp={sIdx !== 0}
                 canMoveDown={sIdx !== sequence.length - 1}
-                />
-                <WaitMarkersSection wait={getWait(item)} />
+              />
+              <WaitMarkersSection wait={getWait(item)} />
             {/if}
-            </div>
+          </div>
         {/each}
         <!-- Add Buttons at end of list -->
         <div class="flex flex-row justify-center items-center gap-3 pt-4">
@@ -1137,19 +1171,21 @@
     {/if}
   </div>
 
-  <div class="flex-none w-full bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+  <div
+    class="flex-none w-full bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+  >
     <PlaybackControls
-        bind:playing
-        {play}
-        {pause}
-        bind:percent
-        {handleSeek}
-        bind:loopAnimation
-        {markers}
-        {playbackSpeed}
-        {changePlaybackSpeedBy}
-        {resetPlaybackSpeed}
-        {setPlaybackSpeed}
+      bind:playing
+      {play}
+      {pause}
+      bind:percent
+      {handleSeek}
+      bind:loopAnimation
+      {markers}
+      {playbackSpeed}
+      {changePlaybackSpeedBy}
+      {resetPlaybackSpeed}
+      {setPlaybackSpeed}
     />
   </div>
 </div>
