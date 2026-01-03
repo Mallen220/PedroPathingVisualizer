@@ -5,9 +5,10 @@
 import GIF from "gif.js";
 // Vite: import worker script URL so gif.js can spawn workers correctly
 import gifWorkerUrl from "gif.js/dist/gif.worker.js?url";
+import UPNG from "upng-js";
 import type Two from "two.js";
 
-export interface ExportGifOptions {
+export interface ExportAnimationOptions {
   two: Two; // Two.js instance
   animationController: any; // controller from createAnimationController
   durationSec: number; // total duration in seconds
@@ -30,8 +31,197 @@ export interface ExportGifOptions {
   };
 }
 
+// Alias for backward compatibility
+export type ExportGifOptions = ExportAnimationOptions;
+
+async function prepareAnimationResources(options: ExportAnimationOptions) {
+  const { backgroundImageSrc, robotImageSrc } = options;
+
+  let backgroundImage: HTMLImageElement | null = null;
+  if (backgroundImageSrc) {
+    backgroundImage = new Image();
+    backgroundImage.crossOrigin = "anonymous";
+    backgroundImage.src = backgroundImageSrc;
+    try {
+      await new Promise<void>((resolve) => {
+        backgroundImage!.onload = () => resolve();
+        backgroundImage!.onerror = () => {
+          backgroundImage = null;
+          resolve();
+        };
+      });
+    } catch {
+      backgroundImage = null;
+    }
+  }
+
+  let robotImage: HTMLImageElement | null = null;
+  if (robotImageSrc) {
+    robotImage = new Image();
+    robotImage.crossOrigin = "anonymous";
+    robotImage.src = robotImageSrc;
+    try {
+      await new Promise<void>((resolve) => {
+        robotImage!.onload = () => resolve();
+        robotImage!.onerror = () => {
+          robotImage = null;
+          resolve();
+        };
+      });
+    } catch {
+      robotImage = null;
+    }
+  }
+
+  return { backgroundImage, robotImage };
+}
+
+async function renderFrameToCanvas(
+  two: Two,
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  backgroundImage: HTMLImageElement | null,
+  robotImage: HTMLImageElement | null,
+  options: ExportAnimationOptions,
+  percent: number,
+  scale: number,
+) {
+  const svgEl = (two.renderer as any).domElement as SVGElement;
+  // Serialize the SVG
+  const svgString = new XMLSerializer().serializeToString(svgEl);
+  const hasNs = svgString.indexOf("xmlns=") >= 0;
+  const svgWithNs = hasNs
+    ? svgString
+    : svgString.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+  const data =
+    "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgWithNs);
+
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw background
+      if (backgroundImage) {
+        try {
+          ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        } catch (e) {
+          console.warn("Failed to draw background image:", e);
+        }
+      }
+
+      // Draw SVG
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Draw robot overlay
+      try {
+        if (robotImage && options.getRobotState) {
+          const state = options.getRobotState(percent);
+          if (state && !Number.isNaN(state.x) && !Number.isNaN(state.y)) {
+            ctx.save();
+            ctx.translate(state.x * scale, state.y * scale);
+            ctx.rotate((state.heading * Math.PI) / 180);
+            const rw =
+              (options.robotLengthPx ?? (robotImage.width || 0)) * scale;
+            const rh =
+              (options.robotWidthPx ?? (robotImage.height || 0)) * scale;
+            ctx.drawImage(robotImage, -rw / 2, -rh / 2, rw, rh);
+            ctx.restore();
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to draw robot overlay:", e);
+      }
+      resolve();
+    };
+    img.onerror = (err) => reject(err);
+    img.src = data;
+  });
+}
+
+export async function exportPathToApng(
+  options: ExportAnimationOptions,
+): Promise<Blob> {
+  const {
+    two,
+    animationController,
+    durationSec,
+    fps = 15,
+    scale = 1,
+    onProgress,
+  } = options;
+
+  const prevPlaying = animationController.isPlaying?.() ?? false;
+  const prevPercent = animationController.getPercent?.() ?? 0;
+  if (animationController.pause) animationController.pause();
+
+  const svgEl = (two.renderer as any).domElement as SVGElement;
+  const rect = svgEl.getBoundingClientRect();
+  const width = Math.round(rect.width * scale);
+  const height = Math.round(rect.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  const { backgroundImage, robotImage } =
+    await prepareAnimationResources(options);
+
+  const calculatedFrames = Math.ceil(durationSec * fps);
+  const MAX_FRAMES = 300;
+  const frames = Math.max(2, Math.min(calculatedFrames, MAX_FRAMES));
+  const delayMs = Math.round(1000 / fps);
+
+  const frameBuffers: ArrayBuffer[] = [];
+  const delays: number[] = [];
+
+  for (let i = 0; i < frames; i++) {
+    const percent = (i / (frames - 1)) * 100;
+    if (animationController.seekToPercent)
+      animationController.seekToPercent(percent);
+    two.update();
+
+    await renderFrameToCanvas(
+      two,
+      canvas,
+      ctx,
+      backgroundImage,
+      robotImage,
+      options,
+      percent,
+      scale,
+    );
+
+    // Get RGBA data
+    const imageData = ctx.getImageData(0, 0, width, height);
+    frameBuffers.push(imageData.data.buffer);
+    delays.push(delayMs);
+
+    if (onProgress) {
+      onProgress(((i + 1) / frames) * 0.8);
+    }
+  }
+
+  // Restore state
+  if (animationController.seekToPercent)
+    animationController.seekToPercent(prevPercent);
+  if (prevPlaying && animationController.play) animationController.play();
+
+  // Encode APNG
+  if (onProgress) onProgress(0.9);
+  // cnum=0 for full color
+  const pngBuffer = UPNG.encode(frameBuffers, width, height, 0, delays);
+  if (onProgress) onProgress(1.0);
+
+  return new Blob([pngBuffer], { type: "image/png" });
+}
+
 export async function exportPathToGif(
-  options: ExportGifOptions,
+  options: ExportAnimationOptions,
 ): Promise<Blob> {
   const {
     two,
@@ -40,226 +230,82 @@ export async function exportPathToGif(
     fps = 15,
     scale = 1,
     quality = 20,
-    filename,
     onProgress,
-    backgroundImageSrc,
   } = options;
 
-  // Save state
   const prevPlaying = animationController.isPlaying?.() ?? false;
   const prevPercent = animationController.getPercent?.() ?? 0;
-
-  // Pause animation to take clean snapshots
   if (animationController.pause) animationController.pause();
 
-  // Prepare canvas for rasterizing SVG
   const svgEl = (two.renderer as any).domElement as SVGElement;
   const rect = svgEl.getBoundingClientRect();
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(rect.width * scale);
-  canvas.height = Math.round(rect.height * scale);
-  const ctx = canvas.getContext("2d")!;
+  const width = Math.round(rect.width * scale);
+  const height = Math.round(rect.height * scale);
 
-  // Optional: Enable better image smoothing
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  // Optionally preload a background image (field map) so it can be drawn under each frame
-  let backgroundImage: HTMLImageElement | null = null;
-  if (backgroundImageSrc) {
-    backgroundImage = new Image();
-    backgroundImage.crossOrigin = "anonymous";
-    backgroundImage.src = backgroundImageSrc;
+  const { backgroundImage, robotImage } =
+    await prepareAnimationResources(options);
 
-    try {
-      await new Promise<void>((resolve, reject) => {
-        backgroundImage!.onload = () => {
-          console.debug(
-            "Background image loaded for GIF export:",
-            backgroundImageSrc,
-          );
-          resolve();
-        };
-        backgroundImage!.onerror = (err) => {
-          console.warn(
-            "Failed to load background image for GIF export:",
-            backgroundImageSrc,
-            err,
-          );
-          // Ignore background image failures and proceed without it
-          backgroundImage = null;
-          resolve();
-        };
-      });
-    } catch (e) {
-      backgroundImage = null;
-    }
-  }
-
-  // Optionally preload the robot overlay image (so we can draw it on top of frames)
-  let robotImage: HTMLImageElement | null = null;
-  if (options.robotImageSrc) {
-    robotImage = new Image();
-    robotImage.crossOrigin = "anonymous";
-    robotImage.src = options.robotImageSrc;
-
-    try {
-      await new Promise<void>((resolve, reject) => {
-        robotImage!.onload = () => {
-          console.debug(
-            "Robot image loaded for GIF export:",
-            options.robotImageSrc,
-          );
-          resolve();
-        };
-        robotImage!.onerror = (err) => {
-          console.warn(
-            "Failed to load robot image for GIF export:",
-            options.robotImageSrc,
-            err,
-          );
-          robotImage = null;
-          resolve();
-        };
-      });
-    } catch (e) {
-      robotImage = null;
-    }
-  }
-
-  // Setup GIF encoder
   const gif = new GIF({
     workers: 2,
     quality: quality,
-    width: canvas.width,
-    height: canvas.height,
+    width,
+    height,
     workerScript: gifWorkerUrl,
   });
 
-  // Hook up progress if provided. We'll combine two phases:
-  //  - frame capture (0.0 -> 0.5)
-  //  - worker encoding progress (0.5 -> 1.0)
   if (onProgress) {
     gif.on("progress", (p: number) => {
-      // Debug log to help diagnose stalls
-      console.debug("GIF encode progress:", p);
       onProgress(0.5 + p * 0.5);
     });
   }
 
-  // Store per-frame data URLs so we can fallback to a main-thread encode if workers fail
   const framesDataURLs: string[] = [];
-
-  // Helper to rasterize the current SVG into canvas and add to GIF
-  async function addCurrentFrame(delayMs: number, percent: number) {
-    // Serialize the SVG
-    const svgString = new XMLSerializer().serializeToString(svgEl);
-    // Ensure xmlns is present
-    const hasNs = svgString.indexOf("xmlns=") >= 0;
-    const svgWithNs = hasNs
-      ? svgString
-      : svgString.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
-    const data =
-      "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgWithNs);
-
-    const img = new Image();
-    // Use crossOrigin to avoid tainting in some setups
-    img.crossOrigin = "anonymous";
-
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // Draw background image first (if available)
-        if (backgroundImage) {
-          try {
-            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-          } catch (e) {
-            console.warn("Failed to draw background image onto canvas:", e);
-          }
-        }
-
-        // Draw the rasterized SVG on top
-        // Scale is handled by drawing into the scaled canvas dimensions
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        // Draw robot overlay (if provided) on top of SVG
-        try {
-          if (robotImage && options.getRobotState) {
-            const state = options.getRobotState(percent);
-            if (state && !Number.isNaN(state.x) && !Number.isNaN(state.y)) {
-              ctx.save();
-              // Translate to robot center (scaled)
-              ctx.translate(state.x * scale, state.y * scale);
-              // Rotate by heading (convert deg -> rad)
-              ctx.rotate((state.heading * Math.PI) / 180);
-
-              // Scale robot dimensions
-              const rw =
-                (options.robotLengthPx ?? (robotImage.width || 0)) * scale;
-              const rh =
-                (options.robotWidthPx ?? (robotImage.height || 0)) * scale;
-
-              // Draw centered
-              // rw (Length) corresponds to X-local, rh (Width) corresponds to Y-local
-              ctx.drawImage(robotImage, -rw / 2, -rh / 2, rw, rh);
-              ctx.restore();
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to draw robot overlay onto canvas:", e);
-        }
-
-        // Capture the canvas state as a data URL for fallback encoding
-        try {
-          const url = canvas.toDataURL("image/png");
-          framesDataURLs.push(url);
-        } catch (e) {
-          console.warn("Failed to capture frame data URL for fallback:", e);
-        }
-
-        // Add canvas context as a frame; copy=true to avoid keeping references
-        try {
-          gif.addFrame(ctx, { copy: true, delay: delayMs });
-        } catch (e) {
-          console.warn("gif.addFrame failed:", e);
-        }
-
-        resolve();
-      };
-      img.onerror = (err) => reject(err);
-      img.src = data;
-    });
-  }
-
   const calculatedFrames = Math.ceil(durationSec * fps);
-  const MAX_FRAMES = 300; // safety cap
+  const MAX_FRAMES = 300;
   const frames = Math.max(2, Math.min(calculatedFrames, MAX_FRAMES));
-  if (calculatedFrames > MAX_FRAMES) {
-    console.warn(
-      `Frame count capped to ${MAX_FRAMES} (requested ${calculatedFrames}). Consider lowering fps or duration.`,
-    );
-  }
-
   const delayMs = Math.round(1000 / fps);
 
   for (let i = 0; i < frames; i++) {
     const percent = (i / (frames - 1)) * 100;
     if (animationController.seekToPercent)
       animationController.seekToPercent(percent);
-    // Force Two.js to update immediately
     two.update();
-    // Add the frame (pass percent so overlays can be drawn correctly)
-    // eslint-disable-next-line no-await-in-loop
-    await addCurrentFrame(delayMs, percent);
-    // Provide incremental progress for frame capture phase
+
+    await renderFrameToCanvas(
+      two,
+      canvas,
+      ctx,
+      backgroundImage,
+      robotImage,
+      options,
+      percent,
+      scale,
+    );
+
+    // Fallback data
+    try {
+      framesDataURLs.push(canvas.toDataURL("image/png"));
+    } catch {}
+
+    try {
+      gif.addFrame(ctx, { copy: true, delay: delayMs });
+    } catch (e) {
+      console.warn("gif.addFrame failed:", e);
+    }
+
     if (onProgress) {
-      const p = ((i + 1) / frames) * 0.5;
-      console.debug("GIF frame capture progress:", p);
-      onProgress(p);
+      onProgress(((i + 1) / frames) * 0.5);
     }
   }
 
-  // Restore previous state
+  // Restore state
   if (animationController.seekToPercent)
     animationController.seekToPercent(prevPercent);
   if (prevPlaying && animationController.play) animationController.play();

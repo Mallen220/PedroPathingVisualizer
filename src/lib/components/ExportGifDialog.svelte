@@ -2,8 +2,8 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { scale } from "svelte/transition";
-  import type { ExportGifOptions } from "../../utils/exportGif";
-  import { exportPathToGif } from "../../utils/exportGif";
+  import type { ExportAnimationOptions } from "../../utils/exportGif";
+  import { exportPathToGif, exportPathToApng } from "../../utils/exportGif";
 
   export let show = false;
   export let twoInstance: any;
@@ -28,6 +28,7 @@
   let statusMessage = "";
   let previewBlob: Blob | null = null;
   let previewUrl: string | null = null;
+  let exportFormat: "gif" | "apng" = "gif";
 
   function close() {
     if (status === "generating") return;
@@ -51,7 +52,7 @@
     previewUrl = null;
 
     try {
-      const blob = await exportPathToGif({
+      const options: ExportAnimationOptions = {
         two: twoInstance,
         animationController,
         durationSec: animationController.getDuration(),
@@ -70,9 +71,16 @@
           if (p < 0.5)
             statusMessage = `Capturing frames... ${Math.round(p * 200)}%`;
           else
-            statusMessage = `Encoding GIF... ${Math.round((p - 0.5) * 200)}%`;
+            statusMessage = `Encoding ${exportFormat.toUpperCase()}... ${Math.round((p - 0.5) * 200)}%`;
         },
-      });
+      };
+
+      let blob: Blob;
+      if (exportFormat === "apng") {
+        blob = await exportPathToApng(options);
+      } else {
+        blob = await exportPathToGif(options);
+      }
 
       previewBlob = blob;
       previewUrl = URL.createObjectURL(blob);
@@ -85,12 +93,16 @@
     }
   }
 
-  async function downloadGif() {
+  async function download() {
     if (!previewBlob) {
       await generatePreview();
     }
 
     if (!previewBlob) return;
+
+    const extension = exportFormat === "apng" ? "png" : "gif";
+    const defaultPath = `path.${extension}`;
+    const filterName = exportFormat === "apng" ? "Animated PNG" : "GIF";
 
     if (
       electronAPI &&
@@ -98,8 +110,8 @@
       electronAPI.writeFileBase64
     ) {
       const dest = await electronAPI.showSaveDialog({
-        defaultPath: "path.gif",
-        filters: [{ name: "GIF", extensions: ["gif"] }],
+        defaultPath: defaultPath,
+        filters: [{ name: filterName, extensions: [extension] }],
       });
       if (dest) {
         const reader = new FileReader();
@@ -115,7 +127,7 @@
     } else {
       const a = document.createElement("a");
       a.href = previewUrl!;
-      a.download = "path.gif";
+      a.download = defaultPath;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -146,7 +158,7 @@
         <h2
           class="text-xl font-semibold text-neutral-800 dark:text-neutral-100"
         >
-          Export GIF
+          Export Animation
         </h2>
         <button
           class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
@@ -173,7 +185,26 @@
       <!-- Content -->
       <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
         <!-- Controls Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <!-- Format Selection -->
+          <div class="flex flex-col gap-2">
+            <label
+              for="export-format"
+              class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            >
+              Format
+            </label>
+            <select
+              id="export-format"
+              bind:value={exportFormat}
+              disabled={status === "generating"}
+              class="bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+            >
+              <option value="gif">GIF (Standard)</option>
+              <option value="apng">APNG (High Quality)</option>
+            </select>
+          </div>
+
           <!-- FPS Control -->
           <div class="flex flex-col gap-2">
             <label
@@ -217,35 +248,40 @@
           </div>
 
           <!-- Quality -->
-          <div class="flex flex-col gap-2">
-            <label
-              for="gif-quality"
-              class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-            >
-              Quality: {quality <= 5
-                ? "Best"
-                : quality <= 15
-                  ? "Good"
-                  : "Draft"}
-            </label>
-            <input
-              id="gif-quality"
-              type="range"
-              min="1"
-              max="30"
-              step="1"
-              bind:value={quality}
-              disabled={status === "generating"}
-              class="w-full accent-purple-600 dir-rtl"
-              title="Lower is better quality"
-            />
-            <div
-              class="text-xs text-neutral-500 dark:text-neutral-400 flex justify-between"
-            >
-              <span>Best (Slower)</span>
-              <span>Draft (Faster)</span>
+          {#if exportFormat === "gif"}
+            <div class="flex flex-col gap-2">
+              <label
+                for="gif-quality"
+                class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              >
+                Quality: {quality <= 5
+                  ? "Best"
+                  : quality <= 15
+                    ? "Good"
+                    : "Draft"}
+              </label>
+              <input
+                id="gif-quality"
+                type="range"
+                min="1"
+                max="30"
+                step="1"
+                bind:value={quality}
+                disabled={status === "generating"}
+                class="w-full accent-purple-600 dir-rtl"
+                title="Lower is better quality"
+              />
+              <div
+                class="text-xs text-neutral-500 dark:text-neutral-400 flex justify-between"
+              >
+                <span>Best</span>
+                <span>Draft</span>
+              </div>
             </div>
-          </div>
+          {:else}
+            <!-- Spacer for alignment when Quality is hidden for APNG -->
+            <div></div>
+          {/if}
         </div>
 
         <!-- Progress Bar -->
@@ -291,7 +327,7 @@
           {#if previewUrl}
             <img
               src={previewUrl}
-              alt="GIF Preview"
+              alt="Preview"
               class="max-w-full max-h-[40vh] object-contain shadow-sm"
             />
           {:else}
@@ -340,7 +376,7 @@
 
         <button
           class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          on:click={downloadGif}
+          on:click={download}
           disabled={status === "generating" || !previewUrl}
         >
           Download / Save
