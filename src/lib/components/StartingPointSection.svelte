@@ -93,7 +93,7 @@
     <div class="flex items-center gap-4">
       <button
         on:click={addPathAtStart}
-        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-neutral-300 dark:border-neutral-600 rounded-md transition-colors shadow-sm hover:text-green-600 dark:hover:text-green-400 hover:border-green-400 dark:hover:border-green-500 hover:bg-white dark:hover:bg-neutral-900 hover:shadow-[0_0_0_3px_rgba(34,197,94,0.35)] dark:hover:shadow-[0_0_0_3px_rgba(74,222,128,0.35)]"
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -113,7 +113,7 @@
       </button>
       <button
         on:click={addWaitAtStart}
-        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-neutral-300 dark:border-neutral-600 rounded-md transition-colors shadow-sm hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-400 dark:hover:border-amber-500 hover:bg-white dark:hover:bg-neutral-900 hover:shadow-[0_0_0_3px_rgba(251,191,36,0.35)] dark:hover:shadow-[0_0_0_3px_rgba(251,191,36,0.35)]"
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 dark:bg-amber-600 rounded-md shadow-sm hover:bg-amber-600 dark:hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

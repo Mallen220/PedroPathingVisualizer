@@ -168,6 +168,16 @@
     ) {
       exportMenuOpen = false;
     }
+
+    if (
+      viewOptionsOpen &&
+      viewOptionsRef &&
+      !viewOptionsRef.contains(event.target as Node) &&
+      viewOptionsButtonRef &&
+      !viewOptionsButtonRef.contains(event.target as Node)
+    ) {
+      viewOptionsOpen = false;
+    }
   }
 
   // Handle Escape key to close dropdown
@@ -179,6 +189,10 @@
       exportMenuOpen = false;
     }
   }
+
+  let viewOptionsOpen = false;
+  let viewOptionsRef: HTMLElement;
+  let viewOptionsButtonRef: HTMLElement;
 
   onMount(() => {
     document.addEventListener("click", handleClickOutside);
@@ -303,193 +317,6 @@
 
   <!-- Right: Toolbar Actions -->
   <div class="flex items-center gap-2 md:gap-3">
-    <!-- View Options Group -->
-    <div
-      class="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-md p-1 gap-1"
-    >
-      <!-- Ruler toggle -->
-      <button
-        title="Toggle Ruler"
-        aria-label="Toggle Ruler"
-        aria-pressed={$showRuler}
-        on:click={() => showRuler.update((v) => !v)}
-        class="p-1.5 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$showRuler
-          ? 'text-blue-500'
-          : 'text-neutral-500 dark:text-neutral-400'}"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path
-            d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0z"
-          ></path>
-          <path d="m14.5 12.5 2-2"></path>
-          <path d="m11.5 9.5 2-2"></path>
-          <path d="m8.5 6.5 2-2"></path>
-          <path d="m17.5 15.5 2-2"></path>
-        </svg>
-      </button>
-
-      <!-- Protractor Lock toggle (only when protractor is on) -->
-      {#if $showProtractor}
-        <button
-          title={$protractorLockToRobot
-            ? "Unlock Protractor from Robot"
-            : "Lock Protractor to Robot"}
-          aria-label={$protractorLockToRobot
-            ? "Unlock Protractor from Robot"
-            : "Lock Protractor to Robot"}
-          aria-pressed={$protractorLockToRobot}
-          on:click={() => protractorLockToRobot.update((v) => !v)}
-          class="p-1.5 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$protractorLockToRobot
-            ? 'text-amber-500'
-            : 'text-neutral-500 dark:text-neutral-400'}"
-        >
-          {#if $protractorLockToRobot}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-          {:else}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
-            </svg>
-          {/if}
-        </button>
-      {/if}
-
-      <!-- Protractor toggle -->
-      <button
-        title="Toggle Protractor"
-        aria-label="Toggle Protractor"
-        aria-pressed={$showProtractor}
-        on:click={() => showProtractor.update((v) => !v)}
-        class="p-1.5 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$showProtractor
-          ? 'text-blue-500'
-          : 'text-neutral-500 dark:text-neutral-400'}"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 21a9 9 0 1 1 0-18c2.52 0 4.93 1 6.74 2.74L21 8"></path>
-          <path d="M12 3v6l3.7 2.7"></path>
-        </svg>
-      </button>
-
-      <div class="w-px h-4 bg-neutral-300 dark:bg-neutral-600 mx-0.5"></div>
-
-      {#if $showGrid}
-        <!-- Snap Toggle -->
-        <button
-          title={$snapToGrid ? "Disable Snap" : "Enable Snap"}
-          aria-label={$snapToGrid ? "Disable Snap" : "Enable Snap"}
-          aria-pressed={$snapToGrid}
-          on:click={() => snapToGrid.update((v) => !v)}
-          class="p-1.5 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$snapToGrid
-            ? 'text-green-500'
-            : 'text-neutral-400'}"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"
-            ></path>
-          </svg>
-        </button>
-
-        <div class="relative">
-          <select
-            class="w-full bg-transparent text-xs font-medium text-neutral-600 dark:text-neutral-300 focus:outline-none cursor-pointer appearance-none pl-1 pr-3"
-            bind:value={selectedGridSize}
-            on:change={handleGridSizeChange}
-            aria-label="Select grid spacing"
-          >
-            {#each gridSizeOptions as option}
-              <option value={option}>{option}"</option>
-            {/each}
-          </select>
-        </div>
-      {/if}
-
-      <button
-        title="Toggle Grid"
-        aria-label="Toggle Grid"
-        aria-pressed={$showGrid}
-        on:click={() => showGrid.update((v) => !v)}
-        class="p-1.5 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$showGrid
-          ? 'text-blue-500'
-          : 'text-neutral-500 dark:text-neutral-400'}"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="3" y1="9" x2="21" y2="9"></line>
-          <line x1="3" y1="15" x2="21" y2="15"></line>
-          <line x1="9" y1="3" x2="9" y2="21"></line>
-          <line x1="15" y1="3" x2="15" y2="21"></line>
-        </svg>
-      </button>
-    </div>
-
-    <div
-      class="w-px h-6 bg-neutral-200 dark:bg-neutral-700 hidden md:block"
-    ></div>
-
     <!-- Undo/Redo Group -->
     <div class="flex items-center gap-1">
       <button
@@ -536,6 +363,310 @@
           />
         </svg>
       </button>
+    </div>
+
+    <div
+      class="w-px h-6 bg-neutral-200 dark:bg-neutral-700 hidden md:block"
+    ></div>
+
+    <!-- Sidebar Toggle -->
+    <button
+      title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+      aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+      on:click={() => (showSidebar = !showSidebar)}
+      class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
+    >
+      {#if showSidebar && isLargeScreen}
+        <!-- Sidebar visible: show icon with left pane -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          class="size-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+          <rect x="12" y="4" width="9" height="16"></rect>
+        </svg>
+      {:else if showSidebar && !isLargeScreen}
+        <!-- Shown on vertical: icon with bottom pane -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          class="size-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+          <rect x="3" y="12" width="18" height="8"></rect>
+        </svg>
+      {:else}
+        <!-- Hidden: Empty Box -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          class="size-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+        </svg>
+      {/if}
+    </button>
+
+    <!-- View Options: compact dropdown -->
+    <div class="relative">
+      <button
+        bind:this={viewOptionsButtonRef}
+        title="View Options"
+        aria-haspopup="true"
+        aria-expanded={viewOptionsOpen}
+        on:click={() => (viewOptionsOpen = !viewOptionsOpen)}
+        class="p-1.5 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"
+      >
+        <!-- compact grid icon -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="size-5"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+      </button>
+
+      {#if viewOptionsOpen}
+        <div
+          bind:this={viewOptionsRef}
+          on:click|stopPropagation
+          on:keydown={(e) => {
+            if (e.key === "Escape") {
+              viewOptionsOpen = false;
+            }
+          }}
+          role="menu"
+          tabindex="0"
+          class="absolute right-0 mt-2 w-44 bg-white dark:bg-neutral-800 rounded-lg shadow-xl py-2 z-50 border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in-95 duration-100"
+        >
+          <!-- <div class="px-3 py-1 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+              <div class="text-sm font-medium">View Options</div>
+            </div>
+            <button
+              class="text-xs text-neutral-500"
+              on:click={() => (viewOptionsOpen = false)}>Close</button
+            >
+          </div>-->
+
+          <div class="px-2 py-2 grid grid-cols-1 gap-1">
+            <div class="flex items-center gap-3">
+              <button
+                title="Toggle Ruler"
+                aria-label="Toggle Ruler"
+                aria-pressed={$showRuler}
+                on:click={() => showRuler.update((v) => !v)}
+                class="p-1 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$showRuler
+                  ? 'text-blue-500'
+                  : 'text-neutral-500 dark:text-neutral-400'}"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0z"
+                  ></path>
+                  <path d="m14.5 12.5 2-2"></path>
+                  <path d="m11.5 9.5 2-2"></path>
+                  <path d="m8.5 6.5 2-2"></path>
+                  <path d="m17.5 15.5 2-2"></path>
+                </svg>
+              </button>
+              <div class="text-sm">Ruler</div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button
+                title="Toggle Protractor"
+                aria-label="Toggle Protractor"
+                aria-pressed={$showProtractor}
+                on:click={() => showProtractor.update((v) => !v)}
+                class="p-1 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$showProtractor
+                  ? 'text-blue-500'
+                  : 'text-neutral-500 dark:text-neutral-400'}"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 21a9 9 0 1 1 0-18c2.52 0 4.93 1 6.74 2.74L21 8"
+                  ></path>
+                  <path d="M12 3v6l3.7 2.7"></path>
+                </svg>
+              </button>
+              <div class="text-sm">Protractor</div>
+            </div>
+
+            {#if $showProtractor}
+              <div class="flex items-center gap-3">
+                <button
+                  title={$protractorLockToRobot
+                    ? "Unlock Protractor from Robot"
+                    : "Lock Protractor to Robot"}
+                  aria-label={$protractorLockToRobot
+                    ? "Unlock Protractor from Robot"
+                    : "Lock Protractor to Robot"}
+                  aria-pressed={$protractorLockToRobot}
+                  on:click={() => protractorLockToRobot.update((v) => !v)}
+                  class="p-1 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$protractorLockToRobot
+                    ? 'text-amber-500'
+                    : 'text-neutral-500 dark:text-neutral-400'}"
+                >
+                  {#if $protractorLockToRobot}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"
+                      ></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  {:else}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"
+                      ></rect>
+                      <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                    </svg>
+                  {/if}
+                </button>
+                <div class="text-sm">Lock to Robot</div>
+              </div>
+            {/if}
+
+            <div class="flex items-center gap-3">
+              <button
+                title="Toggle Grid"
+                aria-label="Toggle Grid"
+                aria-pressed={$showGrid}
+                on:click={() => showGrid.update((v) => !v)}
+                class="p-1 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$showGrid
+                  ? 'text-blue-500'
+                  : 'text-neutral-500 dark:text-neutral-400'}"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="3" y1="15" x2="21" y2="15"></line>
+                  <line x1="9" y1="3" x2="9" y2="21"></line>
+                  <line x1="15" y1="3" x2="15" y2="21"></line>
+                </svg>
+              </button>
+              <div class="text-sm">Grid</div>
+            </div>
+
+            {#if $showGrid}
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 w-full">
+                  <div class="flex items-center gap-2">
+                    <button
+                      title={$snapToGrid ? "Disable Snap" : "Enable Snap"}
+                      aria-label={$snapToGrid ? "Disable Snap" : "Enable Snap"}
+                      aria-pressed={$snapToGrid}
+                      on:click={() => snapToGrid.update((v) => !v)}
+                      class="p-1 rounded-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors {$snapToGrid
+                        ? 'text-green-500'
+                        : 'text-neutral-400'}"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path
+                          d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"
+                        ></path>
+                      </svg>
+                    </button>
+                    <div class="text-sm">Snap</div>
+                  </div>
+                  <div class="ml-2">
+                    <select
+                      class="bg-transparent text-sm text-neutral-600 dark:text-neutral-300 focus:outline-none cursor-pointer pl-1 pr-3"
+                      bind:value={selectedGridSize}
+                      on:change={handleGridSizeChange}
+                      aria-label="Select grid spacing"
+                    >
+                      {#each gridSizeOptions as option}
+                        <option value={option}>{option}"</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
     </div>
 
     <div
@@ -732,54 +863,6 @@
             d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
           />
         </svg>
-      </button>
-
-      <!-- Sidebar Toggle -->
-      <button
-        title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
-        aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
-        on:click={() => (showSidebar = !showSidebar)}
-        class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
-      >
-        {#if showSidebar && isLargeScreen}
-          <!-- Sidebar visible: show icon with left pane -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
-            <rect x="12" y="4" width="9" height="16"></rect>
-          </svg>
-        {:else if showSidebar && !isLargeScreen}
-          <!-- Shown on vertical: icon with bottom pane -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
-            <rect x="3" y="12" width="18" height="8"></rect>
-          </svg>
-        {:else}
-          <!-- Hidden: Empty Box -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
-          </svg>
-        {/if}
       </button>
 
       <!-- Settings Button -->
