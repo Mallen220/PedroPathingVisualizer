@@ -17,3 +17,8 @@
 
 **Learning:** Icon-only buttons (like Next/Previous arrows) are often invisible to screen readers and automated testing tools if they lack `aria-label` attributes. This also makes programmatic verification difficult.
 **Action:** Always audit icon-only buttons for `aria-label` or `title` attributes during implementation.
+
+## 2026-01-03 - [Semantic Labels for Toolbar Actions]
+
+**Learning:** Consistent labeling of toolbar actions (like "Settings", "Save", "Open") using `aria-label` improves accessibility and allows for easier programmatic targeting in tests, especially when icons are decorative or dynamic.
+**Action:** Ensure all primary toolbar actions have explicit `aria-label` attributes, even if they have tooltips or adjacent text that might seem sufficient.

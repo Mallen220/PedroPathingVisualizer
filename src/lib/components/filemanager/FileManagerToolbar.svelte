@@ -61,6 +61,7 @@
       dispatch("sort-change", sortMode === "name" ? "date" : "name")}
     class="p-1.5 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
     title={`Sort by ${sortMode === "name" ? "Date" : "Name"}`}
+    aria-label={`Sort by ${sortMode === "name" ? "Date" : "Name"}`}
   >
     {#if sortMode === "name"}
       <svg
@@ -101,6 +102,7 @@
       dispatch("view-change", viewMode === "list" ? "grid" : "list")}
     class="p-1.5 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
     title={`Switch to ${viewMode === "list" ? "Grid" : "List"} View`}
+    aria-label={`Switch to ${viewMode === "list" ? "Grid" : "List"} View`}
   >
     {#if viewMode === "list"}
       <svg
@@ -142,6 +144,7 @@
     on:click={() => dispatch("new-file")}
     class="p-1.5 text-neutral-500 hover:text-green-600 dark:text-neutral-400 dark:hover:text-green-400 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
     title="New File"
+    aria-label="New File"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -163,6 +166,7 @@
     on:click={() => dispatch("change-dir")}
     class="p-1.5 text-neutral-500 hover:text-blue-600 dark:text-neutral-400 dark:hover:text-blue-400 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
     title="Change Directory"
+    aria-label="Change Directory"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -184,6 +188,7 @@
     on:click={() => dispatch("refresh")}
     class="p-1.5 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
     title="Refresh"
+    aria-label="Refresh"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -680,6 +680,7 @@
         for="file-upload"
         class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 cursor-pointer transition-colors"
         title="Open Project"
+        aria-label="Open Project"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -711,6 +712,7 @@
           on:click={() => (saveDropdownOpen = !saveDropdownOpen)}
           class="flex items-center gap-1 p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
           title="Save Options"
+          aria-label="Save Options"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -868,6 +870,7 @@
       <!-- Settings Button -->
       <button
         title="Settings"
+        aria-label="Settings"
         on:click={() => showSettings.set(true)}
         class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
       >
