@@ -1,14 +1,12 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import TrashIcon from "./icons/TrashIcon.svelte";
+  import SectionHeader from "./common/SectionHeader.svelte";
+  import NumberInput from "./common/NumberInput.svelte";
 
   export let line: Line;
   export let lineIdx: number;
   export let collapsed: boolean;
-
-  function toggleCollapsed() {
-    collapsed = !collapsed;
-  }
 
   function addEventMarker() {
     if (!line.eventMarkers) {
@@ -32,53 +30,36 @@
 </script>
 
 <div class="flex flex-col w-full justify-start items-start mt-2">
-  <div class="flex items-center justify-between w-full">
-    <button
-      on:click={toggleCollapsed}
-      class="flex items-center gap-2 font-light hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-sm"
-      title="{collapsed ? 'Show' : 'Hide'} event markers"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width={2}
-        stroke="currentColor"
-        class="size-3 transition-transform {collapsed
-          ? 'rotate-0'
-          : 'rotate-90'}"
+  <SectionHeader
+    bind:collapsed
+    title="Event Markers"
+    count={line.eventMarkers?.length || 0}
+  >
+    <div slot="buttons">
+      <button
+        on:click={addEventMarker}
+        class="text-sm text-purple-500 hover:text-purple-600 flex items-center gap-1 px-2 py-1"
+        title="Add Event Marker"
+        disabled={line.locked}
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="m8.25 4.5 7.5 7.5-7.5 7.5"
-        />
-      </svg>
-      Event Markers ({line.eventMarkers?.length || 0})
-    </button>
-    <button
-      on:click={addEventMarker}
-      class="text-sm text-purple-500 hover:text-purple-600 flex items-center gap-1 px-2 py-1"
-      title="Add Event Marker"
-      disabled={line.locked}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width={2}
-        stroke="currentColor"
-        class="size-4"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M12 4.5v15m7.5-7.5h-15"
-        />
-      </svg>
-      Add Marker
-    </button>
-  </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width={2}
+          stroke="currentColor"
+          class="size-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4.5v15m7.5-7.5h-15"
+          />
+        </svg>
+        Add Marker
+      </button>
+    </div>
+  </SectionHeader>
 
   {#if !collapsed && line.eventMarkers && line.eventMarkers.length > 0}
     <div class="w-full mt-2 space-y-2">
@@ -136,6 +117,7 @@
                   }
                 }}
               />
+              <!-- Using native input for direct value control to match original behavior -->
               <input
                 type="number"
                 value={event.position}
@@ -146,7 +128,6 @@
                 class="w-16 px-2 py-1 text-xs rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
                 on:input={(e) => {
                   // Don't update immediately, just show the typed value
-                  // We'll validate on blur or Enter
                 }}
                 on:blur={(e) => {
                   const value = parseFloat(e.target.value);

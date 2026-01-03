@@ -23,6 +23,8 @@
   import ObstaclesSection from "./ObstaclesSection.svelte";
   import TrashIcon from "./icons/TrashIcon.svelte";
   import ColorPicker from "./ColorPicker.svelte";
+  import NumberInput from "./common/NumberInput.svelte";
+  import LockToggle from "./common/LockToggle.svelte";
 
   export let recordChange: () => void;
   // Handler passed from parent to toggle optimization dialog
@@ -632,25 +634,23 @@
             Start Point
           </td>
           <td class="px-3 py-2">
-            <input
-              type="number"
-              class="w-20 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            <NumberInput
+              bind:value={startPoint.x}
               step={stepSize}
-              value={startPoint.x}
-              aria-label="Start Point X"
-              on:input={(e) => handleInput(e, startPoint, "x")}
+              ariaLabel="Start Point X"
               disabled={startPoint.locked}
+              className="w-20"
+              on:input={(e) => handleInput(e, startPoint, "x")}
             />
           </td>
           <td class="px-3 py-2">
-            <input
-              type="number"
-              class="w-20 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            <NumberInput
+              bind:value={startPoint.y}
               step={stepSize}
-              value={startPoint.y}
-              aria-label="Start Point Y"
-              on:input={(e) => handleInput(e, startPoint, "y")}
+              ariaLabel="Start Point Y"
               disabled={startPoint.locked}
+              className="w-20"
+              on:input={(e) => handleInput(e, startPoint, "y")}
             />
           </td>
           <td class="px-3 py-2 flex items-center justify-between gap-1">
@@ -734,14 +734,13 @@
                 </td>
                 <td class="px-3 py-2">
                   <div class="flex items-center gap-2">
-                    <input
-                      type="number"
-                      class="w-20 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    <NumberInput
+                      bind:value={line.endPoint.x}
                       step={stepSize}
-                      value={line.endPoint.x}
-                      aria-label="{line.name || `Path ${lineIdx + 1}`} X"
-                      on:input={(e) => handleInput(e, line.endPoint, "x")}
+                      ariaLabel="{line.name || `Path ${lineIdx + 1}`} X"
                       disabled={line.locked}
+                      className="w-20"
+                      on:input={(e) => handleInput(e, line.endPoint, "x")}
                     />
                     <span class="text-xs text-neutral-500"
                       >{line.waitBeforeName || line.waitBeforeMs || ""}</span
@@ -749,61 +748,26 @@
                   </div>
                 </td>
                 <td class="px-3 py-2">
-                  <input
-                    type="number"
-                    class="w-20 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  <NumberInput
+                    bind:value={line.endPoint.y}
                     step={stepSize}
-                    value={line.endPoint.y}
-                    aria-label="{line.name || `Path ${lineIdx + 1}`} Y"
-                    on:input={(e) => handleInput(e, line.endPoint, "y")}
+                    ariaLabel="{line.name || `Path ${lineIdx + 1}`} Y"
                     disabled={line.locked}
+                    className="w-20"
+                    on:input={(e) => handleInput(e, line.endPoint, "y")}
                   />
                 </td>
                 <td class="px-3 py-2 flex items-center justify-between gap-1">
                   <!-- Left slot: lock/unlock button always visible -->
-                  <button
-                    title={line.locked ? "Unlock Path" : "Lock Path"}
-                    aria-label={line.locked ? "Unlock Path" : "Lock Path"}
-                    on:click|stopPropagation={() => {
-                      line.locked = !line.locked;
+                  <LockToggle
+                    bind:locked={line.locked}
+                    titleLocked="Unlock Path"
+                    titleUnlocked="Lock Path"
+                    on:toggle={() => {
                       lines = [...lines];
                       if (recordChange) recordChange();
                     }}
-                    class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-                    aria-pressed={line.locked}
-                  >
-                    {#if line.locked}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="2"
-                        stroke="currentColor"
-                        class="size-5 stroke-yellow-500"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                        />
-                      </svg>
-                    {:else}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="2"
-                        stroke="currentColor"
-                        class="size-5 stroke-gray-400"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                        />
-                      </svg>
-                    {/if}
-                  </button>
+                  />
 
                   <!-- Right slot: delete or placeholder -->
                   {#if lines.length > 1 && !line.locked}
@@ -845,27 +809,25 @@
                     ↳ Control {j + 1}
                   </td>
                   <td class="px-3 py-2">
-                    <input
-                      type="number"
-                      class="w-20 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900/50 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+                    <NumberInput
+                      bind:value={cp.x}
                       step={stepSize}
-                      value={cp.x}
-                      aria-label="Control Point {j + 1} X for {line.name ||
+                      ariaLabel="Control Point {j + 1} X for {line.name ||
                         `Path ${lineIdx + 1}`}"
-                      on:input={(e) => handleInput(e, cp, "x")}
                       disabled={line.locked}
+                      className="w-20"
+                      on:input={(e) => handleInput(e, cp, "x")}
                     />
                   </td>
                   <td class="px-3 py-2">
-                    <input
-                      type="number"
-                      class="w-20 px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900/50 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+                    <NumberInput
+                      bind:value={cp.y}
                       step={stepSize}
-                      value={cp.y}
-                      aria-label="Control Point {j + 1} Y for {line.name ||
+                      ariaLabel="Control Point {j + 1} Y for {line.name ||
                         `Path ${lineIdx + 1}`}"
-                      on:input={(e) => handleInput(e, cp, "y")}
                       disabled={line.locked}
+                      className="w-20"
+                      on:input={(e) => handleInput(e, cp, "y")}
                     />
                   </td>
                   <td class="px-3 py-2 flex items-center justify-between gap-1">
@@ -958,49 +920,15 @@
                 class="px-3 py-2 text-left flex items-center justify-start gap-1"
               >
                 <!-- Lock toggle for wait -->
-                <button
-                  on:click|stopPropagation={() => {
-                    sequence[seqIndex].locked = !sequence[seqIndex].locked;
+                <LockToggle
+                  bind:locked={sequence[seqIndex].locked}
+                  titleLocked="Unlock wait"
+                  titleUnlocked="Lock wait"
+                  on:toggle={() => {
                     sequence = [...sequence];
                     if (recordChange) recordChange();
                   }}
-                  title={item.locked ? "Unlock wait" : "Lock wait"}
-                  aria-label={item.locked ? "Unlock wait" : "Lock wait"}
-                  class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-                  aria-pressed={item.locked}
-                >
-                  {#if item.locked}
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="2"
-                      stroke="currentColor"
-                      class="size-5 stroke-yellow-500"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                      />
-                    </svg>
-                  {:else}
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="2"
-                      stroke="currentColor"
-                      class="size-5 stroke-gray-400"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                      />
-                    </svg>
-                  {/if}
-                </button>
+                />
 
                 <!-- Delete slot (hidden when locked) -->
                 {#if !item.locked}

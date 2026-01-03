@@ -9,6 +9,9 @@
     getClosestTarget,
     type DragPosition,
   } from "../../utils/dragDrop";
+  import SectionHeader from "./common/SectionHeader.svelte";
+  import MoveControls from "./common/MoveControls.svelte";
+  import CoordinateInputs from "./common/CoordinateInputs.svelte";
 
   export let line: Line;
   export let lineIdx: number;
@@ -17,10 +20,6 @@
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
-
-  function toggleCollapsed() {
-    collapsed = !collapsed;
-  }
 
   // Drag and drop state
   let draggingIndex: number | null = null;
@@ -104,68 +103,57 @@
     line.controlPoints = newPoints;
     recordChange();
   }
+
+  function removeControlPoint(idx: number) {
+    let _pts = line.controlPoints;
+    _pts.splice(idx, 1);
+    line.controlPoints = _pts;
+    recordChange();
+  }
 </script>
 
 <svelte:window on:dragover={handleWindowDragOver} on:drop={handleWindowDrop} />
 
 <div class="flex flex-col w-full justify-start items-start mt-2">
-  <!-- Control Points header with toggle and add button -->
-  <div class="flex items-center justify-between w-full">
-    <button
-      on:click={toggleCollapsed}
-      class="flex items-center gap-2 font-light hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-sm"
-      title="{collapsed ? 'Show' : 'Hide'} control points"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width={2}
-        stroke="currentColor"
-        class="size-3 transition-transform {collapsed
-          ? 'rotate-0'
-          : 'rotate-90'}"
+  <SectionHeader
+    bind:collapsed
+    title="Control Points"
+    count={line.controlPoints.length}
+  >
+    <div slot="buttons">
+      <button
+        on:click={() => {
+          line.controlPoints = [
+            ...line.controlPoints,
+            {
+              x: _.random(36, 108),
+              y: _.random(36, 108),
+            },
+          ];
+          recordChange();
+        }}
+        class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1 px-2 py-1"
+        title="Add Control Point"
+        disabled={line.locked}
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="m8.25 4.5 7.5 7.5-7.5 7.5"
-        />
-      </svg>
-      Control Points ({line.controlPoints.length})
-    </button>
-    <button
-      on:click={() => {
-        line.controlPoints = [
-          ...line.controlPoints,
-          {
-            x: _.random(36, 108),
-            y: _.random(36, 108),
-          },
-        ];
-        recordChange();
-      }}
-      class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1 px-2 py-1"
-      title="Add Control Point"
-      disabled={line.locked}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width={2}
-        stroke="currentColor"
-        class="size-4"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M12 4.5v15m7.5-7.5h-15"
-        />
-      </svg>
-      Add Control Point
-    </button>
-  </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width={2}
+          stroke="currentColor"
+          class="size-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4.5v15m7.5-7.5h-15"
+          />
+        </svg>
+        Add Control Point
+      </button>
+    </div>
+  </SectionHeader>
 
   <!-- Control Points list (shown when expanded) -->
   {#if !collapsed && line.controlPoints.length > 0}
@@ -213,126 +201,29 @@
               </span>
             </div>
 
-            <div class="flex items-center gap-1">
-              <!-- Move Up/Down Buttons -->
-              <div class="flex flex-row gap-0.5 mr-2">
-                <button
-                  title={line.locked ? "Locked" : "Move up"}
-                  on:click|stopPropagation={() => moveControlPoint(idx, -1)}
-                  class="p-1 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 bg-neutral-100/70 dark:bg-neutral-900/70 border border-neutral-200/70 dark:border-neutral-700/70 disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled={idx === 0 || line.locked}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    class="size-3"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="m5 15 7-7 7 7"
-                    />
-                  </svg>
-                </button>
-                <button
-                  title={line.locked ? "Locked" : "Move down"}
-                  on:click|stopPropagation={() => moveControlPoint(idx, 1)}
-                  class="p-1 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 bg-neutral-100/70 dark:bg-neutral-900/70 border border-neutral-200/70 dark:border-neutral-700/70 disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled={idx === line.controlPoints.length - 1 ||
-                    line.locked}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    class="size-3"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="m19 9-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <button
-                on:click={() => {
-                  let _pts = line.controlPoints;
-                  _pts.splice(idx, 1);
-                  line.controlPoints = _pts;
-                  recordChange();
-                }}
-                class="text-red-500 hover:text-red-600"
-                title="Remove Control Point"
-                disabled={line.locked}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width={2}
-                  class="size-4"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-                  />
-                </svg>
-              </button>
-            </div>
+            <MoveControls
+              locked={line.locked}
+              canMoveUp={idx > 0}
+              canMoveDown={idx < line.controlPoints.length - 1}
+              on:moveUp={() => moveControlPoint(idx, -1)}
+              on:moveDown={() => moveControlPoint(idx, 1)}
+              on:delete={() => removeControlPoint(idx)}
+              deleteTitle="Remove Control Point"
+            />
           </div>
 
           <!-- Control Point Position Inputs -->
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-neutral-600 dark:text-neutral-400"
-                >X:</span
-              >
-              <input
-                bind:value={point.x}
-                type="number"
-                min="0"
-                max="144"
-                step={$snapToGrid && $showGrid ? $gridSize : 0.1}
-                class="w-16 sm:w-20 px-2 py-1 text-xs rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                aria-label="Line {lineIdx + 1} Control Point {idx + 1} X"
-                on:change={() => {
-                  // Update the array to trigger reactivity
-                  line.controlPoints = [...line.controlPoints];
-                }}
-                disabled={line.locked}
-                title={snapToGridTitle}
-              />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-neutral-600 dark:text-neutral-400"
-                >Y:</span
-              >
-              <input
-                bind:value={point.y}
-                type="number"
-                min="0"
-                max="144"
-                step={$snapToGrid && $showGrid ? $gridSize : 0.1}
-                class="w-16 sm:w-20 px-2 py-1 text-xs rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                aria-label="Line {lineIdx + 1} Control Point {idx + 1} Y"
-                on:change={() => {
-                  // Update the array to trigger reactivity
-                  line.controlPoints = [...line.controlPoints];
-                }}
-                disabled={line.locked}
-                title={snapToGridTitle}
-              />
-            </div>
-          </div>
+          <CoordinateInputs
+            bind:x={point.x}
+            bind:y={point.y}
+            disabled={line.locked}
+            step={$snapToGrid && $showGrid ? $gridSize : 0.1}
+            title={snapToGridTitle}
+            ariaLabelPrefix="Line {lineIdx + 1} Control Point {idx + 1}"
+            on:change={() => {
+              line.controlPoints = [...line.controlPoints];
+            }}
+          />
 
           <div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             Line {lineIdx + 1}, Control Point {idx + 1}

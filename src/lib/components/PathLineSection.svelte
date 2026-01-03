@@ -8,6 +8,10 @@
   import ColorPicker from "./ColorPicker.svelte";
   import { selectedLineId } from "../../stores";
   import TrashIcon from "./icons/TrashIcon.svelte";
+  import CollapseToggle from "./common/CollapseToggle.svelte";
+  import LockToggle from "./common/LockToggle.svelte";
+  import MoveControls from "./common/MoveControls.svelte";
+  import CoordinateInputs from "./common/CoordinateInputs.svelte";
 
   export let line: Line;
   export let idx: number;
@@ -28,10 +32,6 @@
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
-
-  function toggleCollapsed() {
-    collapsed = !collapsed;
-  }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -53,29 +53,11 @@
     class="flex flex-row w-full justify-between items-center flex-wrap gap-y-2"
   >
     <div class="flex flex-row items-center gap-2 flex-wrap">
-      <button
-        on:click={toggleCollapsed}
-        class="flex items-center gap-2 font-semibold hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors"
+      <CollapseToggle
+        bind:collapsed
+        label="Path {idx + 1}"
         title="{collapsed ? 'Expand' : 'Collapse'} path"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width={2}
-          stroke="currentColor"
-          class="size-4 transition-transform {collapsed
-            ? 'rotate-0'
-            : 'rotate-90'}"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="m8.25 4.5 7.5 7.5-7.5 7.5"
-          />
-        </svg>
-        Path {idx + 1}
-      </button>
+      />
 
       <input
         bind:value={line.name}
@@ -100,95 +82,24 @@
         disabled={line.locked}
       />
 
-      <!-- Lock/Unlock Button -->
-      <button
-        title={line.locked ? "Unlock Path" : "Lock Path"}
-        on:click|stopPropagation={() => {
-          line.locked = !line.locked;
+      <LockToggle
+        bind:locked={line.locked}
+        titleLocked="Unlock Path"
+        titleUnlocked="Lock Path"
+        on:toggle={() => {
           lines = [...lines]; // Force reactivity
         }}
-        class="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-      >
-        {#if line.locked}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width={2}
-            stroke="currentColor"
-            class="size-5 stroke-yellow-500"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-            />
-          </svg>
-        {:else}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width={2}
-            stroke="currentColor"
-            class="size-5 stroke-gray-400"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-            />
-          </svg>
-        {/if}
-      </button>
+      />
 
       <div class="flex flex-row gap-0.5 ml-1">
-        <button
-          title={line.locked ? "Path locked" : "Move up"}
-          on:click|stopPropagation={() => {
-            if (!line.locked && onMoveUp) onMoveUp();
-          }}
-          class="p-1 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 bg-neutral-100/70 dark:bg-neutral-900/70 border border-neutral-200/70 dark:border-neutral-700/70 disabled:opacity-40 disabled:cursor-not-allowed"
-          disabled={!canMoveUp || line.locked}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            class="size-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="m5 15 7-7 7 7"
-            />
-          </svg>
-        </button>
-        <button
-          title={line.locked ? "Path locked" : "Move down"}
-          on:click|stopPropagation={() => {
-            if (!line.locked && onMoveDown) onMoveDown();
-          }}
-          class="p-1 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 bg-neutral-100/70 dark:bg-neutral-900/70 border border-neutral-200/70 dark:border-neutral-700/70 disabled:opacity-40 disabled:cursor-not-allowed"
-          disabled={!canMoveDown || line.locked}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            class="size-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="m19 9-7 7-7-7"
-            />
-          </svg>
-        </button>
+        <MoveControls
+          locked={line.locked}
+          {canMoveUp}
+          {canMoveDown}
+          on:moveUp={onMoveUp}
+          on:moveDown={onMoveDown}
+          showDelete={false}
+        />
       </div>
     </div>
 
@@ -256,30 +167,15 @@
     <div class="flex flex-col justify-start items-start w-full">
       <div class="font-light">Point Position:</div>
       <div class="flex flex-wrap justify-start items-center gap-x-4 gap-y-2">
-        <div class="flex items-center gap-2">
-          <div class="font-extralight">X:</div>
-          <input
-            class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none w-20 sm:w-28"
-            step={$snapToGrid && $showGrid ? $gridSize : 0.1}
-            type="number"
-            min="0"
-            max="144"
-            bind:value={line.endPoint.x}
-            disabled={line.locked}
-            title={snapToGridTitle}
-          />
-          <div class="font-extralight">Y:</div>
-          <input
-            class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none w-20 sm:w-28"
-            step={$snapToGrid && $showGrid ? $gridSize : 0.1}
-            min="0"
-            max="144"
-            type="number"
-            bind:value={line.endPoint.y}
-            disabled={line.locked}
-            title={snapToGridTitle}
-          />
-        </div>
+        <CoordinateInputs
+          bind:x={line.endPoint.x}
+          bind:y={line.endPoint.y}
+          disabled={line.locked}
+          step={$snapToGrid && $showGrid ? $gridSize : 0.1}
+          title={snapToGridTitle}
+          ariaLabelPrefix="Line {idx + 1} End Point"
+          className="w-20 sm:w-28 pl-1.5"
+        />
 
         <HeadingControls
           endPoint={line.endPoint}

@@ -3,6 +3,8 @@
   import { createTriangle } from "../../utils";
   import { snapToGrid, showGrid, gridSize } from "../../stores";
   import TrashIcon from "./icons/TrashIcon.svelte";
+  import CollapseToggle from "./common/CollapseToggle.svelte";
+  import CoordinateInputs from "./common/CoordinateInputs.svelte";
 
   export let shapes: Shape[];
   export let collapsedObstacles: boolean[];
@@ -23,31 +25,12 @@
 
 <div class="flex flex-col w-full justify-start items-start gap-0.5 text-sm">
   <div class="flex items-center gap-2 w-full">
-    <button
-      on:click={toggleAllObstacles}
-      class="flex items-center gap-2 font-semibold hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors"
-      title="{collapsedObstacles.every((c) => c)
-        ? 'Expand all'
-        : 'Collapse all'} obstacles"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width={2}
-        stroke="currentColor"
-        class="size-4 transition-transform {collapsedObstacles.every((c) => c)
-          ? 'rotate-0'
-          : 'rotate-90'}"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="m8.25 4.5 7.5 7.5-7.5 7.5"
-        />
-      </svg>
-      Obstacles ({shapes.length})
-    </button>
+    <CollapseToggle
+      collapsed={collapsedObstacles.every((c) => c)}
+      label="Obstacles"
+      count={shapes.length}
+      on:toggle={toggleAllObstacles}
+    />
   </div>
 
   {#each shapes as shape, shapeIdx}
@@ -56,31 +39,11 @@
     >
       <div class="flex flex-row w-full justify-between items-center">
         <div class="flex flex-row items-center gap-2">
-          <button
-            on:click={() => toggleObstacle(shapeIdx)}
-            class="flex items-center gap-2 font-medium text-sm hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors"
-            title="{collapsedObstacles[shapeIdx]
-              ? 'Expand'
-              : 'Collapse'} obstacle"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width={2}
-              stroke="currentColor"
-              class="size-4 transition-transform {collapsedObstacles[shapeIdx]
-                ? 'rotate-0'
-                : 'rotate-90'}"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="m8.25 4.5 7.5 7.5-7.5 7.5"
-              />
-            </svg>
-            Obstacle {shapeIdx + 1}
-          </button>
+          <CollapseToggle
+            collapsed={collapsedObstacles[shapeIdx]}
+            label="Obstacle {shapeIdx + 1}"
+            on:toggle={() => toggleObstacle(shapeIdx)}
+          />
 
           <input
             bind:value={shape.name}
@@ -144,26 +107,14 @@
         {#each shape.vertices as vertex, vertexIdx}
           <div class="flex flex-row justify-start items-center gap-2">
             <div class="font-bold text-sm">{vertexIdx + 1}:</div>
-            <div class="font-extralight text-sm">X:</div>
-            <input
-              bind:value={vertex.x}
-              type="number"
-              min="0"
-              max="144"
+            <CoordinateInputs
+              bind:x={vertex.x}
+              bind:y={vertex.y}
               step={$snapToGrid && $showGrid ? $gridSize : 0.1}
               title={snapToGridTitle}
-              class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none w-24 text-sm"
+              className="w-24 pl-1.5"
             />
-            <div class="font-extralight text-sm">Y:</div>
-            <input
-              bind:value={vertex.y}
-              type="number"
-              min="0"
-              max="144"
-              step={$snapToGrid && $showGrid ? $gridSize : 0.1}
-              class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none w-24 text-sm"
-              title={snapToGridTitle}
-            />
+
             {#if $snapToGrid && $showGrid}
               <span class="text-xs text-green-500" title="Snapping enabled"
                 >✓</span
