@@ -23,6 +23,7 @@
 
   let contextMenu: { x: number; y: number; file: FileInfo } | null = null;
   let renameInput = "";
+  let container: HTMLDivElement;
 
   // Preview Data Cache
   let previews: Record<string, { startPoint: Point; lines: Line[] } | null> =
@@ -127,7 +128,7 @@
     }
   }
 
-  async function loadPreview(filePath: string, force = false) {
+  function loadPreview(filePath: string, force = false) {
     // If already loaded and not forcing, skip
     if (previews[filePath] !== undefined && !force) return;
 
@@ -344,9 +345,22 @@
   export function refreshAll() {
     files.forEach((f) => refreshPreview(f.path));
   }
+
+  export function scrollToSelection(path: string) {
+    if (!container) return;
+    try {
+      const el = container.querySelector(
+        `[data-file-path="${CSS.escape(path)}"]`,
+      );
+      if (el) el.scrollIntoView({ block: "nearest" });
+    } catch (e) {
+      console.warn("Could not scroll to selection", e);
+    }
+  }
 </script>
 
 <div
+  bind:this={container}
   class="flex-1 overflow-y-auto pb-4"
   on:click={() => (contextMenu = null)}
   role="button"
@@ -367,6 +381,7 @@
     <div class="grid grid-cols-3 gap-2 px-2">
       {#each group.files as file (file.path)}
         <div
+          data-file-path={file.path}
           class="group flex flex-col items-center p-2 rounded-md cursor-pointer transition-all border relative
           {selectedFilePath === file.path
             ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 ring-1 ring-blue-300 dark:ring-blue-700'

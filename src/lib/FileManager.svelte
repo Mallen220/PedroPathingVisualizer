@@ -71,7 +71,6 @@
   // Reference to child components for preview refreshes
   let fileGrid: any;
   let fileList: any;
-  let toolbar: any;
 
   // New file state
   let creatingNewFile = false;
@@ -608,93 +607,7 @@
       return m ? m[0] : "";
     },
   };
-
-  function moveSelection(delta: number) {
-    if (filteredFiles.length === 0) return;
-
-    let index = -1;
-    if (selectedFile) {
-      index = filteredFiles.findIndex((f) => f.path === selectedFile?.path);
-    }
-
-    let newIndex = index + delta;
-
-    // Handle bounds
-    if (index === -1) {
-      newIndex = 0;
-    } else {
-      if (newIndex < 0) newIndex = 0;
-      if (newIndex >= filteredFiles.length) newIndex = filteredFiles.length - 1;
-    }
-
-    if (filteredFiles[newIndex]) {
-      selectedFile = filteredFiles[newIndex];
-      // Scroll to view
-      tick().then(() => {
-        if (viewMode === "list" && fileList) {
-          fileList.scrollToSelection(selectedFile!.path);
-        } else if (viewMode === "grid" && fileGrid) {
-          fileGrid.scrollToSelection(selectedFile!.path);
-        }
-      });
-    }
-  }
-
-  function handleWindowKeyDown(e: KeyboardEvent) {
-    if (!isOpen) return;
-
-    // If typing in an input (rename, new file, search), ignore navigation keys
-    const activeTag = document.activeElement?.tagName.toLowerCase();
-    if (activeTag === "input" || activeTag === "textarea") {
-      // Allow escape to blur/close
-      if (e.key === "Escape") {
-        (document.activeElement as HTMLElement).blur();
-        // If it was the new file input, cancel creation
-        if (creatingNewFile) creatingNewFile = false;
-        // If renaming, cancel
-        if (renamingFile) renamingFile = null;
-        e.preventDefault();
-      }
-      return;
-    }
-
-    // Navigation
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      moveSelection(viewMode === "grid" ? 3 : 1);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      moveSelection(viewMode === "grid" ? -3 : -1);
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      moveSelection(1);
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      moveSelection(-1);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (selectedFile) loadFile(selectedFile);
-    } else if (e.key === "Delete" || e.key === "Backspace") {
-      if (selectedFile) deleteFile(selectedFile);
-    } else if (e.key === "F2") {
-      if (selectedFile) renamingFile = selectedFile;
-    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
-      e.preventDefault();
-      if (selectedFile) duplicateFile(selectedFile, false);
-    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
-      e.preventDefault();
-      creatingNewFile = true;
-    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-      e.preventDefault();
-      if (toolbar) toolbar.focusSearch();
-    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r") {
-      e.preventDefault();
-      handleRefresh();
-    }
-  }
 </script>
-
-<svelte:window on:keydown={handleWindowKeyDown} />
 
 <div class="fixed inset-0 z-[1010] flex" class:pointer-events-none={!isOpen}>
   <!-- Backdrop -->
@@ -706,6 +619,9 @@
       role="button"
       tabindex="0"
       aria-label="Close file manager"
+      on:keydown={(e) => {
+        if (e.key === "Escape") isOpen = false;
+      }}
     />
   {/if}
 
@@ -771,7 +687,6 @@
 
     <!-- Toolbar -->
     <FileManagerToolbar
-      bind:this={toolbar}
       {searchQuery}
       {sortMode}
       {viewMode}
