@@ -308,11 +308,16 @@
   onDestroy(() => observer && observer.disconnect());
 </script>
 
-<div class="flex-1 overflow-y-auto pb-4" on:click={() => (contextMenu = null)}>
+<div
+  class="flex-1 overflow-y-auto pb-4"
+  on:click={() => (contextMenu = null)}
+  role="presentation"
+>
   {#each groups as group}
     {#if sortMode === "date"}
       <div
         class="px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50/50 dark:bg-neutral-800/50 sticky top-0 backdrop-blur-sm z-1"
+        role="presentation"
       >
         {group.title}
       </div>
@@ -338,10 +343,10 @@
         >
           <!-- Icon -->
           <div class="mr-3 text-blue-500 dark:text-blue-400 shrink-0">
-            {#if previews[file.path] && previews[file.path].startPoint}
+            {#if previews[file.path]?.startPoint}
               <PathPreview
-                startPoint={previews[file.path].startPoint}
-                lines={previews[file.path].lines}
+                startPoint={previews[file.path]?.startPoint}
+                lines={previews[file.path]?.lines ?? []}
                 fieldImage={fieldImage ? `/fields/${fieldImage}` : null}
                 width={48}
                 height={48}
@@ -371,12 +376,15 @@
           <!-- Content -->
           <div class="flex-1 min-w-0">
             {#if renamingFile?.path === file.path}
-              <div class="flex items-center gap-1" on:click|stopPropagation>
+              <div
+                class="flex items-center gap-1"
+                on:click|stopPropagation
+                role="presentation"
+              >
                 <input
                   type="text"
                   bind:value={renameInput}
                   class="w-full px-1 py-0.5 text-sm border border-blue-400 rounded focus:outline-none dark:bg-neutral-700"
-                  autofocus
                   on:keydown={(e) => {
                     if (e.key === "Enter") dispatch("rename-save", renameInput);
                     if (e.key === "Escape") dispatch("rename-cancel");

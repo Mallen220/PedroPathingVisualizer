@@ -96,6 +96,15 @@
   let sidebarWidth = 384; // default max-w-sm is roughly 384px (24rem)
   let isResizing = false;
 
+  // New file input reference for programmatic focus
+  import { tick } from "svelte";
+  let newFileInput: HTMLInputElement | null = null;
+
+  $: if (creatingNewFile) {
+    // Focus the input after it renders
+    tick().then(() => newFileInput?.focus());
+  }
+
   function startResize(e: MouseEvent) {
     isResizing = true;
     window.addEventListener("mousemove", handleResize);
@@ -624,10 +633,12 @@
     class:-translate-x-full={!isOpen}
   >
     <!-- Resizer Handle -->
-    <div
-      class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500 z-50 transition-colors"
+    <button
+      type="button"
+      class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500 z-50 transition-colors appearance-none bg-transparent"
       on:mousedown={startResize}
-    ></div>
+      aria-label="Resize sidebar"
+    ></button>
 
     <!-- Header -->
     <div
@@ -729,14 +740,15 @@
         </div>
         <input
           bind:value={newFileName}
+          bind:this={newFileInput}
           class="w-full px-2 py-1.5 text-sm border border-blue-400 rounded focus:outline-none bg-white dark:bg-neutral-700 mb-2"
           placeholder="path_name.pp"
-          autoFocus
           on:keydown={(e) => {
             if (e.key === "Enter") createNewFile(newFileName);
             if (e.key === "Escape") creatingNewFile = false;
           }}
         />
+
         <div class="flex gap-2">
           <button
             class="flex-1 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"

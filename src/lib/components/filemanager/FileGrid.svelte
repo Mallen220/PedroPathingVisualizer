@@ -232,7 +232,11 @@
   function openContextMenuAtElement(el: HTMLElement, file: FileInfo) {
     const rect = el.getBoundingClientRect();
     // Place menu near the top-right of the element; ensure integers for ipc
-    contextMenu = { x: Math.round(rect.right - 8), y: Math.round(rect.top + 8), file };
+    contextMenu = {
+      x: Math.round(rect.right - 8),
+      y: Math.round(rect.top + 8),
+      file,
+    };
     dispatch("select", file);
   }
 
@@ -342,7 +346,15 @@
   }
 </script>
 
-<div class="flex-1 overflow-y-auto pb-4" on:click={() => (contextMenu = null)}>
+<div
+  class="flex-1 overflow-y-auto pb-4"
+  on:click={() => (contextMenu = null)}
+  role="button"
+  tabindex="0"
+  on:keydown={(e) => {
+    if (e.key === "Enter" || e.key === " ") contextMenu = null;
+  }}
+>
   {#each groups as group}
     {#if sortMode === "date"}
       <div
@@ -418,12 +430,23 @@
             <button
               class="absolute top-1 right-1 p-1 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
               aria-label="File actions"
-              on:click|stopPropagation={(e) => openContextMenuFromEvent(e, file)}
+              on:click|stopPropagation={(e) =>
+                openContextMenuFromEvent(e, file)}
               title="More actions"
             >
-
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 text-neutral-600 dark:text-neutral-300">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="size-4 text-neutral-600 dark:text-neutral-300"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                />
               </svg>
             </button>
           </div>
@@ -431,11 +454,12 @@
           <!-- Content -->
           <div class="w-full text-center">
             {#if renamingFile?.path === file.path}
-              <div class="w-full px-1" on:click|stopPropagation>
+              <div class="w-full px-1">
                 <input
                   type="text"
                   bind:value={renameInput}
                   use:focusInput
+                  on:click|stopPropagation
                   class="w-full text-xs text-center border border-blue-400 rounded focus:outline-none dark:bg-neutral-700 py-0.5"
                   on:keydown={(e) => {
                     if (e.key === "Enter") dispatch("rename-save", renameInput);
