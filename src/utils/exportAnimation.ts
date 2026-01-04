@@ -307,6 +307,7 @@ export async function exportPathToApng(
     durationSec,
     fps = 15,
     scale = 1,
+    quality = 10,
     onProgress,
   } = options;
 
@@ -328,10 +329,24 @@ export async function exportPathToApng(
   const calculatedFrames = Math.ceil(durationSec * fps);
   const MAX_FRAMES = 300;
   const frames = Math.max(2, Math.min(calculatedFrames, MAX_FRAMES));
-  const delayMs = Math.round(1000 / fps);
+
+  // Precise timing calculation:
+  // We want sum(delays) == durationSec * 1000
+  // Distribute error accumulation
+  const targetTotalMs = durationSec * 1000;
+  const delays: number[] = [];
+  let accumulatedTime = 0;
+
+  for (let i = 0; i < frames; i++) {
+    // Calculate perfect end time for this frame
+    const targetEndTime = ((i + 1) / frames) * targetTotalMs;
+    // Calculate integer delay for this frame to reach that time
+    const delay = Math.round(targetEndTime - accumulatedTime);
+    delays.push(delay);
+    accumulatedTime += delay;
+  }
 
   const buffers: ArrayBuffer[] = [];
-  const delays: number[] = new Array(frames).fill(delayMs);
 
   for (let i = 0; i < frames; i++) {
     const percent = (i / (frames - 1)) * 100;
@@ -368,13 +383,15 @@ export async function exportPathToApng(
   if (onProgress) onProgress(0.95);
 
   // Encode APNG
-  // UPNG.encode(imgs, w, h, cnum, dels)
-  // cnum=0 means lossless (or max colors)
+  // cnum = 0 means lossless. >0 means palette size.
+  // Mapping: Quality 1-9 => Lossless (0), Quality >= 10 => 256 colors
+  const cnum = quality <= 9 ? 0 : 256;
+
   const apngBuffer = UPNG.encode(
     buffers,
     canvas.width,
     canvas.height,
-    0,
+    cnum,
     delays,
   );
 

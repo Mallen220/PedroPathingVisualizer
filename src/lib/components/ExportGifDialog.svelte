@@ -25,7 +25,7 @@
   let format: "gif" | "apng" = "gif";
   let fps = 15;
   let resolutionScale = 0.5; // Default 50%
-  let quality = 10; // 1-30, default 10 (good balance) - Only for GIF
+  let quality = 10; // 1-30, default 10 (good balance)
   let status = "idle"; // idle, generating, done, error
   let progress = 0;
   let statusMessage = "";
@@ -183,7 +183,7 @@
       </div>
 
       <!-- Content -->
-      <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+      <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6 min-h-0">
         <!-- Controls Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Format -->
@@ -247,18 +247,14 @@
             </select>
           </div>
 
-          <!-- Quality (GIF Only) -->
-          <div
-            class="flex flex-col gap-2 opacity-{format === 'gif'
-              ? '100'
-              : '50'}"
-          >
+          <!-- Quality -->
+          <div class="flex flex-col gap-2">
             <label
               for="gif-quality"
               class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
               Quality: {quality <= 5
-                ? "Best"
+                ? "Best (Lossless)"
                 : quality <= 15
                   ? "Good"
                   : "Draft"}
@@ -270,11 +266,11 @@
               max="30"
               step="1"
               bind:value={quality}
-              disabled={status === "generating" || format !== "gif"}
+              disabled={status === "generating"}
               class="w-full accent-purple-600 dir-rtl"
               title={format === "gif"
                 ? "Lower is better quality"
-                : "Not applicable for APNG"}
+                : "Left: Lossless, Right: 256 Colors"}
             />
             <div
               class="text-xs text-neutral-500 dark:text-neutral-400 flex justify-between"
@@ -291,8 +287,7 @@
             class="text-xs text-neutral-500 dark:text-neutral-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-100 dark:border-blue-800"
           >
             <strong>Note:</strong> Animated PNGs support full 24-bit color and 8-bit
-            transparency, offering much higher quality than GIF, but file sizes can
-            be larger.
+            transparency. 'Best' quality is lossless but produces larger files.
           </div>
         {/if}
 
@@ -340,7 +335,7 @@
             <img
               src={previewUrl}
               alt="Animation Preview"
-              class="max-w-full max-h-[40vh] object-contain shadow-sm"
+              class="max-w-full max-h-full object-contain shadow-sm"
             />
           {:else}
             <div
