@@ -134,7 +134,7 @@
   }
 
   // Helper function to convert file to base64
-  function imageToBase64(file) {
+  function imageToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -147,6 +147,16 @@
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  function handleLengthInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    handleNumberInput(target.value, "rLength", 1, 36, true);
+  }
+
+  function handleWidthInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    handleNumberInput(target.value, "rWidth", 1, 36, true);
   }
 </script>
 
@@ -335,8 +345,7 @@
                   min="1"
                   max="36"
                   step="0.5"
-                  on:change={(e) =>
-                    handleNumberInput(e.target.value, "rLength", 1, 36, true)}
+                  on:change={handleLengthInput}
                   class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -358,8 +367,7 @@
                   min="1"
                   max="36"
                   step="0.5"
-                  on:change={(e) =>
-                    handleNumberInput(e.target.value, "rWidth", 1, 36, true)}
+                  on:change={handleWidthInput}
                   class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -383,7 +391,7 @@
                   step="0.5"
                   on:change={(e) =>
                     handleNumberInput(
-                      e.target.value,
+                      (e.target as HTMLInputElement).value,
                       "safetyMargin",
                       0,
                       24,
@@ -419,7 +427,7 @@
                           "Failed to load robot image:",
                           settings.robotImage,
                         );
-                        e.target.src = "/robot.png"; // Fallback
+                        (e.target as HTMLImageElement).src = "/robot.png"; // Fallback
                       }}
                     />
                     {#if settings.robotImage && settings.robotImage !== "/robot.png"}
@@ -488,7 +496,8 @@
                       accept="image/*"
                       class="hidden"
                       on:change={async (e) => {
-                        const file = e.target.files?.[0];
+                        const target = e.target as HTMLInputElement;
+                        const file = target.files?.[0];
                         if (file) {
                           try {
                             const base64 = await imageToBase64(file);
@@ -641,7 +650,7 @@
                     step="1"
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "xVelocity",
                         0,
                         undefined,
@@ -666,7 +675,7 @@
                     step="1"
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "yVelocity",
                         0,
                         undefined,
@@ -716,7 +725,7 @@
                   step="1"
                   on:change={(e) =>
                     handleNumberInput(
-                      e.target.value,
+                      (e.target as HTMLInputElement).value,
                       "maxVelocity",
                       0,
                       undefined,
@@ -743,7 +752,7 @@
                     step="1"
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "maxAcceleration",
                         0,
                         undefined,
@@ -768,7 +777,7 @@
                     step="1"
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "maxDeceleration",
                         0,
                         undefined,
@@ -798,7 +807,7 @@
                   step="0.1"
                   on:change={(e) =>
                     handleNumberInput(
-                      e.target.value,
+                      (e.target as HTMLInputElement).value,
                       "kFriction",
                       0,
                       undefined,
@@ -1094,7 +1103,7 @@
                     bind:value={settings.optimizationIterations}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "optimizationIterations",
                         10,
                         3000,
@@ -1132,7 +1141,7 @@
                     bind:value={settings.optimizationPopulationSize}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "optimizationPopulationSize",
                         10,
                         200,
@@ -1170,7 +1179,7 @@
                     bind:value={settings.optimizationMutationRate}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "optimizationMutationRate",
                         0.01,
                         1,
@@ -1209,7 +1218,7 @@
                     bind:value={settings.optimizationMutationStrength}
                     on:change={(e) =>
                       handleNumberInput(
-                        e.target.value,
+                        (e.target as HTMLInputElement).value,
                         "optimizationMutationStrength",
                         0.1,
                         20,

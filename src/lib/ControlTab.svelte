@@ -1064,7 +1064,7 @@
           />
         </div>
 
-        {#if settings?.showDebugSequence}
+        {#if (settings as any)?.showDebugSequence}
           <div class="p-2 text-xs text-neutral-500">
             <div>
               <strong>DEBUG (ControlTab)</strong> — lines: {lines.length},

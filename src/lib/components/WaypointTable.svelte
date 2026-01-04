@@ -38,7 +38,7 @@
   export let onPreviewChange: (
     lines: import("../../types").Line[] | null,
   ) => void;
-  export let settings: import("../../types").Settings;
+  export let settings: import("../../types").Settings | undefined = undefined;
 
   // Shapes and collapsedObstacles binding for ObstaclesSection
   export let shapes: import("../../types").Shape[];
@@ -50,6 +50,7 @@
 
   // Ensure these are referenced so the compiler doesn't mark them as unused
   $: _shapesCount = Array.isArray(shapes) ? shapes.length : 0;
+  $: _settingsRef = settings; // Reference settings to suppress unused warning
   $: _collapsedObstaclesCount = Array.isArray(collapsedObstacles)
     ? collapsedObstacles.length
     : 0;
@@ -553,7 +554,7 @@
     </div>
   </div>
 
-  {#if settings?.showDebugSequence}
+  {#if (settings as any)?.showDebugSequence}
     <div class="p-2 text-xs text-neutral-500">
       <div>
         <strong>DEBUG</strong> — lines: {lines.length}, sequence: {(
@@ -962,8 +963,12 @@
                 <!-- Lock toggle for wait -->
                 <button
                   on:click|stopPropagation={() => {
-                    sequence[seqIndex].locked = !sequence[seqIndex].locked;
-                    sequence = [...sequence];
+                    if (sequence[seqIndex].kind === "wait") {
+                      (sequence[seqIndex] as any).locked = !(
+                        (sequence[seqIndex] as any).locked ?? false
+                      );
+                      sequence = [...sequence];
+                    }
                     if (recordChange) recordChange();
                   }}
                   title={item.locked ? "Unlock wait" : "Lock wait"}
