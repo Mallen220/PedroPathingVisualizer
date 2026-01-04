@@ -892,10 +892,17 @@
         const dx = evt.clientX - startPan.x;
         const dy = evt.clientY - startPan.y;
 
+        // Rotate the drag vector to match the field rotation
+        // If field is rotated 90deg (CW), visual Right (dx) should map to local Down (-dy or similar) depending on coord system
+        // Visual vector (dx, dy) needs to be rotated by -rotation to align with local (unrotated) axes
+        const rad = -((settings.fieldRotation || 0) * Math.PI) / 180;
+        const rdx = dx * Math.cos(rad) - dy * Math.sin(rad);
+        const rdy = dx * Math.sin(rad) + dy * Math.cos(rad);
+
         // Update the pan store
         fieldPan.update((p) => ({
-          x: p.x + dx,
-          y: p.y + dy,
+          x: p.x + rdx,
+          y: p.y + rdy,
         }));
 
         // Reset start position for next frame
