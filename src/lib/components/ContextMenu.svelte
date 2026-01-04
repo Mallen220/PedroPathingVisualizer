@@ -33,6 +33,7 @@
   let adjustedY = y;
 
   onMount(() => {
+    console.log("ContextMenu mounted", x, y);
     if (menuElement) {
       const rect = menuElement.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
@@ -56,7 +57,7 @@
 
 <div
   bind:this={menuElement}
-  class="fixed z-[1200] min-w-[180px] py-1 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-700 text-sm select-none"
+  class="fixed z-[9999] min-w-[180px] py-1 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-700 text-sm select-none"
   style="top: {adjustedY}px; left: {adjustedX}px;"
   transition:fade={{ duration: 100 }}
   role="menu"
@@ -91,7 +92,11 @@
       >
         {#if item.icon}
           <div class="size-4 flex items-center justify-center">
-            <svelte:component this={item.icon} className="size-4" strokeWidth={1.5} />
+            <svelte:component
+              this={item.icon}
+              className="size-4"
+              strokeWidth={1.5}
+            />
           </div>
         {:else}
           <div class="size-4"></div>

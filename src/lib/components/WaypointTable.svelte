@@ -15,8 +15,7 @@
     selectedPointId,
   } from "../../stores";
   import { slide } from "svelte/transition";
-  import { getRandomColor } from "../../utils";
-  import _ from "lodash";
+  import { getRandomColor, generateName } from "../../utils";
 
   export let startPoint: Point;
   export let lines: Line[];
@@ -477,10 +476,9 @@
   function handleRowContextMenu(
     e: MouseEvent,
     seqIndex: number,
-    item: SequenceItem,
+    item: SequenceItem | null,
     displayName: string,
   ) {
-    if (seqIndex === -1) return; // Ignore start point
     e.preventDefault();
     contextMenu = {
       visible: true,
@@ -501,6 +499,13 @@
     closeContextMenu();
 
     const { seqIndex, item } = contextMenu;
+
+    // Allow action if it's "insert_wait_after", even if item is null (Start Point)
+    if (action === "insert_wait_after") {
+      insertWaitAfter(seqIndex);
+      return;
+    }
+
     if (seqIndex === -1 || !item) return;
 
     switch (action) {
@@ -514,39 +519,8 @@
           deleteWait(seqIndex);
         }
         break;
-      case "insert_wait_after":
-        insertWaitAfter(seqIndex);
-        break;
     }
   }
-
-  // Helper to generate unique name (copied from KeyboardShortcuts)
-  const generateName = (baseName: string, existingNames: string[]) => {
-    const match = baseName.match(/^(.*?) duplicate(?: (\d+))?$/);
-    let rootName = baseName;
-    let startNum = 1;
-
-    if (match) {
-      rootName = match[1];
-      startNum = match[2] ? parseInt(match[2], 10) : 1;
-      startNum++;
-    }
-
-    let candidate = "";
-    let i = startNum;
-    while (i < 1000) {
-      if (i === 1) {
-        candidate = rootName + " duplicate";
-      } else {
-        candidate = rootName + " duplicate " + i;
-      }
-      if (!existingNames.includes(candidate)) {
-        return candidate;
-      }
-      i++;
-    }
-    return rootName + " duplicate " + Date.now();
-  };
 
   function duplicateItem(seqIndex: number, item: SequenceItem) {
     if (item.kind === "wait") {
@@ -611,14 +585,16 @@
 
       // Renumber default names logic
       const renamed = lines.map((l, idx) => {
-          if (/^Path \d+$/.test(l.name)) return { ...l, name: `Path ${idx + 1}` };
-          return l;
+        if (/^Path \d+$/.test(l.name)) return { ...l, name: `Path ${idx + 1}` };
+        return l;
       });
       lines = renamed;
 
       recordChange();
       selectedLineId.set(newLine.id!);
-      selectedPointId.set(`point-${lines.findIndex(l => l.id === newLine.id) + 1}-0`);
+      selectedPointId.set(
+        `point-${lines.findIndex((l) => l.id === newLine.id) + 1}-0`,
+      );
     }
   }
 
@@ -630,6 +606,11 @@
       durationMs: 1000,
       locked: false,
     };
+    // seqIndex is the index of the item we clicked.
+    // If seqIndex is -1 (Start Point), we insert at 0 (first item in sequence).
+    // splice inserts at (index), removing 0 items.
+    // To insert *after* index N, we splice at N+1.
+    // For -1, we splice at -1+1 = 0. Correct.
     sequence.splice(seqIndex + 1, 0, wait);
     sequence = [...sequence];
     recordChange();
@@ -649,7 +630,7 @@
         label: "Duplicate",
         action: "duplicate",
         icon: DuplicateIcon,
-        disabled: contextMenu.item?.locked,
+        disabled: contextMenu.seqIndex === -1 || contextMenu.item?.locked,
       },
       {
         label: "Add Wait After",
@@ -657,12 +638,16 @@
         icon: WaitIcon,
       },
       {
+        label: "",
+        action: "",
+        separator: true,
+      },
+      {
         label: "Delete",
         action: "delete",
         icon: TrashIcon,
-        disabled: contextMenu.item?.locked,
+        disabled: contextMenu.seqIndex === -1 || contextMenu.item?.locked,
         danger: true,
-        separator: true,
       },
     ]}
     on:close={closeContextMenu}
@@ -826,6 +811,8 @@
             selectedLineId.set(null);
             selectedPointId.set("point-0-0");
           }}
+          on:contextmenu={(e) =>
+            handleRowContextMenu(e, -1, null, "Start Point")}
           class:border-b-2={dragOverIndex === -1 && dragPosition === "bottom"}
           class:border-blue-500={dragOverIndex === -1}
           class:dark:border-blue-400={dragOverIndex === -1}

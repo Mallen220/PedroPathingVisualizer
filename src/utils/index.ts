@@ -9,6 +9,7 @@ export * from "./shapes";
 export * from "./timeCalculator";
 export * from "./directorySettings";
 export * from "./settingsPersistence";
+export * from "./nameGenerator";
 
 export const DPI = 96 / 5;
 

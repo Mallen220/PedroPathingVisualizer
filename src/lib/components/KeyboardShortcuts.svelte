@@ -25,7 +25,7 @@
   } from "../projectStore";
   import type { Line, SequenceItem } from "../../types";
   import { DEFAULT_KEY_BINDINGS, FIELD_SIZE } from "../../config";
-  import { getRandomColor } from "../../utils";
+  import { getRandomColor, generateName } from "../../utils";
   import _ from "lodash";
 
   // Actions
@@ -225,41 +225,6 @@
     if (isUIElementFocused()) return;
     const sel = $selectedPointId;
     if (!sel) return;
-
-    // Helper to generate unique name
-    const generateName = (baseName: string, existingNames: string[]) => {
-      // Regex to match "Name duplicate" or "Name duplicate N"
-      const match = baseName.match(/^(.*?) duplicate(?: (\d+))?$/);
-
-      let rootName = baseName;
-      let startNum = 1;
-
-      if (match) {
-        rootName = match[1];
-        startNum = match[2] ? parseInt(match[2], 10) : 1;
-        // If we are duplicating a duplicate, we probably want to start incrementing from its number + 1
-        startNum++;
-      }
-
-      // Try candidates starting from the determined number
-      let candidate = "";
-      let i = startNum;
-
-      // Safety/Sanity: loop limit to prevent infinite hangs in weird edge cases
-      while (i < 1000) {
-        if (i === 1) {
-          candidate = rootName + " duplicate";
-        } else {
-          candidate = rootName + " duplicate " + i;
-        }
-
-        if (!existingNames.includes(candidate)) {
-          return candidate;
-        }
-        i++;
-      }
-      return rootName + " duplicate " + Date.now(); // Fallback
-    };
 
     if (sel.startsWith("wait-")) {
       const waitId = sel.substring(5);
