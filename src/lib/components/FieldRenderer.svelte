@@ -92,6 +92,11 @@
       height / 2 - (height * scaleFactor) / 2,
     ]);
 
+  // Visual Scale (Pixels per Inch at 1x Zoom)
+  // Used for UI elements (points, markers) so they don't grow when zooming in
+  $: ppI = width / FIELD_SIZE;
+  $: uiLength = (inches: number) => inches * ppI;
+
   // Derived Values from Stores
   $: startPoint = $startPointStore;
   $: lines = $linesStore;
@@ -133,7 +138,7 @@
     let startPointElem = new Two.Circle(
       x(startPoint.x),
       y(startPoint.y),
-      x(POINT_RADIUS),
+      uiLength(POINT_RADIUS),
     );
     startPointElem.id = `point-0-0`;
     startPointElem.fill = lines[0]?.color || "#000000"; // Fallback color if lines empty
@@ -149,7 +154,7 @@
           let pointElem = new Two.Circle(
             x(point.x),
             y(point.y),
-            x(POINT_RADIUS),
+            uiLength(POINT_RADIUS),
           );
           pointElem.id = `point-${idx + 1}-${idx1}-background`;
           pointElem.fill = line.color;
@@ -157,11 +162,11 @@
           let pointText = new Two.Text(
             `${idx1}`,
             x(point.x),
-            y(point.y - 0.15),
-            x(POINT_RADIUS),
+            y(point.y) - uiLength(0.15),
+            uiLength(POINT_RADIUS),
           );
           pointText.id = `point-${idx + 1}-${idx1}-text`;
-          pointText.size = x(1.55);
+          pointText.size = uiLength(1.55);
           pointText.leading = 1;
           pointText.family = "ui-sans-serif, system-ui, sans-serif";
           pointText.alignment = "center";
@@ -174,7 +179,7 @@
           let pointElem = new Two.Circle(
             x(point.x),
             y(point.y),
-            x(POINT_RADIUS),
+            uiLength(POINT_RADIUS),
           );
           pointElem.id = `point-${idx + 1}-${idx1}`;
           pointElem.fill = line.color;
@@ -191,7 +196,7 @@
         let pointElem = new Two.Circle(
           x(vertex.x),
           y(vertex.y),
-          x(POINT_RADIUS),
+          uiLength(POINT_RADIUS),
         );
         pointElem.id = `obstacle-${shapeIdx}-${vertexIdx}-background`;
         pointElem.fill = "#991b1b";
@@ -199,11 +204,11 @@
         let pointText = new Two.Text(
           `${vertexIdx + 1}`,
           x(vertex.x),
-          y(vertex.y - 0.15),
-          x(POINT_RADIUS),
+          y(vertex.y) - uiLength(0.15),
+          uiLength(POINT_RADIUS),
         );
         pointText.id = `obstacle-${shapeIdx}-${vertexIdx}-text`;
-        pointText.size = x(1.55);
+        pointText.size = uiLength(1.55);
         pointText.leading = 1;
         pointText.family = "ui-sans-serif, system-ui, sans-serif";
         pointText.alignment = "center";
@@ -303,10 +308,12 @@
       lineElem.id = `line-${idx + 1}`;
       lineElem.stroke = line.color;
       const isSelected = line.id === currentSelectedId;
-      lineElem.linewidth = isSelected ? x(LINE_WIDTH * 2.5) : x(LINE_WIDTH);
+      lineElem.linewidth = isSelected
+        ? uiLength(LINE_WIDTH * 2.5)
+        : uiLength(LINE_WIDTH);
       lineElem.noFill();
       if (line.locked) {
-        lineElem.dashes = [x(2), x(2)];
+        lineElem.dashes = [uiLength(2), uiLength(2)];
         lineElem.opacity = 0.7;
       } else {
         lineElem.dashes = [];
@@ -364,7 +371,7 @@
         shapeElement.stroke = shape.color;
         shapeElement.fill = shape.color;
         shapeElement.opacity = 0.4;
-        shapeElement.linewidth = x(0.8);
+        shapeElement.linewidth = uiLength(0.8);
         shapeElement.automatic = false;
         _shapes.push(shapeElement);
       }
@@ -426,7 +433,7 @@
         ghostPath.stroke = "#a78bfa";
         ghostPath.fill = "#a78bfa";
         ghostPath.opacity = 0.15;
-        ghostPath.linewidth = x(0.5);
+        ghostPath.linewidth = uiLength(0.5);
         ghostPath.automatic = false;
       }
     }
@@ -488,7 +495,7 @@
         onionRect.stroke = "#818cf8";
         onionRect.noFill();
         onionRect.opacity = 0.35;
-        onionRect.linewidth = x(0.5);
+        onionRect.linewidth = uiLength(0.5);
         onionRect.automatic = false;
         onionLayers.push(onionRect);
       });
@@ -585,9 +592,9 @@
         }
         lineElem.id = `preview-line-${idx + 1}`;
         lineElem.stroke = "#60a5fa";
-        lineElem.linewidth = x(LINE_WIDTH);
+        lineElem.linewidth = uiLength(LINE_WIDTH);
         lineElem.noFill();
-        lineElem.dashes = [x(4), x(4)];
+        lineElem.dashes = [uiLength(4), uiLength(4)];
         lineElem.opacity = 0.7;
         _previewPaths.push(lineElem);
       });
@@ -626,7 +633,7 @@
         const py = y(pos.y);
         let grp = new Two.Group();
         grp.id = `event-${idx}-${evIdx}`;
-        let circle = new Two.Circle(px, py, x(1.8));
+        let circle = new Two.Circle(px, py, uiLength(1.8));
         circle.fill = "#a78bfa";
         circle.noStroke();
         grp.add(circle);
@@ -660,20 +667,20 @@
           const markerCircle = new Two.Circle(
             x(point.x),
             y(point.y),
-            x(POINT_RADIUS * 1.3),
+            uiLength(POINT_RADIUS * 1.3),
           );
           markerCircle.id = `wait-event-circle-${ev.waitId}-${eventIdx}`;
           const waitSelected = $selectedPointId === `wait-${ev.waitId}`;
           if (waitSelected) {
             markerCircle.fill = "#f97316";
             markerCircle.stroke = "#fffbeb";
-            markerCircle.linewidth = x(0.6);
+            markerCircle.linewidth = uiLength(0.6);
           } else {
             markerCircle.fill = "#8b5cf6";
             markerCircle.stroke = "#ffffff";
-            markerCircle.linewidth = x(0.3);
+            markerCircle.linewidth = uiLength(0.3);
           }
-          const flagSize = x(1);
+          const flagSize = uiLength(1);
           const flagPoints = [
             new Two.Anchor(x(point.x), y(point.y) - flagSize / 2),
             new Two.Anchor(x(point.x) + flagSize / 2, y(point.y)),
@@ -697,12 +704,12 @@
     if (markers && markers.length > 0) {
       markers.forEach((marker, idx) => {
         const group = new Two.Group();
-        const circle = new Two.Circle(x(marker.x), y(marker.y), x(2));
+        const circle = new Two.Circle(x(marker.x), y(marker.y), uiLength(2));
         circle.fill = "rgba(239, 68, 68, 0.5)"; // Red-500 with opacity
         circle.stroke = "#ef4444";
-        circle.linewidth = x(0.5);
+        circle.linewidth = uiLength(0.5);
 
-        const crossLength = x(1.5);
+        const crossLength = uiLength(1.5);
         const l1 = new Two.Line(
           x(marker.x) - crossLength,
           y(marker.y) - crossLength,
@@ -710,7 +717,7 @@
           y(marker.y) + crossLength,
         );
         l1.stroke = "#ffffff";
-        l1.linewidth = x(0.5);
+        l1.linewidth = uiLength(0.5);
 
         const l2 = new Two.Line(
           x(marker.x) + crossLength,
@@ -719,7 +726,7 @@
           y(marker.y) + crossLength,
         );
         l2.stroke = "#ffffff";
-        l2.linewidth = x(0.5);
+        l2.linewidth = uiLength(0.5);
 
         group.add(circle, l1, l2);
         elems.push(group);
@@ -1152,7 +1159,7 @@ left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}
 
   <!-- Zoom Controls -->
   <div
-    class="absolute top-2 right-2 flex flex-col gap-1 z-30 bg-white/80 dark:bg-neutral-800/80 p-1 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm"
+    class="absolute bottom-2 right-2 flex flex-col gap-1 z-30 bg-white/80 dark:bg-neutral-800/80 p-1 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm"
   >
     <button
       class="w-7 h-7 flex items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 transition-colors"
