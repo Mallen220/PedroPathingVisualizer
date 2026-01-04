@@ -15,6 +15,8 @@
     selectedPointId,
   } from "../../stores";
   import { slide } from "svelte/transition";
+  import { getRandomColor } from "../../utils";
+  import _ from "lodash";
 
   export let startPoint: Point;
   export let lines: Line[];
@@ -23,7 +25,10 @@
   import { tick } from "svelte";
   import ObstaclesSection from "./ObstaclesSection.svelte";
   import TrashIcon from "./icons/TrashIcon.svelte";
+  import DuplicateIcon from "./icons/DuplicateIcon.svelte";
+  import WaitIcon from "./icons/WaitIcon.svelte";
   import ColorPicker from "./ColorPicker.svelte";
+  import ContextMenu from "./ContextMenu.svelte";
 
   export let recordChange: () => void;
   // Handler passed from parent to toggle optimization dialog
@@ -458,9 +463,212 @@
         console.error("Failed to copy table: ", err);
       });
   }
+
+  // --- Context Menu Logic ---
+  let contextMenu = {
+    visible: false,
+    x: 0,
+    y: 0,
+    seqIndex: -1,
+    item: null as SequenceItem | null,
+    title: "",
+  };
+
+  function handleRowContextMenu(
+    e: MouseEvent,
+    seqIndex: number,
+    item: SequenceItem,
+    displayName: string,
+  ) {
+    if (seqIndex === -1) return; // Ignore start point
+    e.preventDefault();
+    contextMenu = {
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      seqIndex,
+      item,
+      title: displayName || "Item",
+    };
+  }
+
+  function closeContextMenu() {
+    contextMenu.visible = false;
+  }
+
+  function handleContextMenuSelect(event: CustomEvent<{ action: string }>) {
+    const { action } = event.detail;
+    closeContextMenu();
+
+    const { seqIndex, item } = contextMenu;
+    if (seqIndex === -1 || !item) return;
+
+    switch (action) {
+      case "duplicate":
+        duplicateItem(seqIndex, item);
+        break;
+      case "delete":
+        if (item.kind === "path" && "lineId" in item) {
+          deleteLine(item.lineId);
+        } else if (item.kind === "wait") {
+          deleteWait(seqIndex);
+        }
+        break;
+      case "insert_wait_after":
+        insertWaitAfter(seqIndex);
+        break;
+    }
+  }
+
+  // Helper to generate unique name (copied from KeyboardShortcuts)
+  const generateName = (baseName: string, existingNames: string[]) => {
+    const match = baseName.match(/^(.*?) duplicate(?: (\d+))?$/);
+    let rootName = baseName;
+    let startNum = 1;
+
+    if (match) {
+      rootName = match[1];
+      startNum = match[2] ? parseInt(match[2], 10) : 1;
+      startNum++;
+    }
+
+    let candidate = "";
+    let i = startNum;
+    while (i < 1000) {
+      if (i === 1) {
+        candidate = rootName + " duplicate";
+      } else {
+        candidate = rootName + " duplicate " + i;
+      }
+      if (!existingNames.includes(candidate)) {
+        return candidate;
+      }
+      i++;
+    }
+    return rootName + " duplicate " + Date.now();
+  };
+
+  function duplicateItem(seqIndex: number, item: SequenceItem) {
+    if (item.kind === "wait") {
+      const waitItem = item as any;
+      const newWait = structuredClone(waitItem);
+      newWait.id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      const existingWaitNames = sequence
+        .filter((s) => s.kind === "wait")
+        .map((s) => (s as any).name || "");
+      newWait.name = generateName(waitItem.name || "Wait", existingWaitNames);
+
+      // Insert after current item
+      sequence.splice(seqIndex + 1, 0, newWait);
+      sequence = [...sequence];
+      recordChange();
+      selectedPointId.set(`wait-${newWait.id}`);
+    } else if (item.kind === "path") {
+      const lineId = (item as any).lineId;
+      const lineIndex = lines.findIndex((l) => l.id === lineId);
+      if (lineIndex === -1) return;
+      const originalLine = lines[lineIndex];
+
+      // Calculate relative offset
+      let prevPoint: { x: number; y: number } = startPoint;
+      // We need to find the point before the *original* line.
+      // Since lines array is ordered by sequence (mostly), lineIndex-1 should be the previous line.
+      if (lineIndex > 0) {
+        prevPoint = lines[lineIndex - 1].endPoint;
+      }
+
+      const deltaX = originalLine.endPoint.x - prevPoint.x;
+      const deltaY = originalLine.endPoint.y - prevPoint.y;
+
+      const newLine = structuredClone(originalLine);
+      newLine.id = `line-${Math.random().toString(36).slice(2)}`;
+
+      const existingLineNames = lines.map((l) => l.name || "");
+      newLine.name = generateName(
+        originalLine.name || `Path ${lineIndex + 1}`,
+        existingLineNames,
+      );
+
+      // Apply offset
+      newLine.endPoint.x += deltaX;
+      newLine.endPoint.y += deltaY;
+      newLine.controlPoints.forEach((cp) => {
+        cp.x += deltaX;
+        cp.y += deltaY;
+      });
+
+      // Insert line into lines array after original line
+      lines.splice(lineIndex + 1, 0, newLine);
+      lines = lines;
+
+      // Insert into sequence after current item
+      sequence.splice(seqIndex + 1, 0, { kind: "path", lineId: newLine.id! });
+      sequence = [...sequence];
+
+      // Update lines again to renumber default names if needed (though we set a name above)
+      // Actually syncLinesToSequence might change order if we don't handle it carefully.
+      // But here we inserted into both lines and sequence consistent, so it should be fine.
+
+      // Renumber default names logic
+      const renamed = lines.map((l, idx) => {
+          if (/^Path \d+$/.test(l.name)) return { ...l, name: `Path ${idx + 1}` };
+          return l;
+      });
+      lines = renamed;
+
+      recordChange();
+      selectedLineId.set(newLine.id!);
+      selectedPointId.set(`point-${lines.findIndex(l => l.id === newLine.id) + 1}-0`);
+    }
+  }
+
+  function insertWaitAfter(seqIndex: number) {
+    const wait: SequenceItem = {
+      kind: "wait",
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      name: "Wait",
+      durationMs: 1000,
+      locked: false,
+    };
+    sequence.splice(seqIndex + 1, 0, wait);
+    sequence = [...sequence];
+    recordChange();
+    selectedPointId.set(`wait-${wait.id}`);
+  }
 </script>
 
 <svelte:window on:dragover={handleWindowDragOver} on:drop={handleWindowDrop} />
+
+{#if contextMenu.visible}
+  <ContextMenu
+    x={contextMenu.x}
+    y={contextMenu.y}
+    title={contextMenu.title}
+    items={[
+      {
+        label: "Duplicate",
+        action: "duplicate",
+        icon: DuplicateIcon,
+        disabled: contextMenu.item?.locked,
+      },
+      {
+        label: "Add Wait After",
+        action: "insert_wait_after",
+        icon: WaitIcon,
+      },
+      {
+        label: "Delete",
+        action: "delete",
+        icon: TrashIcon,
+        disabled: contextMenu.item?.locked,
+        danger: true,
+        separator: true,
+      },
+    ]}
+    on:close={closeContextMenu}
+    on:select={handleContextMenuSelect}
+  />
+{/if}
 
 <div class="w-full flex flex-col gap-4 text-sm p-1">
   <div class="flex justify-between items-center">
@@ -683,6 +891,13 @@
                 draggable={!line.locked}
                 on:dragstart={(e) => handleDragStart(e, seqIndex)}
                 on:dragend={handleDragEnd}
+                on:contextmenu={(e) =>
+                  handleRowContextMenu(
+                    e,
+                    seqIndex,
+                    item,
+                    line.name || `Path ${lineIdx + 1}`,
+                  )}
                 class={`hover:bg-neutral-50 dark:hover:bg-neutral-800/50 font-medium ${$selectedLineId === line.id ? "bg-green-50 dark:bg-green-900/20" : ""} ${$selectedPointId === endPointId ? "bg-green-100 dark:bg-green-800/40" : ""} transition-colors duration-150`}
                 class:border-t-2={dragOverIndex === seqIndex &&
                   dragPosition === "top"}
@@ -902,6 +1117,8 @@
               draggable={!item.locked}
               on:dragstart={(e) => handleDragStart(e, seqIndex)}
               on:dragend={handleDragEnd}
+              on:contextmenu={(e) =>
+                handleRowContextMenu(e, seqIndex, item, item.name || "Wait")}
               class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 bg-amber-50 dark:bg-amber-900/20 transition-colors duration-150"
               class:border-t-2={dragOverIndex === seqIndex &&
                 dragPosition === "top"}
