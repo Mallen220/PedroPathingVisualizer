@@ -2,8 +2,8 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { scale } from "svelte/transition";
-  import type { ExportGifOptions } from "../../utils/exportGif";
   import { exportPathToGif } from "../../utils/exportGif";
+  import { exportPathToApng } from "../../utils/exportApng";
 
   export let show = false;
   export let twoInstance: any;
@@ -20,6 +20,7 @@
 
   const dispatch = createEventDispatcher();
 
+  let format: "gif" | "apng" = "gif";
   let fps = 15;
   let resolutionScale = 0.5; // Default 50%
   let quality = 10; // 1-30, default 10 (good balance)
@@ -51,7 +52,7 @@
     previewUrl = null;
 
     try {
-      const blob = await exportPathToGif({
+      const options = {
         two: twoInstance,
         animationController,
         durationSec: animationController.getDuration(),
@@ -65,14 +66,20 @@
         robotLengthPx: robotLengthPx,
         robotWidthPx: robotWidthPx,
         getRobotState: robotStateFunction,
-        onProgress: (p) => {
+        onProgress: (p: number) => {
           progress = p;
           if (p < 0.5)
             statusMessage = `Capturing frames... ${Math.round(p * 200)}%`;
-          else
-            statusMessage = `Encoding GIF... ${Math.round((p - 0.5) * 200)}%`;
+          else statusMessage = `Encoding... ${Math.round((p - 0.5) * 200)}%`;
         },
-      });
+      };
+
+      let blob: Blob;
+      if (format === "apng") {
+        blob = await exportPathToApng(options);
+      } else {
+        blob = await exportPathToGif(options);
+      }
 
       previewBlob = blob;
       previewUrl = URL.createObjectURL(blob);
@@ -85,12 +92,16 @@
     }
   }
 
-  async function downloadGif() {
+  async function downloadAnimation() {
     if (!previewBlob) {
       await generatePreview();
     }
 
     if (!previewBlob) return;
+
+    const ext = format === "apng" ? "png" : "gif";
+    const defaultFilename = `path.${ext}`;
+    const filterName = format === "apng" ? "PNG Image" : "GIF Image";
 
     if (
       electronAPI &&
@@ -98,8 +109,8 @@
       electronAPI.writeFileBase64
     ) {
       const dest = await electronAPI.showSaveDialog({
-        defaultPath: "path.gif",
-        filters: [{ name: "GIF", extensions: ["gif"] }],
+        defaultPath: defaultFilename,
+        filters: [{ name: filterName, extensions: [ext] }],
       });
       if (dest) {
         const reader = new FileReader();
@@ -115,7 +126,7 @@
     } else {
       const a = document.createElement("a");
       a.href = previewUrl!;
-      a.download = "path.gif";
+      a.download = defaultFilename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -146,7 +157,7 @@
         <h2
           class="text-xl font-semibold text-neutral-800 dark:text-neutral-100"
         >
-          Export GIF
+          Export Animation
         </h2>
         <button
           class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
@@ -173,7 +184,46 @@
       <!-- Content -->
       <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
         <!-- Controls Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Format Selection -->
+          <div class="flex flex-col gap-2">
+            <label
+              for="anim-format"
+              class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            >
+              Format
+            </label>
+            <div class="flex rounded-md shadow-sm" role="group">
+              <button
+                type="button"
+                class="px-4 py-2 text-sm font-medium border border-neutral-300 dark:border-neutral-600 rounded-l-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:z-10 focus:ring-2 focus:ring-purple-500 focus:text-purple-600 dark:focus:text-white transition-colors {format ===
+                'gif'
+                  ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-100'
+                  : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white'}"
+                on:click={() => (format = "gif")}
+                disabled={status === "generating"}
+              >
+                GIF
+              </button>
+              <button
+                type="button"
+                class="px-4 py-2 text-sm font-medium border-t border-b border-r border-neutral-300 dark:border-neutral-600 rounded-r-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:z-10 focus:ring-2 focus:ring-purple-500 focus:text-purple-600 dark:focus:text-white transition-colors {format ===
+                'apng'
+                  ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-100'
+                  : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white'}"
+                on:click={() => (format = "apng")}
+                disabled={status === "generating"}
+              >
+                APNG
+              </button>
+            </div>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">
+              {format === "gif"
+                ? "Widely supported, larger file size."
+                : "Better quality, transparency support, smaller size."}
+            </p>
+          </div>
+
           <!-- FPS Control -->
           <div class="flex flex-col gap-2">
             <label
@@ -291,7 +341,7 @@
           {#if previewUrl}
             <img
               src={previewUrl}
-              alt="GIF Preview"
+              alt="Animation Preview"
               class="max-w-full max-h-[40vh] object-contain shadow-sm"
             />
           {:else}
@@ -340,7 +390,7 @@
 
         <button
           class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          on:click={downloadGif}
+          on:click={downloadAnimation}
           disabled={status === "generating" || !previewUrl}
         >
           Download / Save
