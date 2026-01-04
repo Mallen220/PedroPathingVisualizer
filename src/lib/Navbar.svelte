@@ -222,7 +222,7 @@
   bind:lines
   bind:sequence
   bind:shapes
-  bind:settings
+  settings={settings}
 />
 
 <SettingsDialog bind:isOpen={$showSettings} bind:settings />

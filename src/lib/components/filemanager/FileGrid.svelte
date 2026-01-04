@@ -285,9 +285,11 @@
     return result;
   }
 
-  async function focusInput(node: HTMLInputElement) {
-    await tick();
-    node.select();
+  function focusInput(node: HTMLInputElement): { destroy: () => void } {
+    tick().then(() => node.select());
+    return {
+        destroy: () => {}
+    };
   }
   // When files change, proactively load previews for recently modified files (e.g., today)
   $: if (files && files.length) {
@@ -388,7 +390,7 @@
           <div class="mb-2 relative">
             {#if previews[file.path]?.startPoint}
               <PathPreview
-                startPoint={previews[file.path]?.startPoint}
+                startPoint={previews[file.path]?.startPoint || { x: 0, y: 0, heading: 'tangential', reverse: false }}
                 lines={previews[file.path]?.lines ?? []}
                 fieldImage={fieldImage ? `/fields/${fieldImage}` : null}
                 width={80}

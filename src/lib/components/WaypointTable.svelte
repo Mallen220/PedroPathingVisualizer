@@ -191,7 +191,7 @@
           .map((s) => (s as any).lineId),
       );
       lines.forEach((l) => {
-        if (!pathIds.has(l.id)) {
+        if (l.id && !pathIds.has(l.id)) {
           seqCopy.push({ kind: "path", lineId: l.id });
         }
       });
@@ -339,7 +339,7 @@
       );
       sequence = [
         ...sequence,
-        ...missing.map((l) => ({ kind: "path", lineId: l.id })),
+        ...missing.map((l) => ({ kind: "path", lineId: l.id || "" } as SequenceItem)),
       ];
       repairedOnce = true;
       if (recordChange) recordChange();
@@ -384,7 +384,7 @@
   function deleteWait(index: number) {
     const item = sequence[index];
     if (!item) return;
-    if (item.locked) return;
+    if (item.kind === "wait" && item.locked) return;
 
     sequence.splice(index, 1);
     sequence = [...sequence];
@@ -592,7 +592,7 @@
       newItem.locked = false; // unlock duplicate?
       newItem.name = generateName(
         item.name || "Wait",
-        sequence.map((s) => s.name || ""),
+        sequence.map((s) => (s.kind === "wait" ? s.name : "") || ""),
       );
 
       const newSeq = [...sequence];
@@ -607,7 +607,7 @@
         const newLine = structuredClone(line);
         newLine.id = makeId();
         newLine.locked = false;
-        newLine.name = generateName(line.name || "Path", lines.map(l => l.name));
+        newLine.name = generateName(line.name || "Path", lines.map(l => l.name || ""));
 
         // Offset the new line slightly or keep it same?
         // Usually duplicate implies same properties.
@@ -693,7 +693,7 @@
     };
 
     // Check naming
-    newWait.name = generateName("Wait", sequence.map(s => s.name || ""));
+    newWait.name = generateName("Wait", sequence.map(s => (s.kind === "wait" ? s.name : "") || ""));
 
     const newSeq = [...sequence];
     newSeq.splice(index, 0, newWait);
@@ -890,10 +890,9 @@
         bind:optimizedLines={optOptimizedLines}
         bind:optimizationFailed={optFailed}
         isOpen={true}
-        useModal={false}
         {startPoint}
         {lines}
-        {settings}
+        settings={settings}
         {sequence}
         {shapes}
         onApply={handleOptimizationApply}

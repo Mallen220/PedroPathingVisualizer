@@ -12,7 +12,7 @@
   export let isOpen = false;
   export let startPoint: Point;
   export let lines: Line[];
-  export let settings: Settings;
+  export let settings: Settings | undefined = undefined;
   export let sequence: SequenceItem[];
   export let shapes: Shape[] = [];
   export let onApply: (newLines: Line[]) => void;
@@ -39,15 +39,27 @@
     optimizationFailed = false;
     isStopping = false;
 
-    optimizer = new PathOptimizer(
-      startPoint,
-      lines,
-      settings,
-      sequence,
-      shapes,
-    );
+    if (settings) {
+        optimizer = new PathOptimizer(
+            startPoint,
+            lines,
+            settings,
+            sequence,
+            shapes,
+        );
+    } else {
+        logs = [...logs, "Error: Settings not loaded."];
+        isRunning = false;
+        return;
+    }
 
     logs = [...logs, "Initializing population..."];
+
+    if (!optimizer) {
+         logs = [...logs, "Error: Optimizer initialization failed."];
+         isRunning = false;
+         return;
+    }
 
     const optimizationResult = await optimizer.optimize(
       (result: OptimizationResult) => {
