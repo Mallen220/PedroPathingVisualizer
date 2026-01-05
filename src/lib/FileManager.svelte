@@ -38,6 +38,8 @@
     currentFilePath,
     isUnsaved,
     fileManagerSessionState,
+    fileManagerOpen,
+    fileManagerCreatingNew,
   } from "../stores";
   import { saveAutoPathsDirectory } from "../utils/directorySettings";
 
@@ -46,7 +48,6 @@
   import FileList from "./components/filemanager/FileList.svelte";
   import FileGrid from "./components/filemanager/FileGrid.svelte";
 
-  export let isOpen = false;
   export let startPoint: Point;
   export let lines: Line[];
   export let shapes: Shape[];
@@ -103,6 +104,13 @@
   $: if (creatingNewFile) {
     // Focus the input after it renders
     tick().then(() => newFileInput?.focus());
+  }
+
+  // Check for creating new file request from store
+  $: if ($fileManagerCreatingNew) {
+    creatingNewFile = true;
+    // Reset the store immediately so it doesn't persist
+    fileManagerCreatingNew.set(false);
   }
 
   function startResize(e: MouseEvent) {
@@ -608,18 +616,18 @@
   };
 </script>
 
-<div class="fixed inset-0 z-[1010] flex" class:pointer-events-none={!isOpen}>
+<div class="fixed inset-0 z-[1010] flex" class:pointer-events-none={!$fileManagerOpen}>
   <!-- Backdrop -->
-  {#if isOpen}
+  {#if $fileManagerOpen}
     <div
       transition:fade={{ duration: 200 }}
       class="fixed inset-0 bg-black/50 backdrop-blur-sm"
-      on:click={() => (isOpen = false)}
+      on:click={() => fileManagerOpen.set(false)}
       role="button"
       tabindex="0"
       aria-label="Close file manager"
       on:keydown={(e) => {
-        if (e.key === "Escape") isOpen = false;
+        if (e.key === "Escape") fileManagerOpen.set(false);
       }}
     />
   {/if}
@@ -627,9 +635,9 @@
   <!-- Sidebar -->
   <div
     class="relative flex flex-col h-full bg-white dark:bg-neutral-900 shadow-2xl transform transition-transform duration-300 ease-in-out border-r border-neutral-200 dark:border-neutral-800"
-    style="width: {isOpen ? sidebarWidth : 384}px"
-    class:translate-x-0={isOpen}
-    class:-translate-x-full={!isOpen}
+    style="width: {$fileManagerOpen ? sidebarWidth : 384}px"
+    class:translate-x-0={$fileManagerOpen}
+    class:-translate-x-full={!$fileManagerOpen}
   >
     <!-- Resizer Handle -->
     <button
@@ -663,7 +671,7 @@
         Files
       </h2>
       <button
-        on:click={() => (isOpen = false)}
+        on:click={() => fileManagerOpen.set(false)}
         class="p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
         aria-label="Close"
       >

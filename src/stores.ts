@@ -36,6 +36,10 @@ export const collisionMarkers = writable<CollisionMarker[]>([]);
 // Notification system
 export const notification = writable<Notification | null>(null);
 
+// File Manager State
+export const fileManagerOpen = writable(false);
+export const fileManagerCreatingNew = writable(false);
+
 // File Manager Session State
 export const fileManagerSessionState = writable<{
   searchQuery: string;

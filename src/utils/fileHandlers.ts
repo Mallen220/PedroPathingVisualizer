@@ -1,6 +1,11 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import { get } from "svelte/store";
-import { currentFilePath, isUnsaved } from "../stores";
+import {
+  currentFilePath,
+  isUnsaved,
+  fileManagerOpen,
+  fileManagerCreatingNew,
+} from "../stores";
 import {
   startPointStore,
   linesStore,
@@ -24,10 +29,14 @@ interface ExtendedElectronAPI {
   readFile?: (filePath: string) => Promise<string>;
   onMenuAction?: (callback: (action: string) => void) => void;
   copyFile?: (src: string, dest: string) => Promise<boolean>;
+  exportPP?: (content: string, defaultName: string) => Promise<string>;
 }
-const electronAPI = (window as any).electronAPI as
-  | ExtendedElectronAPI
-  | undefined;
+
+function getElectronAPI(): ExtendedElectronAPI | undefined {
+  // Console log to debug test failure
+  // console.log("getElectronAPI called, window.electronAPI is:", (window as any).electronAPI);
+  return (window as any).electronAPI;
+}
 
 function addToRecentFiles(path: string) {
   const settings = get(settingsStore);
@@ -46,6 +55,7 @@ function addToRecentFiles(path: string) {
 }
 
 export async function loadRecentFile(path: string) {
+  const electronAPI = getElectronAPI();
   if (!electronAPI || !electronAPI.readFile) {
     alert("Cannot load files in this environment");
     return;
@@ -76,6 +86,8 @@ export async function loadRecentFile(path: string) {
 
 export async function saveProject() {
   const path = get(currentFilePath);
+  const electronAPI = getElectronAPI();
+
   if (path && electronAPI) {
     try {
       const jsonString = JSON.stringify(
@@ -97,11 +109,26 @@ export async function saveProject() {
       alert("Failed to save file.");
     }
   } else {
-    saveFileAs();
+    // If not saved, open file manager in creation mode if in Electron
+    if (electronAPI) {
+      fileManagerCreatingNew.set(true);
+      fileManagerOpen.set(true);
+    } else {
+      saveFileAs();
+    }
   }
 }
 
 export function saveFileAs() {
+  const electronAPI = getElectronAPI();
+  // If in Electron, open file manager in creation mode
+  if (electronAPI) {
+    fileManagerCreatingNew.set(true);
+    fileManagerOpen.set(true);
+    return;
+  }
+
+  // Browser fallback
   const filePath = get(currentFilePath);
   // Extract just the filename without the path and .pp extension
   let filename = "trajectory";
@@ -119,6 +146,7 @@ export function saveFileAs() {
   );
 }
 export async function exportAsPP() {
+  const electronAPI = getElectronAPI();
   const filePath = get(currentFilePath);
   // Extract just the filename without the path and .pp extension
   let filename = "trajectory";
@@ -141,9 +169,9 @@ export async function exportAsPP() {
 
   if (electronAPI) {
     // Prefer the exported convenience method if available
-    if ((electronAPI as any).exportPP) {
+    if (electronAPI.exportPP) {
       try {
-        const exportedPath = await (electronAPI as any).exportPP(
+        const exportedPath = await electronAPI.exportPP(
           jsonString,
           defaultName,
         );
@@ -178,6 +206,7 @@ export async function exportAsPP() {
   );
 }
 export async function handleExternalFileOpen(filePath: string) {
+  const electronAPI = getElectronAPI();
   if (!electronAPI || !electronAPI.readFile) return;
 
   try {
@@ -276,6 +305,7 @@ export async function handleExternalFileOpen(filePath: string) {
 }
 
 export async function loadFile(evt: Event) {
+  const electronAPI = getElectronAPI();
   const elem = evt.target as HTMLInputElement;
   const file = elem.files?.[0];
   if (!file) return;
