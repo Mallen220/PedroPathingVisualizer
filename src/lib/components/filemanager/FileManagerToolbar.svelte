@@ -14,12 +14,21 @@
     "sort-change": "name" | "date";
     "view-change": "list" | "grid";
     search: string;
+    "import-file": File;
   }>();
 
   function handleSearch(e: Event) {
     const target = e.target as HTMLInputElement;
     searchQuery = target.value;
     dispatch("search", searchQuery);
+  }
+
+  function handleFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      dispatch("import-file", input.files[0]);
+      input.value = "";
+    }
   }
 </script>
 
@@ -140,6 +149,33 @@
   <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700 mx-1"></div>
 
   <!-- Actions -->
+  <label
+    class="p-1.5 text-neutral-500 hover:text-purple-600 dark:text-neutral-400 dark:hover:text-purple-400 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+    title="Import File"
+    aria-label="Import File"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width="2"
+      stroke="currentColor"
+      class="size-5"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+      />
+    </svg>
+    <input
+      type="file"
+      accept=".pp"
+      class="hidden"
+      on:change={handleFileSelect}
+    />
+  </label>
+
   <button
     on:click={() => dispatch("new-file")}
     class="p-1.5 text-neutral-500 hover:text-green-600 dark:text-neutral-400 dark:hover:text-green-400 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"

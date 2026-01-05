@@ -461,6 +461,64 @@
     }
   }
 
+  async function handleImportFile(e: CustomEvent<File>) {
+    const file = e.detail;
+    if (!file) return;
+
+    if ($isUnsaved) {
+      if (
+        !confirm(
+          "You have unsaved changes. Importing a new file will discard them. Continue?",
+        )
+      ) {
+        return;
+      }
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const content = evt.target?.result as string;
+      if (!content) return;
+
+      try {
+        JSON.parse(content);
+      } catch (err) {
+        showToast("Invalid project file", "error");
+        return;
+      }
+
+      const destPath = path.join(currentDirectory, file.name);
+
+      if (await electronAPI.fileExists(destPath)) {
+        if (!confirm(`File "${file.name}" already exists. Overwrite?`)) {
+          return;
+        }
+      }
+
+      try {
+        await electronAPI.writeFile(destPath, content);
+        await refreshDirectory();
+
+        const fileInfo = files.find((f) => f.name === file.name);
+        if (fileInfo) {
+          await loadFile(fileInfo);
+        } else {
+          // Fallback manual load if refresh didn't pick it up yet for some reason
+          await loadFile({
+            name: file.name,
+            path: destPath,
+            isDirectory: false,
+            modified: new Date().toISOString(),
+            size: content.length,
+          });
+        }
+      } catch (err) {
+        showToast("Failed to import: " + getErrorMessage(err), "error");
+      }
+    };
+    reader.readAsText(file);
+  }
+
   async function duplicateFile(file: FileInfo, mirror = false) {
     try {
       const content = await electronAPI.readFile(file.path);
@@ -712,6 +770,7 @@
       on:refresh={handleRefresh}
       on:change-dir={changeDirectoryDialog}
       on:new-file={() => (creatingNewFile = true)}
+      on:import-file={handleImportFile}
     />
 
     <!-- Breadcrumbs -->
