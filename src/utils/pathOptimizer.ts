@@ -13,7 +13,13 @@ import type {
 } from "../types";
 import { calculatePathTime } from "./timeCalculator";
 import { FIELD_SIZE } from "../config";
-import { pointInPolygon, getRobotCorners } from "./geometry";
+import {
+  pointInPolygon,
+  getRobotCorners,
+  getBoundingBox,
+  doBoxesIntersect,
+  type BoundingBox,
+} from "./geometry";
 import {
   getCurvePoint,
   easeInOutQuad,
@@ -25,6 +31,11 @@ export interface OptimizationResult {
   generation: number;
   bestTime: number;
   bestLines: Line[];
+}
+
+interface OptimizedShape {
+  shape: Shape;
+  bbox: BoundingBox;
 }
 
 export class PathOptimizer {
@@ -39,7 +50,7 @@ export class PathOptimizer {
   private settings: Settings;
   private sequence: SequenceItem[];
   private shapes: Shape[];
-  private activeShapes: Shape[];
+  private activeShapes: OptimizedShape[];
 
   constructor(
     startPoint: Point,
@@ -53,7 +64,15 @@ export class PathOptimizer {
     this.settings = settings;
     this.sequence = sequence;
     this.shapes = shapes;
-    this.activeShapes = this.shapes.filter((s) => s.vertices.length >= 3);
+
+    // Filter active shapes and pre-calculate bounding boxes
+    this.activeShapes = this.shapes
+      .filter((s) => s.vertices.length >= 3)
+      .map((s) => ({
+        shape: s,
+        bbox: getBoundingBox(s.vertices),
+      }));
+
     // Use settings values if provided, else defaults
     this.generations = settings.optimizationIterations ?? 100;
     this.populationSize = settings.optimizationPopulationSize ?? 50;
@@ -306,10 +325,16 @@ export class PathOptimizer {
       }
 
       const corners = getRobotCorners(x, y, heading, rLength, rWidth);
+      const robotBox = getBoundingBox(corners);
 
       let isColliding = false;
-      for (const shape of this.activeShapes) {
-        // Check if any robot corner is in shape
+      for (const { shape, bbox } of this.activeShapes) {
+        // Fast bounding box check
+        if (!doBoxesIntersect(robotBox, bbox)) {
+          continue;
+        }
+
+        // Detailed check: Check if any robot corner is in shape
         for (const corner of corners) {
           if (pointInPolygon([corner.x, corner.y], shape.vertices)) {
             isColliding = true;
@@ -318,7 +343,7 @@ export class PathOptimizer {
         }
         if (isColliding) break;
 
-        // Also check if any shape vertex is inside the robot
+        // Detailed check: Also check if any shape vertex is inside the robot
         for (const v of shape.vertices) {
           if (pointInPolygon([v.x, v.y], corners)) {
             isColliding = true;

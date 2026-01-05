@@ -4,6 +4,13 @@
  */
 import type { BasePoint } from "../types";
 
+export interface BoundingBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
 /**
  * Determines if a point is inside a polygon using ray casting algorithm
  */
@@ -216,4 +223,32 @@ export function convexHull(points: BasePoint[]): BasePoint[] {
   }
 
   return hull;
+}
+
+/**
+ * Calculate the axis-aligned bounding box for a set of points
+ */
+export function getBoundingBox(points: BasePoint[]): BoundingBox {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+
+  return { minX, minY, maxX, maxY };
+}
+
+/**
+ * Check if two axis-aligned bounding boxes intersect
+ */
+export function doBoxesIntersect(a: BoundingBox, b: BoundingBox): boolean {
+  return (
+    a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY
+  );
 }
