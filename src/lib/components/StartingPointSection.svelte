@@ -89,6 +89,7 @@
       <button
         on:click={addPathAtStart}
         class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
+        title="Add a new path segment at the start"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -109,6 +110,7 @@
       <button
         on:click={addWaitAtStart}
         class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 dark:bg-amber-600 rounded-md shadow-sm hover:bg-amber-600 dark:hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500"
+        title="Add a wait command at the start"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

@@ -204,6 +204,7 @@
       role="button"
       tabindex="0"
       aria-label="Ruler start point"
+      title="Ruler start point"
       on:mousedown={(e) => handleMouseDown(e, "ruler-start")}
     />
 
@@ -217,6 +218,7 @@
       role="button"
       tabindex="0"
       aria-label="Ruler end point"
+      title="Ruler end point"
       on:mousedown={(e) => handleMouseDown(e, "ruler-end")}
     />
 
@@ -320,6 +322,7 @@
           role="button"
           tabindex="0"
           aria-label="Drag to rotate radius line"
+          title="Drag to rotate radius line"
           on:mousedown={(e) => handleMouseDown(e, "protractor-rotate")}
         />
         <text
@@ -353,6 +356,7 @@
           role="button"
           tabindex="0"
           aria-label="Drag to resize protractor"
+          title="Drag to resize protractor"
           on:mousedown={(e) => handleMouseDown(e, "protractor-resize")}
         />
         <text
@@ -379,6 +383,9 @@
         role="button"
         tabindex="0"
         aria-label={$protractorLockToRobot
+          ? "Click to unlock from robot"
+          : "Drag to move protractor"}
+        title={$protractorLockToRobot
           ? "Click to unlock from robot"
           : "Drag to move protractor"}
         on:mousedown={(e) => {

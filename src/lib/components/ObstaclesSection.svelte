@@ -195,6 +195,7 @@
       collapsedObstacles = [...collapsedObstacles, true];
     }}
     class="font-semibold text-red-500 text-sm flex flex-row justify-start items-center gap-1 mt-2"
+    title="Add a new obstacle shape to the field"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -866,6 +866,7 @@
           ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
           : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
         on:click={() => (activeTab = "path")}
+        title="Switch to Paths view"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -897,6 +898,7 @@
           ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
           : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
         on:click={() => (activeTab = "field")}
+        title="Switch to Field & Tools view"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -937,6 +939,7 @@
           ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
           : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
         on:click={() => (activeTab = "table")}
+        title="Switch to Table view"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -1186,6 +1189,7 @@
             on:click={addLine}
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
             aria-label="Add new path segment"
+            title="Add a new path segment to the end of the sequence"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1208,6 +1212,7 @@
             on:click={addWait}
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 dark:bg-amber-600 rounded-md shadow-sm hover:bg-amber-600 dark:hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500"
             aria-label="Add wait command"
+            title="Add a wait command to the end of the sequence"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

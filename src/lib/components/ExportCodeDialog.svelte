@@ -355,6 +355,7 @@
                 disabled={searchMatches.length === 0}
                 class="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 disabled:opacity-30"
                 aria-label="Previous match"
+                title="Previous match (Shift+Enter)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -376,6 +377,7 @@
                 disabled={searchMatches.length === 0}
                 class="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 disabled:opacity-30"
                 aria-label="Next match"
+                title="Next match (Enter)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -400,6 +402,7 @@
                 }}
                 class="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 rounded text-neutral-500 transition-colors"
                 aria-label="Close search"
+                title="Close search"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -424,6 +427,7 @@
             on:click={() => (isOpen = false)}
             class="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Close export dialog"
+            title="Close"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -492,6 +496,7 @@
                     targetLibrary = "SolversLib";
                     refreshCode();
                   }}
+                  title="Generate code compatible with SolversLib"
                 >
                   SolversLib
                 </button>
@@ -506,6 +511,7 @@
                     targetLibrary = "NextFTC";
                     refreshCode();
                   }}
+                  title="Generate code compatible with NextFTC"
                 >
                   NextFTC
                 </button>
@@ -622,6 +628,7 @@
           <button
             class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500"
             on:click={() => (isOpen = false)}
+            title="Close export dialog"
           >
             Close
           </button>

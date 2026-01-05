@@ -297,6 +297,7 @@
         <button
           on:click={() => (isOpen = false)}
           aria-label="Close settings"
+          title="Close Settings"
           class="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
         >
           <svg
@@ -352,6 +353,7 @@
           <button
             on:click={() => (isShortcutsDialogOpen = true)}
             class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            title="Open Keyboard Shortcuts Editor"
           >
             <div class="flex items-center gap-2">
               <svg
@@ -383,6 +385,7 @@
               (collapsedSections.robot = !collapsedSections.robot)}
             class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             aria-expanded={!collapsedSections.robot}
+            title="Toggle Robot Configuration"
           >
             <div class="flex items-center gap-2">
               <svg
@@ -661,6 +664,7 @@
               (collapsedSections.motion = !collapsedSections.motion)}
             class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             aria-expanded={!collapsedSections.motion}
+            title="Toggle Motion Parameters"
           >
             <div class="flex items-center gap-2">
               <svg
@@ -852,6 +856,7 @@
               (collapsedSections.theme = !collapsedSections.theme)}
             class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             aria-expanded={!collapsedSections.theme}
+            title="Toggle Interface Settings"
           >
             <div class="flex items-center gap-2">
               <svg
@@ -993,6 +998,7 @@
               (collapsedSections.advanced = !collapsedSections.advanced)}
             class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             aria-expanded={!collapsedSections.advanced}
+            title="Toggle Advanced Settings"
           >
             <div class="flex items-center gap-2">
               <svg
@@ -1269,6 +1275,7 @@
               (collapsedSections.credits = !collapsedSections.credits)}
             class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             aria-expanded={!collapsedSections.credits}
+            title="Toggle Credits & Legal"
           >
             <div class="flex items-center gap-2">
               <svg
@@ -1463,6 +1470,7 @@
         <button
           on:click={() => (isOpen = false)}
           class="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
+          title="Close Settings"
         >
           Close
         </button>

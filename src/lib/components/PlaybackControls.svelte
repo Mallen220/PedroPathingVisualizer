@@ -40,7 +40,7 @@
   class="w-full bg-neutral-50 dark:bg-neutral-900 rounded-lg p-3 flex flex-row justify-start items-center gap-3 shadow-lg"
 >
   <button
-    title="Play/Pause"
+    title={playing ? "Pause Animation" : "Play Animation"}
     aria-label={playing ? "Pause animation" : "Play animation"}
     on:click={() => {
       if (playing) {

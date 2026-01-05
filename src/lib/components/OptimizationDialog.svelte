@@ -276,6 +276,7 @@
         on:click={stopOptimization}
         class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
         disabled={isStopping}
+        title="Stop the optimization process"
       >
         {isStopping ? "Stopping..." : "Stop"}
       </button>
@@ -286,6 +287,7 @@
         <button
           on:click={handleClose}
           class="flex-1 px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-200 rounded-md text-sm font-medium transition-colors"
+          title="Discard changes and close"
         >
           Discard
         </button>
@@ -311,6 +313,7 @@
         <button
           on:click={handleApply}
           class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors"
+          title="Apply the optimized path to your project"
         >
           Apply New Path
         </button>
@@ -320,6 +323,7 @@
     <button
       on:click={startOptimization}
       class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
+      title="Start the path optimization process"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
