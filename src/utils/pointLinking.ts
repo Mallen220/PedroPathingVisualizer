@@ -22,6 +22,32 @@ export function updateLinkedLines(
   const name = sourceLine.name;
 
   if (type === "xy") {
+    // Check for locked peers.
+    const group = lines.filter((l) => l.name === name);
+    const lockedLine = group.find((l) => l.locked);
+
+    if (lockedLine) {
+      // Revert changes to match locked line
+      return lines.map((l) => {
+        if (l.name === name) {
+          if (
+            l.endPoint.x !== lockedLine.endPoint.x ||
+            l.endPoint.y !== lockedLine.endPoint.y
+          ) {
+            return {
+              ...l,
+              endPoint: {
+                ...l.endPoint,
+                x: lockedLine.endPoint.x,
+                y: lockedLine.endPoint.y,
+              },
+            };
+          }
+        }
+        return l;
+      });
+    }
+
     // We are moving the source line. Update all others with same name.
     let changed = false;
     const newLines = lines.map((l) => {
@@ -94,6 +120,25 @@ export function updateLinkedWaits(
   if (!sourceWait.name || sourceWait.name.trim() === "") return sequence;
 
   const name = sourceWait.name;
+
+  // Check for locked waits in the group
+  const group = sequence.filter(
+    (s) => s.kind === "wait" && s.name === name,
+  ) as SequenceWaitItem[];
+  const lockedWait = group.find((w) => w.locked);
+
+  if (lockedWait) {
+    // Revert changes to match locked wait
+    return sequence.map((item) => {
+      if (item.kind === "wait" && item.name === name) {
+        if (item.durationMs !== lockedWait.durationMs) {
+          return { ...item, durationMs: lockedWait.durationMs };
+        }
+      }
+      return item;
+    });
+  }
+
   const duration = sourceWait.durationMs;
 
   let changed = false;

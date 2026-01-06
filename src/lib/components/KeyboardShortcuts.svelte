@@ -29,6 +29,7 @@
   import { DEFAULT_KEY_BINDINGS, FIELD_SIZE } from "../../config";
   import { getRandomColor } from "../../utils";
   import { computeZoomStep } from "../zoomHelpers";
+  import { updateLinkedLines } from "../../utils/pointLinking";
   import _ from "lodash";
 
   // Actions
@@ -152,7 +153,7 @@
     const wait: SequenceItem = {
       kind: "wait",
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      name: "Wait",
+      name: "",
       durationMs: 1000,
       locked: false,
     };
@@ -535,7 +536,13 @@
             }
             line.endPoint.x = Number(line.endPoint.x.toFixed(3));
             line.endPoint.y = Number(line.endPoint.y.toFixed(3));
-            linesStore.set(lines);
+            // Handle linking
+            if (line.id) {
+               const updated = updateLinkedLines(lines, line.id, "xy");
+               linesStore.set(updated);
+            } else {
+               linesStore.set(lines);
+            }
             recordChange();
           }
         } else {
