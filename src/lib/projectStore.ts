@@ -15,6 +15,7 @@ import {
   DEFAULT_SETTINGS,
 } from "../config";
 import { getRandomColor } from "../utils";
+import { restoreLinks } from "../utils/pointLinking";
 
 export function normalizeLines(input: Line[]): Line[] {
   return (input || []).map((line) => ({
@@ -139,7 +140,10 @@ export function loadProjectData(data: any) {
   const sanitized = sanitizeSequence(normLines, seqCandidate);
 
   // Renumber default names to match displayed order
-  const renamedLines = renumberDefaultPathNames(normLines);
+  let renamedLines = renumberDefaultPathNames(normLines);
+
+  // Restore links from file metadata
+  renamedLines = restoreLinks(renamedLines);
 
   linesStore.set(renamedLines);
   shapesStore.set(data.shapes || []);

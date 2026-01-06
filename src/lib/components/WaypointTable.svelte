@@ -26,6 +26,11 @@
     renumberDefaultPathNames,
   } from "../../utils/nameGenerator";
   import { getRandomColor } from "../../utils/draw";
+  import {
+    updateLinkedLines,
+    updateLinkedWaits,
+    isLinked,
+  } from "../../utils/pointLinking";
 
   export let startPoint: Point;
   export let lines: Line[];
@@ -106,8 +111,16 @@
     point: Point | ControlPoint,
     field: "x" | "y",
     value: number,
+    // Add optional reference to the line if we are updating an endPoint
+    relatedLineId?: string,
   ) {
     point[field] = value;
+
+    // If we updated an endpoint, handle linking
+    if (relatedLineId) {
+      lines = updateLinkedLines(lines, relatedLineId, "xy");
+    }
+
     // Trigger reactivity for lines/startPoint
     lines = lines;
     startPoint = startPoint;
@@ -118,11 +131,12 @@
     e: Event,
     point: Point | ControlPoint,
     field: "x" | "y",
+    relatedLineId?: string,
   ) {
     const input = e.target as HTMLInputElement;
     const val = parseFloat(input.value);
     if (!isNaN(val)) {
-      updatePoint(point, field, val);
+      updatePoint(point, field, val, relatedLineId);
     }
   }
 
@@ -130,6 +144,8 @@
     const line = lines.find((l) => l.id === lineId);
     if (line) {
       line.name = name;
+      // Handle linking: if new name matches existing group, snap to it
+      lines = updateLinkedLines(lines, lineId, "name");
       lines = lines; // Trigger reactivity
       recordChange();
     }
@@ -138,6 +154,8 @@
   function updateWaitName(item: SequenceItem, name: string) {
     if (item.kind === "wait") {
       item.name = name;
+      // Handle linking: syncs duration if matched
+      sequence = updateLinkedWaits(sequence, item.id);
       sequence = sequence; // Trigger reactivity
       recordChange();
     }
@@ -155,6 +173,8 @@
   function updateWaitDuration(item: SequenceItem, duration: number) {
     if (item.kind === "wait") {
       item.durationMs = duration;
+      // Handle linking
+      sequence = updateLinkedWaits(sequence, item.id);
       sequence = sequence; // Trigger reactivity
       recordChange();
     }
@@ -1041,16 +1061,37 @@
                       disabled={line.locked}
                       title="Path Color"
                     />
-                    <input
-                      class="w-full max-w-[140px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
-                      value={line.name}
-                      on:input={(e) =>
-                        // @ts-ignore
-                        updateLineName(item.lineId, e.target.value)}
-                      disabled={line.locked}
-                      placeholder="Path {lineIdx + 1}"
-                      aria-label="Path Name"
-                    />
+                    <div class="relative w-full max-w-[140px]">
+                      <input
+                        class="w-full px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+                        value={line.name}
+                        on:input={(e) =>
+                          // @ts-ignore
+                          updateLineName(item.lineId, e.target.value)}
+                        disabled={line.locked}
+                        placeholder="Path {lineIdx + 1}"
+                        aria-label="Path Name"
+                      />
+                      {#if isLinked( line.name, lines.map((l) => l.name || ""), )}
+                        <div
+                          class="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500"
+                          title="Linked by name: position is synchronized"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            class="w-3 h-3"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                              clip-rule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      {/if}
+                    </div>
                   </div>
                 </td>
                 <td class="px-3 py-2">
@@ -1061,7 +1102,8 @@
                       step={stepSize}
                       value={line.endPoint.x}
                       aria-label="{line.name || `Path ${lineIdx + 1}`} X"
-                      on:input={(e) => handleInput(e, line.endPoint, "x")}
+                      on:input={(e) =>
+                        handleInput(e, line.endPoint, "x", line.id)}
                       disabled={line.locked}
                     />
                     <span class="text-xs text-neutral-500"
@@ -1076,7 +1118,8 @@
                     step={stepSize}
                     value={line.endPoint.y}
                     aria-label="{line.name || `Path ${lineIdx + 1}`} Y"
-                    on:input={(e) => handleInput(e, line.endPoint, "y")}
+                    on:input={(e) =>
+                      handleInput(e, line.endPoint, "y", line.id)}
                     disabled={line.locked}
                   />
                 </td>
@@ -1250,16 +1293,39 @@
                 </svg>
               </td>
               <td class="px-3 py-2">
-                <input
-                  class="w-full max-w-[160px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
-                  value={item.name}
-                  on:input={(e) =>
-                    // @ts-ignore
-                    updateWaitName(item, e.target.value)}
-                  disabled={item.locked}
-                  placeholder="Wait Name"
-                  aria-label="Wait Name"
-                />
+                <div class="relative w-full max-w-[160px]">
+                  <input
+                    class="w-full px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs"
+                    value={item.name}
+                    on:input={(e) =>
+                      // @ts-ignore
+                      updateWaitName(item, e.target.value)}
+                    disabled={item.locked}
+                    placeholder="Wait Name"
+                    aria-label="Wait Name"
+                  />
+                  {#if isLinked( item.name, sequence
+                      .map((s) => (s.kind === "wait" ? s.name : ""))
+                      .filter((n) => n), )}
+                    <div
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-amber-600"
+                      title="Linked by name: duration is synchronized"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        class="w-3 h-3"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  {/if}
+                </div>
               </td>
               <td class="px-3 py-2">
                 <input

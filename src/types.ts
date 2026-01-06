@@ -57,6 +57,7 @@ export interface Line {
   controlPoints: ControlPoint[];
   color: string;
   name?: string;
+  _linkedName?: string; // Internal: used for saving/loading linked duplicates
   eventMarkers?: EventMarker[];
   locked?: boolean;
   waitBefore?: WaitSegment;
@@ -76,6 +77,7 @@ export type SequenceWaitItem = {
   kind: "wait";
   id: string;
   name: string;
+  _linkedName?: string; // Internal: used for saving/loading linked duplicates
   durationMs: number;
   locked?: boolean;
   eventMarkers?: EventMarker[];

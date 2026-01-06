@@ -98,9 +98,9 @@ describe("codeExporter", () => {
       const code = await generateJavaCode(startPoint, lines, false);
 
       expect(code).toContain("public static class Paths {");
-      expect(code).toContain("public PathChain line1;");
-      expect(code).toContain("line1 = follower.pathBuilder().addPath(");
-      expect(code).toContain("new BezierLine");
+      expect(code).toContain("public PathChain line1Path;");
+      expect(code).toContain("line1Path = follower.pathBuilder()");
+      expect(code).toContain(".addPath(new BezierLine");
       expect(code).toContain(
         "setConstantHeadingInterpolation(Math.toRadians(90))",
       );
@@ -181,9 +181,8 @@ describe("codeExporter", () => {
       expect(code).toContain(
         "public class TestPath extends SequentialCommandGroup",
       );
-      expect(code).toContain(
-        "new FollowPathCommand(follower, startPointTOline1)",
-      );
+      // New naming logic uses line name suffixed with Path if available
+      expect(code).toContain("new FollowPathCommand(follower, line1Path)");
     });
 
     it("should handle NextFTC library", async () => {
@@ -200,7 +199,7 @@ describe("codeExporter", () => {
         "import dev.nextftc.core.command.groups.SequentialGroup",
       );
       expect(code).toContain("public class TestPath extends SequentialGroup");
-      expect(code).toContain("new FollowPath(startPointTOline1)");
+      expect(code).toContain("new FollowPath(line1Path)");
     });
 
     it("should handle wait commands in sequence", async () => {

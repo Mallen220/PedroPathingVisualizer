@@ -10,6 +10,7 @@ import {
   loadProjectData,
 } from "../lib/projectStore";
 import { loadTrajectoryFromFile, downloadTrajectory } from "./index";
+import { prepareLinesForSave, prepareSequenceForSave } from "./pointLinking";
 
 interface ExtendedElectronAPI {
   writeFile: (filePath: string, content: string) => Promise<boolean>;
@@ -78,11 +79,17 @@ export async function saveProject() {
   const path = get(currentFilePath);
   if (path && electronAPI) {
     try {
+      const lines = get(linesStore);
+      const sequence = get(sequenceStore);
+
+      const linesForSave = prepareLinesForSave(lines);
+      const sequenceForSave = prepareSequenceForSave(sequence);
+
       const jsonString = JSON.stringify(
         {
           startPoint: get(startPointStore),
-          lines: get(linesStore),
-          sequence: get(sequenceStore),
+          lines: linesForSave,
+          sequence: sequenceForSave,
           shapes: get(shapesStore),
         },
         null,
@@ -110,11 +117,14 @@ export function saveFileAs() {
     filename = baseName.replace(".pp", "");
   }
 
+  const lines = get(linesStore);
+  const sequence = get(sequenceStore);
+
   downloadTrajectory(
     get(startPointStore),
-    get(linesStore),
+    prepareLinesForSave(lines),
     get(shapesStore),
-    get(sequenceStore),
+    prepareSequenceForSave(sequence),
     `${filename}.pp`,
   );
 }
@@ -128,12 +138,15 @@ export async function exportAsPP() {
   }
   const defaultName = `${filename}.pp`;
 
+  const lines = get(linesStore);
+  const sequence = get(sequenceStore);
+
   const jsonString = JSON.stringify(
     {
       startPoint: get(startPointStore),
-      lines: get(linesStore),
+      lines: prepareLinesForSave(lines),
       shapes: get(shapesStore),
-      sequence: get(sequenceStore),
+      sequence: prepareSequenceForSave(sequence),
     },
     null,
     2,
@@ -171,9 +184,9 @@ export async function exportAsPP() {
   // Browser fallback
   downloadTrajectory(
     get(startPointStore),
-    get(linesStore),
+    prepareLinesForSave(lines),
     get(shapesStore),
-    get(sequenceStore),
+    prepareSequenceForSave(sequence),
     defaultName,
   );
 }
