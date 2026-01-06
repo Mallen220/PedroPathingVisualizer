@@ -317,18 +317,31 @@ export class PathOptimizer {
       let collisionType: "obstacle" | "boundary" = "obstacle";
 
       // 1. Boundary Checks (if enabled)
-      // Skip check at t=0 to avoid flagging start position
-      if (this.settings.validateFieldBoundaries !== false && t > 0.05) {
-        for (const corner of corners) {
-          if (
-            corner.x < 0 ||
-            corner.x > FIELD_SIZE ||
-            corner.y < 0 ||
-            corner.y > FIELD_SIZE
-          ) {
-            isColliding = true;
-            collisionType = "boundary";
-            break;
+      if (this.settings.validateFieldBoundaries !== false) {
+        // Calculate distance from start point to ignore validation near start
+        // This handles cases where safety margin protrudes at start (which is allowed)
+        const distToStart = Math.sqrt(
+          Math.pow(x - this.startPoint.x, 2) +
+            Math.pow(y - this.startPoint.y, 2),
+        );
+        const exclusionDist = Math.max(
+          2,
+          (this.settings.safetyMargin || 0) * 2,
+        );
+
+        if (distToStart > exclusionDist) {
+          const BOUNDARY_EPSILON = 0.05;
+          for (const corner of corners) {
+            if (
+              corner.x < -BOUNDARY_EPSILON ||
+              corner.x > FIELD_SIZE + BOUNDARY_EPSILON ||
+              corner.y < -BOUNDARY_EPSILON ||
+              corner.y > FIELD_SIZE + BOUNDARY_EPSILON
+            ) {
+              isColliding = true;
+              collisionType = "boundary";
+              break;
+            }
           }
         }
       }
