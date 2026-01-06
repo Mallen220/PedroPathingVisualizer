@@ -57,3 +57,6 @@ src/tests/animation.test.ts
 src/tests/nameGenerator.test.ts
 src/utils/pathTransform.ts
 src/lib/components/WaitSection.svelte
+.Jules/feature.md
+.jules/feature.md
+src/lib/components/ExportCodeDialog.svelte
