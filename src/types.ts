@@ -114,6 +114,8 @@ export interface Settings {
   optimizationPopulationSize?: number; // Population size for optimizer
   optimizationMutationRate?: number; // Mutation rate for optimizer
   optimizationMutationStrength?: number; // Mutation strength for optimizer
+  validateFieldBoundaries?: boolean; // Check if robot goes out of bounds
+  restrictDraggingToField?: boolean; // Restrict dragging to field bounds
   keyBindings?: KeyBinding[];
   recentFiles?: string[];
   fileManagerSortMode?: "name" | "date"; // File manager sort preference
@@ -172,6 +174,7 @@ export interface CollisionMarker {
   y: number;
   time: number;
   segmentIndex?: number;
+  type?: "obstacle" | "boundary";
 }
 
 export interface Notification {

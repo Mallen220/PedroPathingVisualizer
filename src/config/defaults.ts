@@ -414,6 +414,8 @@ export const DEFAULT_SETTINGS: Settings = {
   optimizationPopulationSize: 100,
   optimizationMutationRate: 0.4,
   optimizationMutationStrength: 6.0,
+  validateFieldBoundaries: true,
+  restrictDraggingToField: true,
   keyBindings: DEFAULT_KEY_BINDINGS,
   recentFiles: [],
   // Developer/debugging aids

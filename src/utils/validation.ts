@@ -21,8 +21,18 @@ export function validatePath(
   collisionMarkers.set(markers);
 
   if (markers.length > 0) {
+    const boundaryCount = markers.filter((m) => m.type === "boundary").length;
+    const obstacleCount = markers.length - boundaryCount;
+    let msg = `Found ${markers.length} collisions! `;
+    if (boundaryCount > 0 && obstacleCount > 0) {
+      msg += `(${obstacleCount} obstacle, ${boundaryCount} boundary)`;
+    } else if (boundaryCount > 0) {
+      msg += "(Field Boundary Violation)";
+    } else {
+      msg += "(Obstacle Collision)";
+    }
     notification.set({
-      message: `Found ${markers.length} collisions! Check the field.`,
+      message: msg,
       type: "error",
       timeout: 5000,
     });

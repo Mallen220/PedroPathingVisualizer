@@ -750,9 +750,16 @@
     if (markers && markers.length > 0) {
       markers.forEach((marker, idx) => {
         const group = new Two.Group();
+        const isBoundary = marker.type === "boundary";
+
         const circle = new Two.Circle(x(marker.x), y(marker.y), uiLength(2));
-        circle.fill = "rgba(239, 68, 68, 0.5)"; // Red-500 with opacity
-        circle.stroke = "#ef4444";
+        if (isBoundary) {
+          circle.fill = "rgba(249, 115, 22, 0.5)"; // Orange-500 with opacity
+          circle.stroke = "#f97316";
+        } else {
+          circle.fill = "rgba(239, 68, 68, 0.5)"; // Red-500 with opacity
+          circle.stroke = "#ef4444";
+        }
         circle.linewidth = uiLength(0.5);
 
         const crossLength = uiLength(1.5);
@@ -894,9 +901,55 @@
         if ($snapToGrid && $showGrid && $gridSize > 0) {
           inchX = Math.round(rawInchX / $gridSize) * $gridSize;
           inchY = Math.round(rawInchY / $gridSize) * $gridSize;
-          inchX = Math.max(0, Math.min(FIELD_SIZE, inchX));
-          inchY = Math.max(0, Math.min(FIELD_SIZE, inchY));
         }
+
+        // Determine clamping range
+        let minX = -Infinity;
+        let maxX = Infinity;
+        let minY = -Infinity;
+        let maxY = Infinity;
+
+        // Apply field restrictions if enabled or if snapped (snap implies grid which is usually in field, but let's stick to explicit restriction)
+        if (settings.restrictDraggingToField !== false) {
+          minX = 0;
+          maxX = FIELD_SIZE;
+          minY = 0;
+          maxY = FIELD_SIZE;
+
+          if (currentElem.startsWith("point-")) {
+            const parts = currentElem.split("-");
+            const lineNum = Number(parts[1]);
+            const pointIdx = Number(parts[2]);
+
+            // Calculate base robot margin (half of smallest dimension)
+            const robotMargin = Math.min(settings.rLength, settings.rWidth) / 2;
+            const safety = settings.safetyMargin || 0;
+
+            let margin = 0;
+
+            // Start Point (point-0-0)
+            if (lineNum === 0 && pointIdx === 0) {
+              margin = robotMargin;
+            }
+            // Other Anchor Points (Endpoints of lines: point-N-0 where N > 0)
+            else if (lineNum > 0 && pointIdx === 0) {
+              margin = robotMargin + safety;
+            }
+            // Control Points (point-N-M where M > 0) -> No extra margin, just field bounds
+            else {
+              margin = 0;
+            }
+
+            minX = margin;
+            maxX = FIELD_SIZE - margin;
+            minY = margin;
+            maxY = FIELD_SIZE - margin;
+          }
+        }
+
+        // Apply clamping
+        inchX = Math.max(minX, Math.min(maxX, inchX));
+        inchY = Math.max(minY, Math.min(maxY, inchY));
 
         if (currentElem.startsWith("obstacle-")) {
           const parts = currentElem.split("-");
@@ -1148,8 +1201,10 @@
         inchX = Math.round(inchX / $gridSize) * $gridSize;
         inchY = Math.round(inchY / $gridSize) * $gridSize;
       }
-      inchX = Math.max(0, Math.min(FIELD_SIZE, inchX));
-      inchY = Math.max(0, Math.min(FIELD_SIZE, inchY));
+      if (settings.restrictDraggingToField !== false) {
+        inchX = Math.max(0, Math.min(FIELD_SIZE, inchX));
+        inchY = Math.max(0, Math.min(FIELD_SIZE, inchY));
+      }
 
       const newLine: Line = {
         id: `line-${Math.random().toString(36).slice(2)}`,

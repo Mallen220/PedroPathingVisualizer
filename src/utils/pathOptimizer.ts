@@ -187,7 +187,13 @@ export class PathOptimizer {
     timeline: TimelineEvent[] | null = null,
     lines: Line[] | null = null,
   ): CollisionMarker[] {
-    if (this.activeShapes.length === 0) return [];
+    // If we have no shapes and boundary validation is disabled, we can skip
+    if (
+      this.activeShapes.length === 0 &&
+      this.settings.validateFieldBoundaries === false
+    ) {
+      return [];
+    }
 
     // If not provided, calculate them (useful for one-off checks)
     if (!timeline || !lines) {
@@ -308,24 +314,69 @@ export class PathOptimizer {
       const corners = getRobotCorners(x, y, heading, rLength, rWidth);
 
       let isColliding = false;
-      for (const shape of this.activeShapes) {
-        // Check if any robot corner is in shape
-        for (const corner of corners) {
-          if (pointInPolygon([corner.x, corner.y], shape.vertices)) {
-            isColliding = true;
-            break;
-          }
-        }
-        if (isColliding) break;
+      let collisionType: "obstacle" | "boundary" = "obstacle";
 
-        // Also check if any shape vertex is inside the robot
-        for (const v of shape.vertices) {
-          if (pointInPolygon([v.x, v.y], corners)) {
-            isColliding = true;
-            break;
+      // 1. Boundary Checks (if enabled)
+      if (this.settings.validateFieldBoundaries !== false) {
+        // Calculate distance from start point to ignore validation near start
+        // This handles cases where safety margin protrudes at start (which is allowed)
+        const distToStart = Math.sqrt(
+          Math.pow(x - this.startPoint.x, 2) +
+            Math.pow(y - this.startPoint.y, 2),
+        );
+        const exclusionDist = Math.max(
+          2,
+          (this.settings.safetyMargin || 0) * 2,
+        );
+
+        if (distToStart > exclusionDist) {
+          const BOUNDARY_EPSILON = 0.05;
+          for (const corner of corners) {
+            if (
+              corner.x < -BOUNDARY_EPSILON ||
+              corner.x > FIELD_SIZE + BOUNDARY_EPSILON ||
+              corner.y < -BOUNDARY_EPSILON ||
+              corner.y > FIELD_SIZE + BOUNDARY_EPSILON
+            ) {
+              isColliding = true;
+              collisionType = "boundary";
+              break;
+            }
           }
         }
-        if (isColliding) break;
+      }
+
+      // 2. Obstacle Checks (only if no boundary violation yet, or check both?)
+      // We prioritize showing obstacle collisions if both happen, OR we show both?
+      // Let's stick to flagging the first one found or prioritizing obstacles?
+      // Actually, if we hit a boundary, we might also be in an obstacle (outside field?)
+      // But typically boundaries are walls.
+      // Let's check obstacles if not already colliding with boundary, or just check anyway
+      // and let the marker type reflect the most severe? Or just one marker per timestamp?
+      // The `markers` array can hold multiple for same time? Yes.
+      // But let's just push one marker per time step to avoid clutter.
+      // If boundary hit, we mark it. If obstacle hit, we mark it.
+
+      if (!isColliding) {
+        for (const shape of this.activeShapes) {
+          // Check if any robot corner is in shape
+          for (const corner of corners) {
+            if (pointInPolygon([corner.x, corner.y], shape.vertices)) {
+              isColliding = true;
+              break;
+            }
+          }
+          if (isColliding) break;
+
+          // Also check if any shape vertex is inside the robot
+          for (const v of shape.vertices) {
+            if (pointInPolygon([v.x, v.y], corners)) {
+              isColliding = true;
+              break;
+            }
+          }
+          if (isColliding) break;
+        }
       }
 
       if (isColliding) {
@@ -335,6 +386,7 @@ export class PathOptimizer {
           time: t,
           segmentIndex:
             activeEvent.type === "travel" ? activeEvent.lineIndex : undefined,
+          type: collisionType,
         });
       }
     }
