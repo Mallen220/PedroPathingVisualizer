@@ -192,9 +192,7 @@
         ),
         waitAfterMs: Math.max(
           0,
-          Number(
-            line.waitAfterMs ?? (line as any).waitAfter?.durationMs ?? 0,
-          ),
+          Number(line.waitAfterMs ?? (line as any).waitAfter?.durationMs ?? 0),
         ),
         waitBeforeName: stripSuffix(beforeName),
         waitAfterName: stripSuffix(afterName),
