@@ -3,9 +3,11 @@
   import { selectedPointId, selectedLineId } from "../../stores";
   import TrashIcon from "./icons/TrashIcon.svelte";
   import WaitMarkersSection from "./WaitMarkersSection.svelte";
-  import type { SequenceWaitItem } from "../../types";
+  import type { SequenceWaitItem, SequenceItem } from "../../types";
+  import { isWaitLinked, handleWaitRename } from "../../utils/pointLinking";
 
   export let wait: SequenceWaitItem;
+  export let sequence: SequenceItem[];
   // export let idx: number = 0;
 
   // Collapsed state
@@ -22,18 +24,22 @@
   export let canMoveDown: boolean = true;
   export let recordChange: (() => void) | undefined = undefined;
 
-  // We assume the parent binds to 'wait' or handles updates via object mutation reference.
-  // We trigger recordChange on updates.
-
   $: isSelected = $selectedPointId === `wait-${wait.id}`;
-  // Show linked badge when wait carries linked-name metadata
-  $: isLinked = Boolean((wait as any)._linkedName);
+  $: linked = isWaitLinked(sequence, wait.id);
+
+  let hoveredWaitId: string | null = null;
 
   function toggleCollapsed() {
     collapsed = !collapsed;
   }
 
-  function handleNameChange() {
+  function handleNameInput(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const newName = input.value;
+    sequence = handleWaitRename(sequence, wait.id, newName);
+  }
+
+  function handleBlur() {
     if (recordChange) recordChange();
   }
 
@@ -107,20 +113,22 @@
       <div class="relative">
         <input
           tabindex="-1"
-          bind:value={wait.name}
+          value={wait.name}
           placeholder="Wait Name"
           class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none text-sm font-semibold min-w-[100px] pr-6"
+          class:text-amber-500={hoveredWaitId === wait.id}
           disabled={wait.locked}
-          on:input={() => {
-            // Trigger reactivity if needed, usually Svelte handles object prop mutation
-          }}
-          on:blur={handleNameChange}
+          on:input={handleNameInput}
+          on:blur={handleBlur}
           on:click|stopPropagation
         />
-        {#if isLinked}
+        {#if linked}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div
-            class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-500"
-            title="Linked by name. Shares duration."
+            class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-500 cursor-help"
+            title={`Linked Wait (Logic: Same Name = Shared Duration). This wait event shares its duration with other waits named '${wait.name}'.`}
+            on:mouseenter={() => (hoveredWaitId = wait.id)}
+            on:mouseleave={() => (hoveredWaitId = null)}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

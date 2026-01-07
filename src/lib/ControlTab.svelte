@@ -1149,6 +1149,7 @@
             {:else}
               <WaitSection
                 bind:wait={item}
+                bind:sequence={sequence}
                 idx={sIdx}
                 bind:collapsed={collapsedSections.waits[getWait(item).id]}
                 collapsedMarkers={allCollapsed}

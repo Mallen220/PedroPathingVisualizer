@@ -1132,7 +1132,7 @@
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <div
                           class="absolute right-1 top-1/2 -translate-y-1/2 text-blue-500 cursor-help"
-                          title="Linked Path: Shares X/Y position with other paths of the same name. Control points & events are independent."
+                          title={`Linked Path (Logic: Same Name = Shared Position). This path shares its X/Y coordinates with other paths named '${line.name}'. Control points & events remain independent.`}
                           on:mouseenter={() => (hoveredLinkId = line.id)}
                           on:mouseleave={() => (hoveredLinkId = null)}
                         >
@@ -1368,7 +1368,7 @@
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div
                       class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-500 cursor-help"
-                      title="Linked Wait: Shares duration with other waits of the same name."
+                      title={`Linked Wait (Logic: Same Name = Shared Duration). This wait event shares its duration with other waits named '${item.name}'.`}
                       on:mouseenter={() => (hoveredWaitId = item.id)}
                       on:mouseleave={() => (hoveredWaitId = null)}
                     >
