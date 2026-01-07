@@ -1235,10 +1235,19 @@
         inchY = Math.max(0, Math.min(FIELD_SIZE, inchY));
       }
 
+      const headingType = settings.defaultHeadingType || "tangential";
       const newLine: Line = {
         id: `line-${Math.random().toString(36).slice(2)}`,
         name: "",
-        endPoint: { x: inchX, y: inchY, heading: "tangential", reverse: false },
+        endPoint: {
+          x: inchX,
+          y: inchY,
+          heading: headingType,
+          reverse: false,
+          startDeg: 90,
+          endDeg: 180,
+          degrees: 0,
+        } as any,
         controlPoints: [],
         color: getRandomColor(),
         locked: false,

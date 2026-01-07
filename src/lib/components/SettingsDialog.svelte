@@ -1025,6 +1025,28 @@
                   </div>
                 </fieldset>
               </div>
+
+              <!-- Default Heading Type -->
+              <div>
+                <label
+                  for="default-heading-type"
+                  class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                >
+                  Default Heading Type
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Heading type for new paths
+                  </div>
+                </label>
+                <select
+                  id="default-heading-type"
+                  bind:value={settings.defaultHeadingType}
+                  class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="tangential">Tangential (Follows Path)</option>
+                  <option value="linear">Linear (Interpolated)</option>
+                  <option value="constant">Constant (Fixed)</option>
+                </select>
+              </div>
             </div>
           {/if}
         </div>

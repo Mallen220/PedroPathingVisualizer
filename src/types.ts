@@ -118,6 +118,7 @@ export interface Settings {
   optimizationMutationStrength?: number; // Mutation strength for optimizer
   validateFieldBoundaries?: boolean; // Check if robot goes out of bounds
   restrictDraggingToField?: boolean; // Restrict dragging to field bounds
+  defaultHeadingType?: "linear" | "constant" | "tangential"; // Default heading type for new lines
   keyBindings?: KeyBinding[];
   recentFiles?: string[];
   fileManagerSortMode?: "name" | "date"; // File manager sort preference

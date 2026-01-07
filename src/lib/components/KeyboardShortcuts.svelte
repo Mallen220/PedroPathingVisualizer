@@ -103,15 +103,20 @@
   }
 
   function addNewLine() {
+    const headingType = settings.defaultHeadingType || "tangential";
     const newLine: Line = {
       id: `line-${Math.random().toString(36).slice(2)}`,
       name: "",
       endPoint: {
         x: _.random(36, 108),
         y: _.random(36, 108),
-        heading: "tangential",
+        heading: headingType,
         reverse: false,
-      },
+        // Ensure properties for other types are initialized properly
+        startDeg: 90,
+        endDeg: 180,
+        degrees: 0,
+      } as any,
       controlPoints: [],
       color: getRandomColor(),
       locked: false,
