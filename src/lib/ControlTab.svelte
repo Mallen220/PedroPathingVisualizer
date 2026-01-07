@@ -463,6 +463,10 @@
     return i as SequenceWaitItem;
   }
 
+  function getPathLineId(item: SequenceItem) {
+    return item.kind === "path" ? (item as any).lineId : undefined;
+  }
+
   function insertLineAfter(seqIndex: number) {
     const seqItem = sequence[seqIndex];
     if (!seqItem || seqItem.kind !== "path") return;
@@ -1106,7 +1110,12 @@
         {/if}
 
         <!-- Unified sequence render: paths and waits -->
-        {#each sequence as item, sIdx (item.kind === "path" ? item.lineId : getWait(item).id)}
+        {#each sequence as item, sIdx (item.kind === "path" ? getPathLineId(item) : getWait(item).id)}
+          {@const isLocked =
+            item.kind === "path"
+              ? (lines.find((l) => l.id === getPathLineId(item))?.locked ??
+                false)
+              : (item.locked ?? false)}
           <div
             role="listitem"
             data-index={sIdx}
@@ -1122,7 +1131,7 @@
             class:opacity-50={draggingIndex === sIdx}
           >
             {#if item.kind === "path"}
-              {#each lines.filter((l) => l.id === getLineId(item)) as ln (ln.id)}
+              {#each lines.filter((l) => l.id === getPathLineId(item)) as ln (ln.id)}
                 <PathLineSection
                   bind:line={ln}
                   idx={lines.findIndex((l) => l.id === ln.id)}
@@ -1156,6 +1165,7 @@
             {:else}
               <WaitSection
                 bind:wait={item}
+                bind:sequence
                 bind:collapsed={collapsedSections.waits[getWait(item).id]}
                 onRemove={() => {
                   const newSeq = [...sequence];

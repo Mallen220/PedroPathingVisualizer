@@ -16,6 +16,7 @@
   import { slide } from "svelte/transition";
   import OptimizationDialog from "./OptimizationDialog.svelte";
   import { tick } from "svelte";
+  import { tooltipPortal } from "../actions/portal";
   import ObstaclesSection from "./ObstaclesSection.svelte";
   import TrashIcon from "./icons/TrashIcon.svelte";
   import ColorPicker from "./ColorPicker.svelte";
@@ -473,6 +474,31 @@
   let contextMenuX = 0;
   let contextMenuY = 0;
   let contextMenuItems: any[] = [];
+
+  let hoveredLinkId: string | null = null;
+  let hoveredWaitId: string | null = null;
+  // Anchor elements used for portal positioning (moved to body)
+  let hoveredLinkAnchor: HTMLElement | null = null;
+  let hoveredWaitAnchor: HTMLElement | null = null;
+
+  function handleLinkHoverEnter(e: MouseEvent, id: string | null) {
+    hoveredLinkId = id;
+    // currentTarget is the icon container
+    hoveredLinkAnchor = e.currentTarget as HTMLElement;
+  }
+  function handleLinkHoverLeave() {
+    hoveredLinkId = null;
+    hoveredLinkAnchor = null;
+  }
+
+  function handleWaitHoverEnter(e: MouseEvent, id: string | null) {
+    hoveredWaitId = id;
+    hoveredWaitAnchor = e.currentTarget as HTMLElement;
+  }
+  function handleWaitHoverLeave() {
+    hoveredWaitId = null;
+    hoveredWaitAnchor = null;
+  }
 
   async function handleContextMenu(event: MouseEvent, seqIndex: number) {
     event.preventDefault();
@@ -1113,9 +1139,10 @@
                       disabled={line.locked}
                       title="Path Color"
                     />
-                    <div class="relative flex-1">
+                    <div class="relative flex-1 max-w-[140px]">
                       <input
-                        class="w-full max-w-[140px] px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs pr-6"
+                        class="w-full px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs pr-6"
+                        class:text-blue-500={hoveredLinkId === line.id}
                         value={line.name}
                         on:input={(e) =>
                           // @ts-ignore
@@ -1125,9 +1152,11 @@
                         aria-label="Path Name"
                       />
                       {#if line.id && isLineLinked(lines, line.id)}
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <div
-                          class="absolute right-1 top-1/2 -translate-y-1/2 text-blue-500"
-                          title="Linked by name. Shares position (X/Y). Control points & events are independent."
+                          class="absolute right-1 top-1/2 -translate-y-1/2 text-blue-500 cursor-help flex items-center justify-center"
+                          on:mouseenter={(e) => handleLinkHoverEnter(e, line.id || null)}
+                          on:mouseleave={handleLinkHoverLeave}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1141,6 +1170,18 @@
                               clip-rule="evenodd"
                             />
                           </svg>
+                          {#if hoveredLinkId === line.id}
+                            <div
+                              use:tooltipPortal={hoveredLinkAnchor}
+                              class="w-64 p-2 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded shadow-lg text-xs text-blue-900 dark:text-blue-100 z-50 pointer-events-none"
+                            >
+                              <strong>Linked Path</strong><br />
+                              Logic: Same Name = Shared Position.<br />
+                              This path shares its X/Y coordinates with other paths
+                              named '{line.name}'. Control points & events
+                              remain independent.
+                            </div>
+                          {/if}
                         </div>
                       {/if}
                     </div>
@@ -1348,6 +1389,7 @@
                 <div class="relative w-full max-w-[160px]">
                   <input
                     class="w-full px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs pr-6"
+                    class:text-amber-500={hoveredWaitId === item.id}
                     value={item.name}
                     on:input={(e) =>
                       // @ts-ignore
@@ -1357,9 +1399,11 @@
                     aria-label="Wait Name"
                   />
                   {#if isWaitLinked(sequence, item.id)}
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div
-                      class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-500"
-                      title="Linked by name. Shares duration."
+                      class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-500 cursor-help flex items-center justify-center"
+                      on:mouseenter={(e) => handleWaitHoverEnter(e, item.id)}
+                      on:mouseleave={handleWaitHoverLeave}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1373,6 +1417,17 @@
                           clip-rule="evenodd"
                         />
                       </svg>
+                      {#if hoveredWaitId === item.id}
+                        <div
+                          use:tooltipPortal={hoveredWaitAnchor}
+                          class="w-64 p-2 bg-amber-100 dark:bg-amber-900 border border-amber-300 dark:border-amber-700 rounded shadow-lg text-xs text-amber-900 dark:text-amber-100 z-50 pointer-events-none"
+                        >
+                          <strong>Linked Wait</strong><br />
+                          Logic: Same Name = Shared Duration.<br />
+                          This wait event shares its duration with other waits named
+                          '{item.name}'.
+                        </div>
+                      {/if}
                     </div>
                   {/if}
                 </div>

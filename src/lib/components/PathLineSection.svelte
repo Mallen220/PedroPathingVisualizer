@@ -9,6 +9,7 @@
   import { selectedLineId } from "../../stores";
   import TrashIcon from "./icons/TrashIcon.svelte";
   import { handleWaypointRename, isLineLinked } from "../../utils/pointLinking";
+  import { tooltipPortal } from "../actions/portal";
 
   export let line: Line;
   export let idx: number;
@@ -29,6 +30,18 @@
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
+
+  let hoveredLinkId: string | null = null;
+  let hoveredLinkAnchor: HTMLElement | null = null;
+
+  function handleLinkHoverEnter(e: MouseEvent, id: string | null) {
+    hoveredLinkId = id;
+    hoveredLinkAnchor = e.currentTarget as HTMLElement;
+  }
+  function handleLinkHoverLeave() {
+    hoveredLinkId = null;
+    hoveredLinkAnchor = null;
+  }
 
   function toggleCollapsed() {
     collapsed = !collapsed;
@@ -99,6 +112,7 @@
           value={line.name}
           placeholder="Path {idx + 1}"
           class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none text-sm font-semibold min-w-[100px] pr-6"
+          class:text-blue-500={hoveredLinkId === line.id}
           disabled={line.locked}
           on:input={handleNameInput}
           on:blur={() => {
@@ -107,9 +121,11 @@
           }}
         />
         {#if line.id && isLineLinked(lines, line.id)}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div
-            class="absolute right-1 top-1/2 -translate-y-1/2 text-blue-500"
-            title="Linked by name. Shares position (X/Y). Control points & events are independent."
+            class="absolute right-1 top-1/2 -translate-y-1/2 text-blue-500 cursor-help flex items-center justify-center"
+            on:mouseenter={(e) => handleLinkHoverEnter(e, line.id || null)}
+            on:mouseleave={handleLinkHoverLeave}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -123,6 +139,17 @@
                 clip-rule="evenodd"
               />
             </svg>
+            {#if hoveredLinkId === line.id}
+              <div
+                use:tooltipPortal={hoveredLinkAnchor}
+                class="w-64 p-2 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded shadow-lg text-xs text-blue-900 dark:text-blue-100 z-50 pointer-events-none"
+              >
+                <strong>Linked Path</strong><br />
+                Logic: Same Name = Shared Position.<br />
+                This path shares its X/Y coordinates with other paths named '{line.name}'.
+                Control points & events remain independent.
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -336,6 +363,7 @@
         <HeadingControls
           endPoint={line.endPoint}
           locked={line.locked}
+          tabindex={-1}
           on:change={() => {
             // Force reactivity so timeline recalculates immediately
             lines = [...lines];
