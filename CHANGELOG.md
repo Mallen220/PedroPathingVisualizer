@@ -1,3 +1,7 @@
+## 1.5.0 (2026-01-07)
+
+- Increase optimization mutation strength. Overhaul Navbar UI. Dramatically imporved backend testing. Optimized field rendering logic. Overhaul keybinds UI. Credits and Legal section added in settings. Add Animated PNG (APNG) export support. add duplicate keybind and functionality (shift+d). Add zoom controls, panning, and keyboard shortcuts to Field View. Improve export dialog. Resolve numerous TypeScript and Svelte check errors. Added context menu (right click dropdown) to waypoint table for added controls. Changed save icon. Unified wait and path UI to be the same. open file manager on save for untitled projects. add reverse path tool. add field boundary validation and drag restrictions, configurable in settings. Added sticky header to waypoint table. Add name-based linking for waypoints and wait events with java exporter support. Add safety validation for zero-length paths. Added lots of tooltips.
+
 ## 1.4.3 (2026-01-03)
 
 - Fix critical error breaking several versions due to stale or undefined settings. implement realistic motion profiling for path segments and fix unexpected behavior. Better testing. Add path validation and collision visualization. reorder control points via drag-and-drop and buttons. Overhaul File Manager UI for better scalability and better user experience. Add credits section to settings dialog.
