@@ -128,21 +128,20 @@ export function loadProjectData(data: any) {
   startPointStore.set(sp);
 
   // Helper to strip " (##)" suffix from names to restore linkage
-  const stripSuffix = (name: string) => {
-    if (!name) return name;
+  const stripSuffix = (name?: string) => {
+    if (!name) return name ?? "";
     const match = name.match(/^(.*) \(\d+\)$/);
     return match ? match[1] : name;
   };
 
   const normLines = normalizeLines(data.lines || []).map((l) => {
-    // Restore name from metadata if present
-    if (l._linkedName) {
-      return { ...l, name: l._linkedName };
-    } else if (l.name) {
-      // Attempt to strip suffix to restore linkage for older files
-      return { ...l, name: stripSuffix(l.name) };
-    }
-    return l;
+    const baseName = l._linkedName ?? l.name;
+    return {
+      ...l,
+      name: stripSuffix(baseName),
+      waitBeforeName: stripSuffix(l.waitBeforeName),
+      waitAfterName: stripSuffix(l.waitAfterName),
+    };
   });
 
   // Sanitize sequence with respect to normalized lines and set both stores
@@ -156,11 +155,8 @@ export function loadProjectData(data: any) {
   const processedSeq = seqCandidate.map((s) => {
     if (s.kind === "wait") {
       const newWait = { ...s };
-      if ((newWait as any)._linkedName) {
-        newWait.name = (newWait as any)._linkedName;
-      } else if (newWait.name) {
-        newWait.name = stripSuffix(newWait.name);
-      }
+      const baseName = (newWait as any)._linkedName ?? newWait.name;
+      newWait.name = stripSuffix(baseName);
       return newWait;
     }
     return s;

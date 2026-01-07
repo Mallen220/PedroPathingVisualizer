@@ -164,33 +164,60 @@
     }
   }
 
+  // Normalize trailing numeric duplicates like "shooter (2)" to maintain links
+  function stripSuffix(name?: string | null): string {
+    if (!name) return name ?? "";
+    const match = name.match(/^(.*) \(\d+\)$/);
+    return match ? match[1] : name;
+  }
+
   // Normalize lines helper
   function normalizeLines(input: Line[] = []): Line[] {
-    return (input || []).map((line) => ({
-      ...line,
-      id: line.id || `line-${Math.random().toString(36).slice(2)}`,
-      waitBeforeMs: Math.max(
-        0,
-        Number(line.waitBeforeMs ?? (line as any).waitBefore?.durationMs ?? 0),
-      ),
-      waitAfterMs: Math.max(
-        0,
-        Number(line.waitAfterMs ?? (line as any).waitAfter?.durationMs ?? 0),
-      ),
-      waitBeforeName:
-        line.waitBeforeName ?? (line as any).waitBefore?.name ?? "",
-      waitAfterName: line.waitAfterName ?? (line as any).waitAfter?.name ?? "",
-    }));
+    return (input || []).map((line) => {
+      const baseName = line._linkedName ?? line.name ?? "";
+      const beforeName =
+        line.waitBeforeName ?? (line as any).waitBefore?.name ?? "";
+      const afterName =
+        line.waitAfterName ?? (line as any).waitAfter?.name ?? "";
+
+      return {
+        ...line,
+        name: stripSuffix(baseName),
+        id: line.id || `line-${Math.random().toString(36).slice(2)}`,
+        waitBeforeMs: Math.max(
+          0,
+          Number(
+            line.waitBeforeMs ?? (line as any).waitBefore?.durationMs ?? 0,
+          ),
+        ),
+        waitAfterMs: Math.max(
+          0,
+          Number(
+            line.waitAfterMs ?? (line as any).waitAfter?.durationMs ?? 0,
+          ),
+        ),
+        waitBeforeName: stripSuffix(beforeName),
+        waitAfterName: stripSuffix(afterName),
+      };
+    });
   }
 
   function deriveSequence(data: any, normalizedLines: Line[]): SequenceItem[] {
-    if (Array.isArray(data?.sequence) && data.sequence.length) {
-      return data.sequence as SequenceItem[];
-    }
-    return normalizedLines.map((ln) => ({
-      kind: "path",
-      lineId: ln.id!,
-    }));
+    const baseSeq: SequenceItem[] =
+      Array.isArray(data?.sequence) && data.sequence.length
+        ? (data.sequence as SequenceItem[])
+        : normalizedLines.map((ln) => ({
+            kind: "path",
+            lineId: ln.id!,
+          }));
+
+    return baseSeq.map((item) => {
+      if (item.kind === "wait") {
+        const baseName = (item as any)._linkedName ?? item.name ?? "";
+        return { ...item, name: stripSuffix(baseName) };
+      }
+      return item;
+    });
   }
 
   async function loadDirectory() {

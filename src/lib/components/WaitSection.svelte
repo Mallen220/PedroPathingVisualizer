@@ -26,6 +26,8 @@
   // We trigger recordChange on updates.
 
   $: isSelected = $selectedPointId === `wait-${wait.id}`;
+  // Show linked badge when wait carries linked-name metadata
+  $: isLinked = Boolean((wait as any)._linkedName);
 
   function toggleCollapsed() {
     collapsed = !collapsed;
