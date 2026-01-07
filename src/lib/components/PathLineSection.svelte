@@ -9,6 +9,7 @@
   import { selectedLineId } from "../../stores";
   import TrashIcon from "./icons/TrashIcon.svelte";
   import { handleWaypointRename, isLineLinked } from "../../utils/pointLinking";
+  import { tooltipPortal } from "../actions/portal";
 
   export let line: Line;
   export let idx: number;
@@ -31,6 +32,16 @@
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
 
   let hoveredLinkId: string | null = null;
+  let hoveredLinkAnchor: HTMLElement | null = null;
+
+  function handleLinkHoverEnter(e: MouseEvent, id: string | null) {
+    hoveredLinkId = id;
+    hoveredLinkAnchor = e.currentTarget as HTMLElement;
+  }
+  function handleLinkHoverLeave() {
+    hoveredLinkId = null;
+    hoveredLinkAnchor = null;
+  }
 
   function toggleCollapsed() {
     collapsed = !collapsed;
@@ -113,8 +124,8 @@
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div
             class="absolute right-1 top-1/2 -translate-y-1/2 text-blue-500 cursor-help flex items-center justify-center"
-            on:mouseenter={() => (hoveredLinkId = line.id || null)}
-            on:mouseleave={() => (hoveredLinkId = null)}
+            on:mouseenter={(e) => handleLinkHoverEnter(e, line.id || null)}
+            on:mouseleave={handleLinkHoverLeave}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -130,7 +141,8 @@
             </svg>
             {#if hoveredLinkId === line.id}
               <div
-                class="absolute bottom-full mb-1 right-0 w-64 p-2 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded shadow-lg text-xs text-blue-900 dark:text-blue-100 z-50 pointer-events-none"
+                use:tooltipPortal={hoveredLinkAnchor}
+                class="w-64 p-2 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded shadow-lg text-xs text-blue-900 dark:text-blue-100 z-50 pointer-events-none"
               >
                 <strong>Linked Path</strong><br />
                 Logic: Same Name = Shared Position.<br />

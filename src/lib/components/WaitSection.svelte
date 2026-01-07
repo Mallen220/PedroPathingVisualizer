@@ -5,6 +5,7 @@
   import WaitMarkersSection from "./WaitMarkersSection.svelte";
   import type { SequenceWaitItem, SequenceItem } from "../../types";
   import { isWaitLinked, handleWaitRename } from "../../utils/pointLinking";
+  import { tooltipPortal } from "../actions/portal";
 
   export let wait: SequenceWaitItem;
   export let sequence: SequenceItem[];
@@ -28,6 +29,16 @@
   $: linked = isWaitLinked(sequence, wait.id);
 
   let hoveredWaitId: string | null = null;
+  let hoveredWaitAnchor: HTMLElement | null = null;
+
+  function handleWaitHoverEnter(e: MouseEvent, id: string | null) {
+    hoveredWaitId = id;
+    hoveredWaitAnchor = e.currentTarget as HTMLElement;
+  }
+  function handleWaitHoverLeave() {
+    hoveredWaitId = null;
+    hoveredWaitAnchor = null;
+  }
 
   function toggleCollapsed() {
     collapsed = !collapsed;
@@ -126,8 +137,8 @@
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div
             class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-500 cursor-help flex items-center justify-center"
-            on:mouseenter={() => (hoveredWaitId = wait.id)}
-            on:mouseleave={() => (hoveredWaitId = null)}
+            on:mouseenter={(e) => handleWaitHoverEnter(e, wait.id)}
+            on:mouseleave={handleWaitHoverLeave}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -143,7 +154,8 @@
             </svg>
             {#if hoveredWaitId === wait.id}
               <div
-                class="absolute bottom-full mb-1 right-0 w-64 p-2 bg-amber-100 dark:bg-amber-900 border border-amber-300 dark:border-amber-700 rounded shadow-lg text-xs text-amber-900 dark:text-amber-100 z-50 pointer-events-none"
+                use:tooltipPortal={hoveredWaitAnchor}
+                class="w-64 p-2 bg-amber-100 dark:bg-amber-900 border border-amber-300 dark:border-amber-700 rounded shadow-lg text-xs text-amber-900 dark:text-amber-100 z-50 pointer-events-none"
               >
                 <strong>Linked Wait</strong><br />
                 Logic: Same Name = Shared Duration.<br />

@@ -16,6 +16,7 @@
   import { slide } from "svelte/transition";
   import OptimizationDialog from "./OptimizationDialog.svelte";
   import { tick } from "svelte";
+  import { tooltipPortal } from "../actions/portal";
   import ObstaclesSection from "./ObstaclesSection.svelte";
   import TrashIcon from "./icons/TrashIcon.svelte";
   import ColorPicker from "./ColorPicker.svelte";
@@ -476,6 +477,28 @@
 
   let hoveredLinkId: string | null = null;
   let hoveredWaitId: string | null = null;
+  // Anchor elements used for portal positioning (moved to body)
+  let hoveredLinkAnchor: HTMLElement | null = null;
+  let hoveredWaitAnchor: HTMLElement | null = null;
+
+  function handleLinkHoverEnter(e: MouseEvent, id: string | null) {
+    hoveredLinkId = id;
+    // currentTarget is the icon container
+    hoveredLinkAnchor = e.currentTarget as HTMLElement;
+  }
+  function handleLinkHoverLeave() {
+    hoveredLinkId = null;
+    hoveredLinkAnchor = null;
+  }
+
+  function handleWaitHoverEnter(e: MouseEvent, id: string | null) {
+    hoveredWaitId = id;
+    hoveredWaitAnchor = e.currentTarget as HTMLElement;
+  }
+  function handleWaitHoverLeave() {
+    hoveredWaitId = null;
+    hoveredWaitAnchor = null;
+  }
 
   async function handleContextMenu(event: MouseEvent, seqIndex: number) {
     event.preventDefault();
@@ -1132,9 +1155,8 @@
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <div
                           class="absolute right-1 top-1/2 -translate-y-1/2 text-blue-500 cursor-help flex items-center justify-center"
-                          on:mouseenter={() =>
-                            (hoveredLinkId = line.id || null)}
-                          on:mouseleave={() => (hoveredLinkId = null)}
+                          on:mouseenter={(e) => handleLinkHoverEnter(e, line.id || null)}
+                          on:mouseleave={handleLinkHoverLeave}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1150,7 +1172,8 @@
                           </svg>
                           {#if hoveredLinkId === line.id}
                             <div
-                              class="absolute bottom-full mb-1 right-0 w-64 p-2 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded shadow-lg text-xs text-blue-900 dark:text-blue-100 z-50 pointer-events-none"
+                              use:tooltipPortal={hoveredLinkAnchor}
+                              class="w-64 p-2 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded shadow-lg text-xs text-blue-900 dark:text-blue-100 z-50 pointer-events-none"
                             >
                               <strong>Linked Path</strong><br />
                               Logic: Same Name = Shared Position.<br />
@@ -1379,8 +1402,8 @@
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div
                       class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-500 cursor-help flex items-center justify-center"
-                      on:mouseenter={() => (hoveredWaitId = item.id)}
-                      on:mouseleave={() => (hoveredWaitId = null)}
+                      on:mouseenter={(e) => handleWaitHoverEnter(e, item.id)}
+                      on:mouseleave={handleWaitHoverLeave}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1396,7 +1419,8 @@
                       </svg>
                       {#if hoveredWaitId === item.id}
                         <div
-                          class="absolute bottom-full mb-1 right-0 w-64 p-2 bg-amber-100 dark:bg-amber-900 border border-amber-300 dark:border-amber-700 rounded shadow-lg text-xs text-amber-900 dark:text-amber-100 z-50 pointer-events-none"
+                          use:tooltipPortal={hoveredWaitAnchor}
+                          class="w-64 p-2 bg-amber-100 dark:bg-amber-900 border border-amber-300 dark:border-amber-700 rounded shadow-lg text-xs text-amber-900 dark:text-amber-100 z-50 pointer-events-none"
                         >
                           <strong>Linked Wait</strong><br />
                           Logic: Same Name = Shared Duration.<br />
