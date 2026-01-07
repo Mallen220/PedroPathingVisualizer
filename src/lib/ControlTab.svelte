@@ -847,7 +847,7 @@
 
   function isItemLocked(item: SequenceItem, lines: Line[]): boolean {
     if (item.kind === "path") {
-      return (lines.find((l) => l.id === (item as any).lineId)?.locked ?? false);
+      return lines.find((l) => l.id === (item as any).lineId)?.locked ?? false;
     }
     return getWait(item).locked ?? false;
   }

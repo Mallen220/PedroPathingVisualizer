@@ -18,7 +18,7 @@
     {title}
     aria-label={title}
     {disabled}
-    tabindex={tabindex}
+    {tabindex}
     on:input
     on:change
   />
