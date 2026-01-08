@@ -30,12 +30,17 @@
     ref: EventMarker;
   }
 
+  // Keep track of dragging marker to prevent re-sorting while dragging
+  let draggingMarkerId: string | null = null;
+  let cachedSortedMarkers: GlobalMarker[] = [];
+
   // Reactive list of all markers with global position
-  $: allMarkers = getAllMarkers(sequence, lines);
+  $: allMarkers = getAllMarkers(sequence, lines, draggingMarkerId);
 
   function getAllMarkers(
     seq: SequenceItem[],
     linesList: Line[],
+    draggingId: string | null,
   ): GlobalMarker[] {
     const markers: GlobalMarker[] = [];
 
@@ -78,7 +83,34 @@
     });
 
     // Sort by global position
-    return markers.sort((a, b) => a.globalPosition - b.globalPosition);
+    const sorted = markers.sort((a, b) => a.globalPosition - b.globalPosition);
+
+    if (draggingId) {
+        // If dragging, we want to maintain the list order from before the drag started,
+        // but update the values of the dragging marker.
+        // We use cachedSortedMarkers as the base order.
+        if (cachedSortedMarkers.length === 0) return sorted; // Fallback
+
+        // Map cached ID order to current marker data
+        const idMap = new Map(sorted.map(m => [m.id, m]));
+        const result: GlobalMarker[] = [];
+
+        // Use cached order
+        cachedSortedMarkers.forEach(cached => {
+            const current = idMap.get(cached.id);
+            if (current) {
+                result.push(current);
+                idMap.delete(cached.id);
+            }
+        });
+
+        // Append any new markers that weren't in cache
+        idMap.forEach(m => result.push(m));
+
+        return result;
+    }
+
+    return sorted;
   }
 
   function addMarker() {
@@ -146,7 +178,34 @@
     }
   }
 
-  function handleGlobalPositionChange(marker: GlobalMarker, newVal: number) {
+  function handleGlobalPositionInput(marker: GlobalMarker, newVal: number) {
+    // Start drag session if not already
+    if (!draggingMarkerId) {
+        draggingMarkerId = marker.id;
+        // Snapshot current order
+        cachedSortedMarkers = [...allMarkers];
+    }
+
+    // During drag/input, allow out-of-bounds local values relative to current parent
+    // to visualize "global" movement without thrashing the data structure.
+    // Calculate effective local position relative to CURRENT parent.
+    // globalPosition = parentIndex + localPos
+    // localPos = globalPosition - parentIndex
+    const newLocalPos = newVal - marker.parentIndex;
+
+    marker.ref.position = newLocalPos;
+
+    // Trigger reactivity so UI updates (e.g. number input value)
+    if (marker.parentType === "path") lines = [...lines];
+    else sequence = [...sequence];
+  }
+
+  function handleGlobalPositionCommit(marker: GlobalMarker, newVal: number) {
+    // End drag session
+    draggingMarkerId = null;
+    cachedSortedMarkers = [];
+
+    // On release/commit, perform the actual parent switch if needed.
     // Clamp to valid range
     const max = sequence.length;
     if (newVal < 0) newVal = 0;
@@ -197,7 +256,11 @@
          sequence = [...sequence];
       }
     } else {
-      // Parent is same, just update local position
+      // Parent is same, just update local position (clamping if it was out of bounds)
+      // Ensure it is 0-1
+      if (newLocalPos < 0) newLocalPos = 0;
+      if (newLocalPos > 1) newLocalPos = 1;
+
       marker.ref.position = newLocalPos;
       // Trigger reactivity
       if (marker.parentType === "path") lines = [...lines];
@@ -234,7 +297,7 @@
                 <input
                   type="text"
                   bind:value={marker.ref.name}
-                  class="text-sm font-medium bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-purple-500 rounded px-1 w-full"
+                  class="text-sm font-medium bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-purple-500 rounded px-2 py-0.5 w-full"
                   on:change={() => {
                       if (marker.parentType === 'path') lines = [...lines];
                       else sequence = [...sequence];
@@ -264,7 +327,8 @@
                     step="0.01"
                     value={marker.globalPosition}
                     class="flex-1 slider accent-purple-500"
-                    on:input={(e) => handleGlobalPositionChange(marker, parseFloat(e.currentTarget.value))}
+                    on:input={(e) => handleGlobalPositionInput(marker, parseFloat(e.currentTarget.value))}
+                    on:change={(e) => handleGlobalPositionCommit(marker, parseFloat(e.currentTarget.value))}
                   />
                   <input
                     type="number"
@@ -273,7 +337,7 @@
                     step="0.01"
                     value={parseFloat(marker.globalPosition.toFixed(2))}
                     class="w-16 px-1 py-0.5 text-xs rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-center"
-                    on:change={(e) => handleGlobalPositionChange(marker, parseFloat(e.currentTarget.value))}
+                    on:change={(e) => handleGlobalPositionCommit(marker, parseFloat(e.currentTarget.value))}
                   />
             </div>
           </div>
