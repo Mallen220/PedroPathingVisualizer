@@ -27,6 +27,7 @@
   import WaitSection from "./components/WaitSection.svelte";
   import OptimizationDialog from "./components/OptimizationDialog.svelte";
   import WaypointTable from "./components/WaypointTable.svelte";
+  import PathStatisticsDialog from "./components/PathStatisticsDialog.svelte";
   import { calculatePathTime } from "../utils";
   import { validatePath } from "../utils/validation";
   import { selectedLineId, selectedPointId } from "../stores";
@@ -63,6 +64,7 @@
   export let onPreviewChange: ((lines: Line[] | null) => void) | null = null;
 
   let optimizationOpen = false;
+  let statsOpen = false;
   let waypointTableRef: any = null;
 
   // Field panel optimizer reference and bound runtime state
@@ -864,6 +866,15 @@
 <div
   class="flex-1 flex flex-col justify-start items-center gap-2 h-full relative"
 >
+  <PathStatisticsDialog
+    isOpen={statsOpen}
+    {timePrediction}
+    {lines}
+    {startPoint}
+    {sequence}
+    onClose={() => (statsOpen = false)}
+  />
+
   <!-- Tab Switcher -->
   <div class="w-full px-2 pt-2 flex-none z-10">
     <div
@@ -1027,6 +1038,7 @@
           {recordChange}
           onToggleOptimization={() => (optimizationOpen = !optimizationOpen)}
           onValidate={handleValidate}
+          onStats={() => (statsOpen = true)}
           {optimizationOpen}
           {handleOptimizationApply}
           onPreviewChange={onPreviewChange || (() => {})}
@@ -1092,6 +1104,27 @@
             {toggleCollapseAll}
             {allCollapsed}
           />
+          <button
+            on:click={() => (statsOpen = true)}
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-md transition-colors text-sm font-medium border border-neutral-200 dark:border-neutral-700"
+            title="View Path Statistics"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="size-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
+              />
+            </svg>
+            Stats
+          </button>
         </div>
 
         {#if showDebug}
