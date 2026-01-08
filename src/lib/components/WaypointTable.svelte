@@ -1554,12 +1554,13 @@
     </table>
   </div>
   <div class="flex items-center justify-between mt-2 px-1">
-    <div class="text-xs text-neutral-500 dark:text-neutral-500">
-      * Coordinates in inches. 0,0 is bottom-left. Drag handle to reorder.
+    <div class="text-xs text-neutral-500 dark:text-neutral-500 w-2/3 break-words">
+      <div>* Coordinates in inches. 0,0 is bottom-left. Drag handle to reorder.</div>
+      <div>* Right-click a row to add or reorder points. Use keyboard shortcuts for the best experience (see Keyboard Shortcuts).</div>
     </div>
 
     <!-- Persistent Add Buttons -->
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-shrink-0">
       <button
         on:click={() => insertPath(sequence.length)}
         class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
