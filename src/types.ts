@@ -83,7 +83,20 @@ export type SequenceWaitItem = {
   _linkedName?: string; // Metadata for linked names
 };
 
-export type SequenceItem = SequencePathItem | SequenceWaitItem;
+export type SequenceRotateItem = {
+  kind: "rotate";
+  id: string;
+  name: string;
+  degrees: number;
+  locked?: boolean;
+  eventMarkers?: EventMarker[];
+  _linkedName?: string; // Metadata for linked names
+};
+
+export type SequenceItem =
+  | SequencePathItem
+  | SequenceWaitItem
+  | SequenceRotateItem;
 
 export interface KeyBinding {
   id: string;

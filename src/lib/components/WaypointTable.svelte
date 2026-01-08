@@ -33,6 +33,9 @@
     updateLinkedWaits,
     isLineLinked,
     isWaitLinked,
+    handleRotateRename,
+    updateLinkedRotations,
+    isRotateLinked,
   } from "../../utils/pointLinking";
   import { getRandomColor } from "../../utils/draw";
 
@@ -158,11 +161,26 @@
     }
   }
 
+  function updateRotateName(item: SequenceItem, name: string) {
+    if (item.kind === "rotate") {
+      sequence = handleRotateRename(sequence, item.id, name);
+      recordChange();
+    }
+  }
+
   function updateLineColor(lineId: string, color: string) {
     const line = lines.find((l) => l.id === lineId);
     if (line) {
       line.color = color;
       lines = lines; // Trigger reactivity
+      recordChange();
+    }
+  }
+
+  function updateRotateDegrees(item: SequenceItem, degrees: number) {
+    if (item.kind === "rotate") {
+      item.degrees = degrees;
+      sequence = updateLinkedRotations(sequence, item.id);
       recordChange();
     }
   }
@@ -410,9 +428,21 @@
     selectedPointId.set(null);
   }
 
+  function deleteRotate(index: number) {
+    const item = sequence[index];
+    if (!item) return;
+    if (item.kind === "rotate" && item.locked) return;
+
+    sequence.splice(index, 1);
+    sequence = [...sequence];
+    syncLinesToSequence(sequence);
+    if (recordChange) recordChange();
+    selectedPointId.set(null);
+  }
+
   function toggleWaitLock(index: number) {
     const item = sequence[index];
-    if (item.kind === "wait") {
+    if (item.kind === "wait" || item.kind === "rotate") {
       (item as any).locked = !(item.locked ?? false);
       sequence = [...sequence];
       if (recordChange) recordChange();

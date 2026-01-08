@@ -1,5 +1,11 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
-import type { Line, SequenceItem, SequenceWaitItem, Point } from "../types";
+import type {
+  Line,
+  SequenceItem,
+  SequenceWaitItem,
+  Point,
+  SequenceRotateItem,
+} from "../types";
 
 // Update linked waypoints: shares endpoint x/y
 export function updateLinkedWaypoints(
@@ -164,5 +170,90 @@ export function isWaitLinked(
   if (!wait || !wait.name) return false;
   return sequence.some(
     (s) => s.kind === "wait" && s.id !== waitId && s.name === wait.name,
+  );
+}
+
+// Update linked rotate events: shares degrees
+export function updateLinkedRotations(
+  sequence: SequenceItem[],
+  changedRotateId: string,
+): SequenceItem[] {
+  const changedItem = sequence.find(
+    (s) => s.kind === "rotate" && s.id === changedRotateId,
+  ) as SequenceRotateItem | undefined;
+
+  if (!changedItem || !changedItem.name) return sequence;
+
+  return sequence.map((s) => {
+    if (
+      s.kind === "rotate" &&
+      s.id !== changedRotateId &&
+      s.name === changedItem.name
+    ) {
+      return {
+        ...s,
+        degrees: changedItem.degrees,
+      };
+    }
+    return s;
+  });
+}
+
+// Handle renaming of a rotate event
+export function handleRotateRename(
+  sequence: SequenceItem[],
+  rotateId: string,
+  newName: string,
+): SequenceItem[] {
+  const rotateToRename = sequence.find(
+    (s) => s.kind === "rotate" && s.id === rotateId,
+  ) as SequenceRotateItem | undefined;
+
+  if (!rotateToRename) return sequence;
+
+  // If new name is empty, just rename
+  if (!newName) {
+    return sequence.map((s) =>
+      s.kind === "rotate" && s.id === rotateId ? { ...s, name: newName } : s,
+    );
+  }
+
+  // Check if there are existing rotates with the new name
+  const targetGroupRotate = sequence.find(
+    (s) => s.kind === "rotate" && s.name === newName && s.id !== rotateId,
+  ) as SequenceRotateItem | undefined;
+
+  let updatedRotate: SequenceRotateItem;
+
+  if (targetGroupRotate) {
+    // Adopt the degrees of the group
+    updatedRotate = {
+      ...rotateToRename,
+      name: newName,
+      degrees: targetGroupRotate.degrees,
+    };
+  } else {
+    updatedRotate = {
+      ...rotateToRename,
+      name: newName,
+    };
+  }
+
+  return sequence.map((s) =>
+    s.kind === "rotate" && s.id === rotateId ? updatedRotate : s,
+  );
+}
+
+// Check if a rotate is linked
+export function isRotateLinked(
+  sequence: SequenceItem[],
+  rotateId: string,
+): boolean {
+  const rotate = sequence.find(
+    (s) => s.kind === "rotate" && s.id === rotateId,
+  ) as SequenceRotateItem | undefined;
+  if (!rotate || !rotate.name) return false;
+  return sequence.some(
+    (s) => s.kind === "rotate" && s.id !== rotateId && s.name === rotate.name,
   );
 }
