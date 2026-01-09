@@ -7,3 +7,8 @@
 
 **Learning:** When making a table header sticky (`sticky top-0`) within a flex container that has `overflow-x-auto` (common for responsive tables), the sticky behavior often breaks because the wrapper `div` scrolls away with the document.
 **Action:** To fix this, constrain the wrapper `div` height (e.g., `max-h-[70vh]`) and set `overflow-auto` (handling both axes). This creates a local scrolling context where the header can stick to the top of the wrapper, preserving context for long lists.
+
+## 2026-01-09 - [Actionable Empty States]
+
+**Learning:** Passive empty states (text only) leave users searching for the next step, increasing cognitive load.
+**Action:** Include primary action buttons directly within the empty state container to guide the user immediately to the next logical step.
