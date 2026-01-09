@@ -1029,6 +1029,28 @@
                   </div>
                 </fieldset>
               </div>
+
+              <!-- Velocity Heatmap Toggle -->
+              <div
+                class="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
+              >
+                <div>
+                  <div
+                    class="text-sm font-medium text-neutral-700 dark:text-neutral-300 block mb-1"
+                  >
+                    Velocity Heatmap
+                  </div>
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Visualize robot speed along path (Green to Red)
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  bind:checked={settings.showVelocityHeatmap}
+                  class="w-5 h-5 rounded border-neutral-300 dark:border-neutral-600 text-emerald-500 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  title="Toggle velocity heatmap visualization"
+                />
+              </div>
             </div>
           {/if}
         </div>

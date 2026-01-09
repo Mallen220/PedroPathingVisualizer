@@ -280,6 +280,72 @@
         idx === 0 ? startPoint : lines[idx - 1]?.endPoint || null;
       if (!_startPoint) return;
 
+      // Check for Velocity Heatmap Mode
+      const showHeatmap = settings.showVelocityHeatmap && timePrediction;
+      let heatmapSegments: PathLine[] = [];
+
+      if (showHeatmap) {
+        // Try to find corresponding timeline event for velocity data
+        // lineIndex matches the index in 'lines' array
+        const event = timePrediction.timeline.find(
+          (e: any) => e.type === "travel" && e.lineIndex === idx,
+        );
+
+        if (event && event.velocityProfile && event.velocityProfile.length > 0) {
+          const vProfile = event.velocityProfile as number[];
+          const maxVel = Math.max(1, settings.maxVelocity);
+
+          // Re-sample geometry to match profile (100 samples)
+          const samples = 100;
+          let cps = [_startPoint, ...line.controlPoints, line.endPoint];
+          let prevPt = getCurvePoint(0, cps);
+
+          for (let i = 1; i <= samples; i++) {
+            const t = i / samples;
+            const currPt = getCurvePoint(t, cps);
+
+            // Calculate the proportional index in the velocity profile
+            const profileIndex = Math.floor(t * (vProfile.length - 1));
+            // Ensure we don't go out of bounds (though Math.floor guarantees <= length-1)
+            const safeIndex = Math.min(vProfile.length - 1, Math.max(0, profileIndex));
+
+            const vAvg = vProfile[safeIndex] || 0;
+            const ratio = Math.min(1, Math.max(0, vAvg / maxVel));
+
+            // Green (120) -> Red (0)
+            const hue = 120 - ratio * 120;
+            const color = `hsl(${hue}, 100%, 40%)`;
+
+            let seg = new Two.Line(
+              x(prevPt.x),
+              y(prevPt.y),
+              x(currPt.x),
+              y(currPt.y),
+            );
+            seg.stroke = color;
+            seg.linewidth =
+              line.id === currentSelectedId
+                ? uiLength(LINE_WIDTH * 2.5)
+                : uiLength(LINE_WIDTH);
+            seg.id = `line-${idx + 1}-seg-${i}`;
+            if (line.locked) {
+              seg.dashes = [uiLength(2), uiLength(2)];
+              seg.opacity = 0.7;
+            }
+            heatmapSegments.push(seg);
+
+            prevPt = currPt;
+          }
+        }
+      }
+
+      // If we generated heatmap segments, add them and skip standard line
+      if (heatmapSegments.length > 0) {
+        heatmapSegments.forEach((seg) => _path.push(seg));
+        return;
+      }
+
+      // Fallback: Standard Line Rendering
       let lineElem: Path | PathLine;
       if (line.controlPoints.length > 2) {
         const samples = 100;

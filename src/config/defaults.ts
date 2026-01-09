@@ -407,6 +407,7 @@ export const DEFAULT_SETTINGS: Settings = {
   robotImage: "/robot.png",
   javaPackageName: "org.firstinspires.ftc.teamcode.Commands.AutoCommands",
   theme: "auto",
+  showVelocityHeatmap: false,
   showGhostPaths: false,
   showOnionLayers: false,
   onionLayerSpacing: 6, // inches between each robot body trace

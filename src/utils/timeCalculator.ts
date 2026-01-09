@@ -332,7 +332,7 @@ function calculateRotationTime(
 function calculateMotionProfileDetailed(
   steps: PathStep[],
   settings: Settings,
-): { totalTime: number; profile: number[] } {
+): { totalTime: number; profile: number[]; velocityProfile: number[] } {
   const maxVelGlobal = settings.maxVelocity || 100;
   const maxAcc = settings.maxAcceleration || 30;
   const maxDec = settings.maxDeceleration || maxAcc;
@@ -411,7 +411,10 @@ function calculateMotionProfileDetailed(
     profile.push(totalTime);
   }
 
-  return { totalTime, profile };
+  // Convert Float64Array to number[] for easier consumption
+  const velocityProfile = Array.from(vAtPoints);
+
+  return { totalTime, profile, velocityProfile };
 }
 
 export function calculatePathTime(
@@ -553,6 +556,7 @@ export function calculatePathTime(
 
     let translationTime = 0;
     let motionProfile: number[] | undefined = undefined;
+    let velocityProfile: number[] | undefined = undefined;
     let headingProfile: number[] | undefined = undefined;
 
     if (useMotionProfile) {
@@ -562,6 +566,7 @@ export function calculatePathTime(
       );
       translationTime = result.totalTime;
       motionProfile = result.profile;
+      velocityProfile = result.velocityProfile;
 
       // Build heading profile if Tangential
       if (line.endPoint.heading === "tangential") {
@@ -624,6 +629,7 @@ export function calculatePathTime(
       endTime: currentTime + segmentTime,
       lineIndex,
       motionProfile: motionProfile,
+      velocityProfile: velocityProfile,
       headingProfile: headingProfile,
     });
     currentTime += segmentTime;
