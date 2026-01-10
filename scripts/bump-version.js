@@ -61,7 +61,7 @@ async function bumpVersion() {
 
   // Ensure newest.md exists (recreate it if it was renamed or didn't exist)
   try {
-    const template = `### What's New in the Next Version
+    const template = `### What's New!
 
 **Features:**
 -
@@ -69,12 +69,6 @@ async function bumpVersion() {
 **Bug Fixes:**
 -
 `;
-    // We only want to write it if it doesn't exist?
-    // Actually, if we just renamed it, it won't exist.
-    // If it didn't exist before, we should create it.
-    // So writing it is safe if we want to ensure a fresh one.
-    // But wait, if we didn't rename it (because it wasn't a file), we might be overwriting something?
-    // No, catch block handles ENOENT.
 
     // Check if it exists now.
     try {
