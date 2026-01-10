@@ -31,53 +31,93 @@
   let appVersion = packageJson.version;
 
   let downloadCount: number | null = null;
+  let isPartialCount = false;
 
   onMount(async () => {
     try {
       let page = 1;
       let count = 0;
       let hasMore = true;
+      let fetchFailed = false;
 
-      while (hasMore) {
-        const response = await fetch(
-          `https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases?per_page=100&page=${page}`,
-        );
+      // Try to fetch all releases to get total download count
+      try {
+        while (hasMore) {
+          const response = await fetch(
+            `https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases?per_page=100&page=${page}`,
+          );
 
-        if (response.ok) {
-          const releases = await response.json();
-          if (releases.length === 0) {
-            hasMore = false;
-          } else {
-            releases.forEach((release: any) => {
-              release.assets.forEach((asset: any) => {
-                // Filter for application binaries to avoid counting metadata files (like latest.yml)
-                // which might be downloaded automatically by updaters.
-                const name = asset.name.toLowerCase();
-                if (
-                  name.endsWith(".exe") ||
-                  name.endsWith(".dmg") ||
-                  name.endsWith(".deb") ||
-                  name.endsWith(".rpm") ||
-                  name.endsWith(".appimage") ||
-                  name.endsWith(".pkg") ||
-                  name.endsWith(".zip") ||
-                  name.endsWith(".tar.gz")
-                ) {
-                  count += asset.download_count;
-                }
+          if (response.ok) {
+            const releases = await response.json();
+            if (releases.length === 0) {
+              hasMore = false;
+            } else {
+              releases.forEach((release: any) => {
+                count += sumAssets(release.assets);
               });
-            });
-            page++;
+              page++;
+            }
+          } else {
+            // If the first page fails, we mark it as failed to trigger fallback
+            if (page === 1) {
+              fetchFailed = true;
+              console.warn("Failed to list releases, falling back to latest release.");
+            }
+            hasMore = false;
           }
-        } else {
-          hasMore = false;
+        }
+      } catch (e) {
+        console.error("Error fetching release list", e);
+        fetchFailed = true;
+      }
+
+      // If listing all releases failed (e.g. timeout), try getting just the latest release
+      if (fetchFailed || count === 0) {
+        try {
+          const response = await fetch(
+            `https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases/latest`,
+          );
+
+          if (response.ok) {
+            const release = await response.json();
+            count = sumAssets(release.assets);
+            isPartialCount = true;
+          }
+        } catch (e) {
+           console.error("Failed to fetch latest release", e);
         }
       }
-      downloadCount = count;
+
+      if (count > 0) {
+        downloadCount = count;
+      }
     } catch (e) {
       console.error("Failed to fetch download count", e);
     }
   });
+
+  function sumAssets(assets: any[]): number {
+    let c = 0;
+    if (!assets) return 0;
+    assets.forEach((asset: any) => {
+      // Filter for application binaries to avoid counting metadata files (like latest.yml)
+      // which might be downloaded automatically by updaters.
+      const name = asset.name.toLowerCase();
+      if (
+        name.endsWith(".exe") ||
+        name.endsWith(".dmg") ||
+        name.endsWith(".deb") ||
+        name.endsWith(".rpm") ||
+        name.endsWith(".appimage") ||
+        name.endsWith(".pkg") ||
+        name.endsWith(".zip") ||
+        name.endsWith(".tar.gz")
+      ) {
+        c += asset.download_count;
+      }
+    });
+    return c;
+  }
 
   // Display value for angular velocity (user inputs this, gets multiplied by PI)
   $: angularVelocityDisplay = settings ? settings.aVelocity / Math.PI : 1;
@@ -288,9 +328,9 @@
             <div class="text-xs text-neutral-400 dark:text-neutral-500">•</div>
             <span
               class="text-xs text-neutral-500 dark:text-neutral-400"
-              title="Total Downloads from GitHub"
+              title={isPartialCount ? "Downloads for the latest release only" : "Total Downloads from GitHub"}
             >
-              {downloadCount.toLocaleString()} App Downloads
+              {downloadCount.toLocaleString()} App Downloads{isPartialCount ? "*" : ""}
             </span>
           {/if}
         </div>
