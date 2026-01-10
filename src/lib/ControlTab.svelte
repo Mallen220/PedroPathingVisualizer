@@ -8,6 +8,7 @@
     Shape,
     SequenceItem,
     SequenceWaitItem,
+    SequenceRotateItem,
   } from "../types";
   import _ from "lodash";
   import {

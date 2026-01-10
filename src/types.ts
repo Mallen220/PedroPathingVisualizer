@@ -122,6 +122,7 @@ export interface Settings {
   robotImage?: string;
   javaPackageName?: string;
   theme: "light" | "dark" | "auto";
+  showVelocityHeatmap?: boolean; // Show velocity heatmap overlay
   showGhostPaths?: boolean; // Show collision overlays via ghost paths
   showOnionLayers?: boolean; // Show robot body at intervals along the path
   onionLayerSpacing?: number; // Distance in inches between onion layers

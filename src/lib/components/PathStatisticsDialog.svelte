@@ -119,6 +119,7 @@
       }
 
       // Handle Path Item
+      if (item.kind !== "path") return;
       const line = lineById.get(item.lineId);
       if (!line) return;
 

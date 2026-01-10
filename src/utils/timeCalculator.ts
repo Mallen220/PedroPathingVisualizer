@@ -484,7 +484,7 @@ function calculateMotionProfileDetailed(
   const aVelocity = Math.max(settings.aVelocity, 0.001);
 
   const n = steps.length;
-  if (n === 0) return { totalTime: 0, profile: [0] };
+  if (n === 0) return { totalTime: 0, profile: [0], velocityProfile: [0] };
 
   const vAtPoints = new Float64Array(n + 1);
   vAtPoints[0] = 0;
