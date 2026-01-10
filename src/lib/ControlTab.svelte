@@ -25,6 +25,7 @@
   import PathLineSection from "./components/PathLineSection.svelte";
   import PlaybackControls from "./components/PlaybackControls.svelte";
   import WaitSection from "./components/WaitSection.svelte";
+  import RotateSection from "./components/RotateSection.svelte";
   import OptimizationDialog from "./components/OptimizationDialog.svelte";
   import GlobalEventMarkers from "./components/GlobalEventMarkers.svelte";
   import WaypointTable from "./components/WaypointTable.svelte";
@@ -280,6 +281,8 @@
     controlPoints: lines.map(() => true), // Start with control points collapsed
     // Track collapsed state for waits by their ID
     waits: {} as Record<string, boolean>,
+    // Track collapsed state for rotates by their ID
+    rotates: {} as Record<string, boolean>,
     globalMarkers: false,
   };
 
@@ -469,6 +472,10 @@
     return i as SequenceWaitItem;
   }
 
+  function getRotate(i: any) {
+    return i as SequenceRotateItem;
+  }
+
   function getPathLineId(item: SequenceItem) {
     return item.kind === "path" ? (item as any).lineId : undefined;
   }
@@ -616,6 +623,15 @@
     });
     collapsedSections.waits = newWaits;
 
+    // Set all rotates to collapsed
+    const newRotates = { ...collapsedSections.rotates };
+    sequence.forEach((s) => {
+      if (s.kind === "rotate") {
+        newRotates[s.id] = true;
+      }
+    });
+    collapsedSections.rotates = newRotates;
+
     // Force reactivity
     collapsedSections = { ...collapsedSections };
     collapsedEventMarkers = [...collapsedEventMarkers];
@@ -639,6 +655,15 @@
     });
     collapsedSections.waits = newWaits;
 
+    // Set all rotates to expanded (false)
+    const newRotates = { ...collapsedSections.rotates };
+    sequence.forEach((s) => {
+      if (s.kind === "rotate") {
+        newRotates[s.id] = false;
+      }
+    });
+    collapsedSections.rotates = newRotates;
+
     collapsedSections = { ...collapsedSections };
     collapsedEventMarkers = [...collapsedEventMarkers];
   }
@@ -654,7 +679,12 @@
     (sequence.filter((s) => s.kind === "wait").length === 0 ||
       sequence
         .filter((s) => s.kind === "wait")
-        .every((s) => collapsedSections.waits[s.id]));
+        .every((s) => collapsedSections.waits[s.id])) &&
+    // Check if all rotates are collapsed (only if there are rotates)
+    (sequence.filter((s) => s.kind === "rotate").length === 0 ||
+      sequence
+        .filter((s) => s.kind === "rotate")
+        .every((s) => collapsedSections.rotates[s.id]));
 
   function toggleCollapseAll() {
     if (allCollapsed) expandAll();
@@ -673,6 +703,22 @@
 
     // Select newly created wait
     selectedPointId.set(`wait-${(wait as any).id}`);
+    selectedLineId.set(null);
+    recordChange();
+  }
+
+  function addRotate() {
+    const rotate = {
+      kind: "rotate",
+      id: makeId(),
+      name: "",
+      degrees: 0,
+      locked: false,
+    } as SequenceItem;
+    sequence = [...sequence, rotate];
+
+    // Select newly created rotate
+    selectedPointId.set(`rotate-${(rotate as any).id}`);
     selectedLineId.set(null);
     recordChange();
   }
@@ -744,6 +790,18 @@
       id: makeId(),
       name: "",
       durationMs: 1000,
+      locked: false,
+    });
+    sequence = newSeq;
+  }
+
+  function insertRotateAfter(seqIndex: number) {
+    const newSeq = [...sequence];
+    newSeq.splice(seqIndex + 1, 0, {
+      kind: "rotate",
+      id: makeId(),
+      name: "",
+      degrees: 0,
       locked: false,
     });
     sequence = newSeq;
@@ -844,6 +902,10 @@
       if (it.kind === "wait") {
         return (it as any).locked ?? false;
       }
+      // rotate
+      if (it.kind === "rotate") {
+        return (it as any).locked ?? false;
+      }
       return false;
     };
 
@@ -862,6 +924,9 @@
   function isItemLocked(item: SequenceItem, lines: Line[]): boolean {
     if (item.kind === "path") {
       return lines.find((l) => l.id === (item as any).lineId)?.locked ?? false;
+    }
+    if (item.kind === "rotate") {
+      return getRotate(item).locked ?? false;
     }
     return getWait(item).locked ?? false;
   }
@@ -1148,8 +1213,8 @@
           </div>
         {/if}
 
-        <!-- Unified sequence render: paths and waits -->
-        {#each sequence as item, sIdx (item.kind === "path" ? getPathLineId(item) : getWait(item).id)}
+        <!-- Unified sequence render: paths, waits, and rotates -->
+        {#each sequence as item, sIdx (item.kind === "path" ? getPathLineId(item) : item.kind === "wait" ? getWait(item).id : getRotate(item).id)}
           {@const isLocked =
             item.kind === "path"
               ? (lines.find((l) => l.id === getPathLineId(item))?.locked ??
@@ -1196,6 +1261,26 @@
                   {recordChange}
                 />
               {/each}
+            {:else if item.kind === "rotate"}
+              <RotateSection
+                bind:rotate={item}
+                bind:sequence
+                bind:collapsed={collapsedSections.rotates[getRotate(item).id]}
+                onRemove={() => {
+                  const newSeq = [...sequence];
+                  newSeq.splice(sIdx, 1);
+                  sequence = newSeq;
+                  recordChange?.();
+                }}
+                onInsertAfter={() => insertRotateAfter(sIdx)}
+                onAddPathAfter={() => insertPathAfter(sIdx)}
+                onAddWaitAfter={() => insertWaitAfter(sIdx)}
+                onMoveUp={() => moveSequenceItem(sIdx, -1)}
+                onMoveDown={() => moveSequenceItem(sIdx, 1)}
+                canMoveUp={sIdx !== 0}
+                canMoveDown={sIdx !== sequence.length - 1}
+                {recordChange}
+              />
             {:else}
               <WaitSection
                 bind:wait={item}
@@ -1274,6 +1359,28 @@
               />
             </svg>
             Add Wait
+          </button>
+
+          <button
+            on:click={addRotate}
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-500 dark:bg-green-600 rounded-md shadow-sm hover:bg-green-600 dark:hover:bg-green-500 transition-colors focus:outline-none focus:ring-2 focus:ring-green-200 dark:focus:ring-green-500"
+            aria-label="Add rotate command"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="size-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+              />
+            </svg>
+            Add Rotate
           </button>
         </div>
       </div>

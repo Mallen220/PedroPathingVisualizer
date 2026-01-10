@@ -71,6 +71,10 @@ src/tests/validation.test.ts
 package-lock.json
 src/tests/exportAnimation.test.ts
 src/tests/projectStore.test.ts
+src/lib/components/RotateSection.svelte
+src/types.ts
+verification/error.png
+verification/verify_rotate.py
 src/lib/components/PathStatisticsDialog.svelte
 src/lib/components/ObstaclesSection.svelte
 src/tests/fileHandlers.test.ts

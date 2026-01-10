@@ -645,7 +645,31 @@ export function calculatePathTime(
       return;
     }
 
-    const line = lineById.get(item.lineId);
+    if (item.kind === "rotate") {
+      // Calculate rotation duration
+      const targetHeading = unwrapAngle(item.degrees, currentHeading);
+      const diff = Math.abs(currentHeading - targetHeading);
+      const rotTime = calculateRotationTime(diff, safeSettings);
+
+      if (rotTime > 0) {
+        timeline.push({
+          type: "wait", // Reuse wait type for stationary actions
+          name: item.name,
+          duration: rotTime,
+          startTime: currentTime,
+          endTime: currentTime + rotTime,
+          waitId: item.id,
+          startHeading: currentHeading,
+          targetHeading: targetHeading,
+          atPoint: lastPoint,
+        });
+        currentTime += rotTime;
+        currentHeading = targetHeading;
+      }
+      return;
+    }
+
+    const line = lineById.get((item as any).lineId);
     if (!line || !line.endPoint) {
       return;
     }
