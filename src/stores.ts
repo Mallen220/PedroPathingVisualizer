@@ -1,6 +1,6 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import { writable } from "svelte/store";
-import type { CollisionMarker, Notification } from "./types";
+import type { CollisionMarker, Notification, Line, Point } from "./types";
 
 // Math tools stores
 export const showRuler = writable(false);
@@ -58,3 +58,7 @@ export const fileManagerSessionState = writable<{
 });
 
 export const hoveredMarkerId = writable<string | null>(null);
+
+// Snapshot Stores
+export const snapshotLines = writable<Line[] | null>(null);
+export const snapshotStartPoint = writable<Point | null>(null);

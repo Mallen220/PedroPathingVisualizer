@@ -16,6 +16,8 @@
     collisionMarkers,
     fieldZoom,
     fieldPan,
+    snapshotLines,
+    snapshotStartPoint,
   } from "../../stores";
   import {
     linesStore,
@@ -155,6 +157,17 @@
   $: robotHeading = $robotHeadingStore;
   $: sequence = $sequenceStore; // Needed for wait markers
   $: markers = $collisionMarkers;
+
+  // Snapshot Functions
+  function takeSnapshot() {
+    snapshotLines.set(structuredClone($linesStore));
+    snapshotStartPoint.set(structuredClone($startPointStore));
+  }
+
+  function clearSnapshot() {
+    snapshotLines.set(null);
+    snapshotStartPoint.set(null);
+  }
 
   // Helper to transform mouse coordinates based on rotation
   function getTransformedCoordinates(
@@ -623,6 +636,104 @@
     return onionLayers;
   })();
 
+  // Snapshot Paths
+  $: snapshotPathElements = (() => {
+    let _snapshotPaths: Path[] = [];
+    const _lines = $snapshotLines;
+    const _startPoint = $snapshotStartPoint;
+
+    if (_lines && _startPoint && _lines.length > 0) {
+      _lines.forEach((line, idx) => {
+        if (!line || !line.endPoint) return;
+        let prevStart =
+          idx === 0 ? _startPoint : _lines[idx - 1]?.endPoint || null;
+        if (!prevStart) return;
+
+        let lineElem: Path | PathLine;
+        if (line.controlPoints.length > 2) {
+          const samples = 100;
+          const cps = [prevStart, ...line.controlPoints, line.endPoint];
+          let points = [
+            new Two.Anchor(
+              x(prevStart.x),
+              y(prevStart.y),
+              0,
+              0,
+              0,
+              0,
+              Two.Commands.move,
+            ),
+          ];
+          for (let i = 1; i <= samples; ++i) {
+            const point = getCurvePoint(i / samples, cps);
+            points.push(
+              new Two.Anchor(
+                x(point.x),
+                y(point.y),
+                0,
+                0,
+                0,
+                0,
+                Two.Commands.line,
+              ),
+            );
+          }
+          points.forEach((point) => (point.relative = false));
+          lineElem = new Two.Path(points);
+          lineElem.automatic = false;
+        } else if (line.controlPoints.length > 0) {
+          let cp1 = line.controlPoints[1]
+            ? line.controlPoints[0]
+            : quadraticToCubic(prevStart, line.controlPoints[0], line.endPoint)
+                .Q1;
+          let cp2 =
+            line.controlPoints[1] ??
+            quadraticToCubic(prevStart, line.controlPoints[0], line.endPoint)
+              .Q2;
+          let points = [
+            new Two.Anchor(
+              x(prevStart.x),
+              y(prevStart.y),
+              x(prevStart.x),
+              y(prevStart.y),
+              x(cp1.x),
+              y(cp1.y),
+              Two.Commands.move,
+            ),
+            new Two.Anchor(
+              x(line.endPoint.x),
+              y(line.endPoint.y),
+              x(cp2.x),
+              y(cp2.y),
+              x(line.endPoint.x),
+              y(line.endPoint.y),
+              Two.Commands.curve,
+            ),
+          ];
+          points.forEach((point) => (point.relative = false));
+          lineElem = new Two.Path(points);
+          lineElem.automatic = false;
+        } else {
+          lineElem = new Two.Line(
+            x(prevStart.x),
+            y(prevStart.y),
+            x(line.endPoint.x),
+            y(line.endPoint.y),
+          );
+        }
+
+        lineElem.id = `snapshot-line-${idx + 1}`;
+        lineElem.stroke = "#06b6d4"; // Cyan-500
+        lineElem.linewidth = uiLength(LINE_WIDTH);
+        lineElem.noFill();
+        lineElem.dashes = [uiLength(6), uiLength(4)];
+        lineElem.opacity = 0.6;
+        _snapshotPaths.push(lineElem);
+      });
+    }
+    return _snapshotPaths;
+  })();
+
   // Preview Paths
   $: previewPathElements = (() => {
     let _previewPaths: Path[] = [];
@@ -899,6 +1010,8 @@
     eventGroup.id = "event-group";
     const collisionGroup = new Two.Group();
     collisionGroup.id = "collision-group";
+    const snapshotGroup = new Two.Group();
+    snapshotGroup.id = "snapshot-group";
 
     two.clear();
 
@@ -906,6 +1019,8 @@
       shapeElements.forEach((el) => shapeGroup.add(el));
     if (ghostPathElement) shapeGroup.add(ghostPathElement);
     onionLayerElements.forEach((el) => shapeGroup.add(el));
+
+    snapshotPathElements.forEach((el) => snapshotGroup.add(el));
 
     path.forEach((el) => lineGroup.add(el));
     previewPathElements.forEach((el) => lineGroup.add(el));
@@ -917,6 +1032,7 @@
     collisionElements.forEach((el) => collisionGroup.add(el));
 
     two.add(shapeGroup);
+    two.add(snapshotGroup);
     two.add(lineGroup);
     two.add(eventGroup);
     two.add(pointGroup);
@@ -1398,6 +1514,55 @@ left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}
   <div
     class="absolute bottom-2 right-2 flex flex-col gap-1 z-30 bg-white/80 dark:bg-neutral-800/80 p-1 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm"
   >
+    <!-- Snapshot Controls -->
+    {#if $snapshotLines}
+      <button
+        class="w-7 h-7 flex items-center justify-center rounded hover:bg-red-200 dark:hover:bg-red-900 text-red-600 dark:text-red-400 transition-colors"
+        on:click={clearSnapshot}
+        aria-label="Clear Snapshot"
+        title="Clear Path Snapshot"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+    {:else}
+      <button
+        class="w-7 h-7 flex items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 transition-colors"
+        on:click={takeSnapshot}
+        aria-label="Take Snapshot"
+        title="Take Path Snapshot"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            d="M4.5 5A2.5 2.5 0 002 7.5v6A2.5 2.5 0 004.5 16h11a2.5 2.5 0 002.5-2.5v-6A2.5 2.5 0 0015.5 5h-11z"
+            opacity="0.5"
+          />
+          <path
+            fill-rule="evenodd"
+            d="M10 8a3 3 0 100 6 3 3 0 000-6zm-1.5 3a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+    {/if}
+
+    <div class="h-px bg-neutral-200 dark:bg-neutral-700 my-0.5"></div>
+
     <button
       class="w-7 h-7 flex items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 transition-colors"
       on:click={() => {
