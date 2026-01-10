@@ -1459,26 +1459,18 @@ left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 20 20"
-        fill="currentColor"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
         class="w-4 h-4"
       >
-        <path
-          fill-rule="evenodd"
-          d="M3.5 2A1.5 1.5 0 002 3.5v13A1.5 1.5 0 003.5 18h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0016.5 2h-13zM9 5a.75.75 0 01.75.75v3.5h3.5a.75.75 0 010 1.5h-3.5v3.5a.75.75 0 01-1.5 0v-3.5h-3.5a.75.75 0 010-1.5h3.5v-3.5A.75.75 0 019 5z"
-          clip-rule="evenodd"
-          style="display:none"
-        />
-        <!-- Custom Reset Icon (Square with dot or similar, or just text '1x') -->
-        <!-- Using a simple maximize/fit icon representation or text -->
-        <text
-          x="10"
-          y="11"
-          font-size="8"
-          text-anchor="middle"
-          fill="currentColor"
-          font-weight="bold">R</text
-        >
+        <polyline points="4 9 4 4 9 4" />
+        <polyline points="15 4 20 4 20 9" />
+        <polyline points="20 15 20 20 15 20" />
+        <polyline points="9 20 4 20 4 15" />
       </svg>
     </button>
   </div>
