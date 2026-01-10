@@ -11,6 +11,7 @@
   import FieldRenderer from "./lib/components/FieldRenderer.svelte";
   import KeyboardShortcuts from "./lib/components/KeyboardShortcuts.svelte";
   import ExportGifDialog from "./lib/components/ExportGifDialog.svelte";
+  import PathStatisticsDialog from "./lib/components/PathStatisticsDialog.svelte";
   import NotificationToast from "./lib/components/NotificationToast.svelte";
 
   // Stores
@@ -110,6 +111,7 @@
   let showSidebar = true;
   let activeControlTab: "path" | "field" | "table" = "path";
   let controlTabRef: any = null;
+  let statsOpen = false;
   let mainContentHeight = 0;
   let mainContentWidth = 0;
   let mainContentDiv: HTMLDivElement;
@@ -642,6 +644,17 @@
   />
 {/if}
 
+{#if statsOpen}
+  <PathStatisticsDialog
+    bind:isOpen={statsOpen}
+    lines={$linesStore}
+    sequence={$sequenceStore}
+    settings={$settingsStore}
+    startPoint={$startPointStore}
+    onClose={() => (statsOpen = false)}
+  />
+{/if}
+
 <NotificationToast />
 
 <!-- Main Container -->
@@ -768,6 +781,7 @@
         playbackSpeed={$playbackSpeedStore}
         {resetPlaybackSpeed}
         {setPlaybackSpeed}
+        bind:statsOpen
         bind:activeTab={activeControlTab}
         onPreviewChange={handlePreviewChange}
       />

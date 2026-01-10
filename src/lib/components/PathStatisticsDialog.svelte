@@ -361,9 +361,9 @@
         </div>
       </div>
 
-      <!-- Table Header -->
+      <!-- Table Header (desktop only) -->
       <div
-        class="grid grid-cols-12 gap-2 px-6 py-2 bg-neutral-100 dark:bg-neutral-900/30 border-y border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+        class="hidden sm:grid grid-cols-12 gap-2 px-6 py-2 bg-neutral-100 dark:bg-neutral-900/30 border-y border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
       >
         <div class="col-span-4">Segment</div>
         <div class="col-span-2 text-right">Length</div>
@@ -377,9 +377,11 @@
         <div class="flex flex-col gap-1">
           {#each pathStats.segments as seg}
             <div
-              class="grid grid-cols-12 gap-2 px-4 py-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors items-center text-sm"
+              class="grid grid-cols-1 sm:grid-cols-12 gap-2 px-4 py-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors items-start text-sm"
             >
-              <div class="col-span-4 flex items-center gap-2 truncate">
+              <div
+                class="col-span-1 sm:col-span-4 flex items-center gap-2 truncate"
+              >
                 <div
                   class="w-3 h-3 rounded-full flex-none"
                   style="background-color: {seg.color}"
@@ -389,23 +391,35 @@
                   >{seg.name}</span
                 >
               </div>
+
+              <!-- Compact metrics for small screens -->
               <div
-                class="col-span-2 text-right text-neutral-600 dark:text-neutral-400"
+                class="sm:hidden mt-2 w-full text-sm text-neutral-600 dark:text-neutral-400 flex flex-wrap gap-2"
+              >
+                <div class="flex-1">Len: {seg.length.toFixed(1)}"</div>
+                <div class="flex-1">Time: {seg.time.toFixed(2)}s</div>
+                <div class="flex-1">Max V: {seg.maxVel.toFixed(1)}</div>
+                <div class="flex-1">ω: {seg.maxAngVel.toFixed(1)}</div>
+              </div>
+
+              <!-- Desktop metrics -->
+              <div
+                class="hidden sm:block sm:col-span-2 text-right text-neutral-600 dark:text-neutral-400"
               >
                 {seg.length.toFixed(1)}"
               </div>
               <div
-                class="col-span-2 text-right text-neutral-600 dark:text-neutral-400"
+                class="hidden sm:block sm:col-span-2 text-right text-neutral-600 dark:text-neutral-400"
               >
                 {seg.time.toFixed(2)}s
               </div>
               <div
-                class="col-span-2 text-right text-neutral-600 dark:text-neutral-400"
+                class="hidden sm:block sm:col-span-2 text-right text-neutral-600 dark:text-neutral-400"
               >
                 {seg.maxVel.toFixed(1)}
               </div>
               <div
-                class="col-span-2 text-right text-neutral-600 dark:text-neutral-400"
+                class="hidden sm:block sm:col-span-2 text-right text-neutral-600 dark:text-neutral-400"
               >
                 {seg.maxAngVel.toFixed(1)}
               </div>

@@ -30,7 +30,6 @@
   import OptimizationDialog from "./components/OptimizationDialog.svelte";
   import GlobalEventMarkers from "./components/GlobalEventMarkers.svelte";
   import WaypointTable from "./components/WaypointTable.svelte";
-  import PathStatisticsDialog from "./components/PathStatisticsDialog.svelte";
   import { calculatePathTime } from "../utils";
   import { validatePath } from "../utils/validation";
   import { selectedLineId, selectedPointId } from "../stores";
@@ -67,7 +66,7 @@
   export let onPreviewChange: ((lines: Line[] | null) => void) | null = null;
 
   let optimizationOpen = false;
-  let statsOpen = false;
+  export let statsOpen = false;
   let waypointTableRef: any = null;
 
   // Field panel optimizer reference and bound runtime state
@@ -1387,15 +1386,6 @@
       </div>
     {/if}
   </div>
-
-  <PathStatisticsDialog
-    bind:isOpen={statsOpen}
-    {lines}
-    {sequence}
-    {settings}
-    {startPoint}
-    onClose={() => (statsOpen = false)}
-  />
 
   <div
     class="flex-none w-full bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
