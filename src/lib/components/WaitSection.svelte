@@ -329,7 +329,9 @@
     <div class="flex flex-col justify-start items-start w-full gap-2 pl-2">
       <!-- Duration Input -->
       <div class="flex items-center gap-2">
-        <span class="text-sm font-light" id="wait-duration-label-{wait.id}">Duration:</span>
+        <span class="text-sm font-light" id="wait-duration-label-{wait.id}"
+          >Duration:</span
+        >
         <input
           class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none focus:ring-2 focus:ring-blue-500 w-24"
           type="number"
