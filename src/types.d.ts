@@ -90,9 +90,18 @@ type SequenceWaitItem = {
   id: string;
   name: string;
   durationMs: number;
+  eventMarkers?: EventMarker[];
 };
 
-type SequenceItem = SequencePathItem | SequenceWaitItem;
+type SequenceRotateItem = {
+  kind: "rotate";
+  id: string;
+  name: string;
+  degrees: number;
+  eventMarkers?: EventMarker[];
+};
+
+type SequenceItem = SequencePathItem | SequenceWaitItem | SequenceRotateItem;
 
 interface Settings {
   xVelocity: number;
@@ -109,41 +118,6 @@ interface Settings {
   robotImage?: string;
   theme: "light" | "dark" | "auto";
 }
-
-function getDefaultSettings(): Settings {
-  return {
-    xVelocity: 10,
-    yVelocity: 10,
-    aVelocity: 5,
-    kFriction: 0.1,
-    rWidth: 18,
-    rHeight: 18,
-    safetyMargin: 2,
-    maxVelocity: 50,
-    maxAcceleration: 10,
-    maxDeceleration: 8,
-  };
-}
-
-function saveSettings(settings: Settings): void {
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-}
-
-function loadSettings(): Settings {
-  if (!fs.existsSync(SETTINGS_FILE)) {
-    const defaultSettings = getDefaultSettings();
-    saveSettings(defaultSettings);
-    return defaultSettings;
-  }
-
-  const fileContent = fs.readFileSync(SETTINGS_FILE, "utf-8");
-  const savedSettings = JSON.parse(fileContent) as Partial<Settings>;
-
-  // Merge saved settings with defaults to include new settings
-  return { ...getDefaultSettings(), ...savedSettings };
-}
-
-export const settings = loadSettings();
 
 interface Shape {
   id: string;

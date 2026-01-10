@@ -5,7 +5,7 @@ import {
   generatePointsArray,
   generateSequentialCommandCode,
 } from "../utils/codeExporter";
-import type { Point, Line, SequenceItem } from "../types";
+import type { Point, Line, SequenceItem, Settings } from "../types";
 
 // Mock prettier to just return the code as-is or with simple modification
 vi.mock("prettier", () => ({
@@ -69,6 +69,36 @@ describe("codeExporter", () => {
     },
     color: "#000000",
     eventMarkers: [{ id: "m1", name: "marker1", position: 0.5 }],
+  };
+
+  const mockSettings: Settings = {
+    xVelocity: 30,
+    yVelocity: 30,
+    aVelocity: Math.PI,
+    kFriction: 0.4,
+    rLength: 16,
+    rWidth: 16,
+    safetyMargin: 6,
+    maxVelocity: 40,
+    maxAcceleration: 30,
+    maxDeceleration: 30,
+    fieldMap: "decode.webp",
+    fieldRotation: 0,
+    robotImage: "/robot.png",
+    javaPackageName: "org.firstinspires.ftc.teamcode.Commands.AutoCommands",
+    theme: "auto",
+    showVelocityHeatmap: false,
+    showGhostPaths: false,
+    showOnionLayers: false,
+    onionLayerSpacing: 6,
+    optimizationIterations: 300,
+    optimizationPopulationSize: 100,
+    optimizationMutationRate: 0.4,
+    optimizationMutationStrength: 6.0,
+    validateFieldBoundaries: true,
+    restrictDraggingToField: true,
+    keyBindings: [],
+    recentFiles: [],
   };
 
   describe("generatePointsArray", () => {
@@ -211,6 +241,7 @@ describe("codeExporter", () => {
       const code = await generateSequentialCommandCode(
         startPoint,
         lines,
+        mockSettings,
         "TestPath.pp",
       );
 
@@ -227,6 +258,7 @@ describe("codeExporter", () => {
       const code = await generateSequentialCommandCode(
         startPoint,
         lines,
+        mockSettings,
         "TestPath.pp",
         undefined,
         "NextFTC",
@@ -248,6 +280,7 @@ describe("codeExporter", () => {
       const code = await generateSequentialCommandCode(
         startPoint,
         lines,
+        mockSettings,
         "TestPath.pp",
         sequence,
       );
@@ -264,6 +297,7 @@ describe("codeExporter", () => {
       const code = await generateSequentialCommandCode(
         startPoint,
         lines,
+        mockSettings,
         "TestPath.pp",
         sequence,
         "NextFTC",
@@ -279,6 +313,7 @@ describe("codeExporter", () => {
       const code = await generateSequentialCommandCode(
         startPoint,
         lines,
+        mockSettings,
         "TestPath.pp",
       );
 
@@ -300,6 +335,7 @@ describe("codeExporter", () => {
       const code = await generateSequentialCommandCode(
         startPoint,
         [],
+        mockSettings,
         "TestPath.pp",
         sequence,
       );
@@ -338,6 +374,7 @@ describe("codeExporter", () => {
       const code = await generateSequentialCommandCode(
         startPoint,
         linkedLines,
+        mockSettings,
         "TestPath.pp",
       );
 
@@ -402,6 +439,7 @@ describe("codeExporter", () => {
       const loopCode = await generateSequentialCommandCode(
         startPoint,
         loopLines,
+        mockSettings,
         "TestPath.pp",
       );
       expect(loopCode).toMatch(/private PathChain ATOB;/);

@@ -431,7 +431,7 @@ export function analyzePathSegment(
  * Calculates time to rotate a certain angle using a trapezoidal motion profile
  * Accounts for angular acceleration limits derived from robot dimensions.
  */
-function calculateRotationTime(
+export function calculateRotationTime(
   angleDiffDegrees: number,
   settings: Settings,
 ): number {

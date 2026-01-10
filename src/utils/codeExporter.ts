@@ -1,8 +1,9 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import prettier from "prettier";
 import prettierJavaPlugin from "prettier-plugin-java";
-import type { Point, Line, BasePoint, SequenceItem } from "../types";
+import type { Point, Line, BasePoint, SequenceItem, Settings } from "../types";
 import { getCurvePoint } from "./math";
+import { calculateRotationTime, calculatePathTime } from "./timeCalculator";
 import pkg from "../../package.json";
 
 /**
@@ -43,6 +44,11 @@ export async function generateJavaCode(
   if (sequence) {
     sequence.forEach((item) => {
       if ((item as any).kind === "wait" && (item as any).eventMarkers) {
+        (item as any).eventMarkers.forEach((event: any) => {
+          eventMarkerNames.add(event.name);
+        });
+      }
+      if ((item as any).kind === "rotate" && (item as any).eventMarkers) {
         (item as any).eventMarkers.forEach((event: any) => {
           eventMarkerNames.add(event.name);
         });
@@ -367,6 +373,7 @@ export function generatePointsArray(startPoint: Point, lines: Line[]): string {
 export async function generateSequentialCommandCode(
   startPoint: Point,
   lines: Line[],
+  settings: Settings,
   fileName: string | null = null,
   sequence?: SequenceItem[],
   targetLibrary: "SolversLib" | "NextFTC" = "SolversLib", // - Added parameter
@@ -581,6 +588,24 @@ export async function generateSequentialCommandCode(
   const WaitUntilCmdClass = isNextFTC ? "WaitUntil" : "WaitUntilCommand"; // Assuming NextFTC has similar or user maps it
   const FollowPathCmdClass = isNextFTC ? "FollowPath" : "FollowPathCommand";
 
+  // Calculate path timing to get duration for rotate events
+  const defaultSequenceForTiming: SequenceItem[] = lines.map((ln, idx) => ({
+    kind: "path",
+    lineId: ln.id || `line-${idx + 1}`,
+  }));
+  const timingSequence = sequence && sequence.length ? sequence : defaultSequenceForTiming;
+
+  // We use the calculatePathTime to get estimated durations for rotate events
+  const timePrediction = calculatePathTime(startPoint, lines, settings, timingSequence);
+
+  // Map from item ID to duration (in seconds)
+  const durationMap = new Map<string, number>();
+  timePrediction.timeline.forEach(event => {
+     if ((event.type === 'wait') && event.waitId) {
+        durationMap.set(event.waitId, event.duration);
+     }
+  });
+
   // Generate addCommands calls with event handling; iterate sequence if provided
   const commands: string[] = [];
 
@@ -597,9 +622,63 @@ export async function generateSequentialCommandCode(
       const degrees = rotateItem.degrees || 0;
       const radians = (degrees * Math.PI) / 180;
 
+      const markers: any[] = Array.isArray(rotateItem.eventMarkers)
+        ? [...rotateItem.eventMarkers]
+        : [];
+
+      if (markers.length === 0) {
+        commands.push(
+          `                new ${InstantCmdClass}(() -> follower.turnTo(${radians.toFixed(3)}))`,
+          `                new ${WaitUntilCmdClass}(() -> !follower.isTurning())`,
+        );
+        return;
+      }
+
+      // Calculate rotation duration using timeCalculator result
+      const estimatedDurationSec = durationMap.get(rotateItem.id) || 0;
+      const estimatedDurationMs = estimatedDurationSec * 1000;
+
+      const getWaitValue = (ms: number) =>
+        isNextFTC ? (ms / 1000.0).toFixed(3) : ms.toFixed(0);
+
+      // Sort markers by position (0-1) to schedule in order
+      markers.sort((a, b) => (a.position || 0) - (b.position || 0));
+
+      let scheduled = 0;
+      const markerCommandParts: string[] = [];
+
+      markers.forEach((marker) => {
+        const targetMs =
+          Math.max(0, Math.min(1, marker.position || 0)) * estimatedDurationMs;
+        const delta = Math.max(0, targetMs - scheduled);
+        scheduled = targetMs;
+
+        markerCommandParts.push(
+          `new ${WaitCmdClass}(${getWaitValue(delta)}), new ${InstantCmdClass}(() -> progressTracker.executeEvent("${marker.name}"))`,
+        );
+      });
+
+      // We don't necessarily need to fill the rest of the time in the marker sequence,
+      // but it helps if there are actions after? No, the ParallelRaceGroup will end when turn ends.
+      // BUT, if the turn ends FASTER than the markers, the markers might be cut off.
+      // The user likely wants markers to fire relative to the ESTIMATED time.
+      // If the turn completes early, the RaceGroup kills the marker sequence.
+      // If we want markers to guarantee execution, we should not use RaceGroup, but ParallelGroup?
+      // But then we might wait too long if the turn is fast.
+      // Standard practice for 'Wait' markers is RaceGroup with timer.
+      // For 'Rotate', we are racing 'Turn' vs 'Markers based on estimated time'.
+      // Use ParallelDeadlineGroup to ensure the turn completes.
+      // The turn sequence is the deadline. Markers will fire in parallel but stop if turn finishes early.
+      const ParallelDeadlineClass = isNextFTC ? "ParallelDeadlineGroup" : "ParallelDeadlineGroup";
+
       commands.push(
-        `                new ${InstantCmdClass}(() -> follower.turnTo(${radians.toFixed(3)}))`,
-        `                new ${WaitUntilCmdClass}(() -> !follower.isTurning())`,
+        `                new ${ParallelDeadlineClass}(
+                    new ${SequentialGroupClass}(
+                        new ${InstantCmdClass}(() -> follower.turnTo(${radians.toFixed(3)})),
+                        new ${WaitUntilCmdClass}(() -> !follower.isTurning())
+                    ),
+                    new ${SequentialGroupClass}(${markerCommandParts.join(",")})
+                )`,
       );
       return;
     }
@@ -798,6 +877,7 @@ export async function generateSequentialCommandCode(
     imports = `
 import dev.nextftc.core.command.groups.SequentialGroup;
 import dev.nextftc.core.command.groups.ParallelRaceGroup;
+import dev.nextftc.core.command.groups.ParallelDeadlineGroup;
 import dev.nextftc.core.command.Delay;
 import dev.nextftc.core.command.WaitUntil;
 import dev.nextftc.core.command.InstantCommand;
@@ -807,6 +887,7 @@ import dev.nextftc.extensions.pedro.command.FollowPath;
     imports = `
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
 import com.seattlesolvers.solverslib.command.ParallelRaceGroup;
+import com.seattlesolvers.solverslib.command.ParallelDeadlineGroup;
 import com.seattlesolvers.solverslib.command.WaitUntilCommand;
 import com.seattlesolvers.solverslib.command.WaitCommand;
 import com.seattlesolvers.solverslib.command.InstantCommand;

@@ -25,6 +25,8 @@
   export let shapes: Shape[] = [];
   export const settings: Settings | undefined = undefined;
 
+  let localSettings: Settings;
+
   let exportFullCode = false;
   let exportFormat: "java" | "points" | "sequential" | "json" = "java";
   let sequentialClassName = "AutoPath";
@@ -66,9 +68,9 @@
 
   // Load settings on mount
   onMount(async () => {
-    const settings = await loadSettings();
-    if (settings.javaPackageName) {
-      packageName = settings.javaPackageName;
+    localSettings = await loadSettings();
+    if (localSettings.javaPackageName) {
+      packageName = localSettings.javaPackageName;
     } else {
       packageName = DEFAULT_PACKAGE;
     }
@@ -86,12 +88,18 @@
 
   // Save package name to settings
   async function savePackageName() {
-    const settings = await loadSettings();
-    settings.javaPackageName = packageName;
-    await saveSettings(settings);
+    const s = await loadSettings();
+    s.javaPackageName = packageName;
+    await saveSettings(s);
+    localSettings = s; // Update local cache
   }
 
   async function refreshCode() {
+    // Ensure settings are loaded
+    if (!localSettings) {
+        localSettings = await loadSettings();
+    }
+
     try {
       if (exportFormat === "java") {
         exportedCode = await generateJavaCode(
@@ -109,6 +117,7 @@
         exportedCode = await generateSequentialCommandCode(
           startPoint,
           lines,
+          localSettings,
           sequentialClassName,
           sequence,
           targetLibrary,
