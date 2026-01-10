@@ -3,7 +3,7 @@ from playwright.sync_api import sync_playwright, expect
 
 def test_whats_new_dialog(page):
     # Go to the app
-    page.goto("http://localhost:5173")
+    page.goto("http://localhost:4173")
 
     # Wait for loading
     try:
