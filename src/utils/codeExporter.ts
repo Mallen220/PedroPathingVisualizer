@@ -509,6 +509,18 @@ export async function generateSequentialCommandCode(
   const seq = sequence && sequence.length ? sequence : defaultSequence;
 
   seq.forEach((item, idx) => {
+    if (item.kind === "rotate") {
+      const rotateItem: any = item as any;
+      const degrees = rotateItem.degrees || 0;
+      const radians = (degrees * Math.PI) / 180;
+
+      commands.push(
+        `                new ${InstantCmdClass}(() -> follower.turnTo(${radians.toFixed(3)}))`,
+        `                new ${WaitUntilCmdClass}(() -> !follower.isTurning())`,
+      );
+      return;
+    }
+
     if (item.kind === "wait") {
       const waitItem: any = item as any;
       const waitDuration = waitItem.durationMs || 0;
