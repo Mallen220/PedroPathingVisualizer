@@ -2,7 +2,12 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import MarkdownIt from "markdown-it";
-  import { features, type FeatureHighlight } from "./features";
+  import {
+    features,
+    getAllFeatures,
+    getLatestHighlightId,
+    type FeatureHighlight,
+  } from "./features";
   import { pages, type Page } from "./pages";
   // @ts-ignore
   import changelogContent from "../../../../CHANGELOG.md?raw";
@@ -40,8 +45,8 @@
   let runtimeFeatures: FeatureHighlight[] = [];
 
   // Decide which features list to render: prefer compile-time `features`, otherwise
-  // use runtime-discovered ones.
-  $: displayedFeatures = features.length ? features : runtimeFeatures;
+  // use runtime-discovered ones. Use getAllFeatures() to include newest.md if it's not a template.
+  $: displayedFeatures = features.length ? getAllFeatures() : runtimeFeatures;
 
   // If the static import produced no features (e.g., in the renderer during
   // Electron runtime), attempt to dynamically import them at runtime.
@@ -225,8 +230,9 @@
 
     if (page.type === "highlight") {
       // If the page doesn't declare a highlightId (e.g. "Recent Highlights"),
-      // fall back to the current latest feature at runtime.
-      const targetId = page.highlightId ?? displayedFeatures[0]?.id;
+      // use getLatestHighlightId() which returns "newest" if it's not a template,
+      // or falls back to the most recent version.
+      const targetId = page.highlightId ?? getLatestHighlightId();
       if (targetId) {
         activeFeatureId = targetId;
         activePage = page;
