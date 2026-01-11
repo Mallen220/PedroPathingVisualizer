@@ -63,11 +63,9 @@ async function bumpVersion() {
   try {
     const template = `### What's New!
 
-**Features:**
--
+## **Features:**
 
-**Bug Fixes:**
--
+## **Bug Fixes:**
 `;
 
     // Check if it exists now.
