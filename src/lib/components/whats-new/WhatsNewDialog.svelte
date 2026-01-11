@@ -9,12 +9,13 @@
     type FeatureHighlight,
   } from "./features";
   import { pages, type Page } from "./pages";
+  import { highlightText, highlightSnippet, getSnippet } from "./searchUtils";
   // @ts-ignore
   import changelogContent from "../../../../CHANGELOG.md?raw";
   // Import app version from package.json so the UI shows the real version at build time
   // @ts-ignore
   import pkg from "../../../../package.json";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
 
   export let show = false;
 
@@ -32,6 +33,7 @@
   let activePage: Page | null = null;
   let activeFeatureId: string | null = null;
   let searchQuery = "";
+  let contentContainer: HTMLDivElement;
 
   // Log features at component init so we can see what the dialog receives at runtime
   // eslint-disable-next-line no-console
@@ -176,26 +178,48 @@
 
     // Search pages
     const matchedPages = pages
-      .filter(
-        (p) =>
-          p.type !== "changelog" && // Exclude full changelog from search results to avoid noise
-          (p.title.toLowerCase().includes(query) ||
-            p.description.toLowerCase().includes(query) ||
-            (p.content && p.content.toLowerCase().includes(query))),
-      )
-      .map((p) => ({ type: "page" as const, item: p }));
+      .map((p) => {
+        if (p.type === "changelog") return null;
+
+        const inTitle = p.title.toLowerCase().includes(query);
+        const inDesc = p.description.toLowerCase().includes(query);
+        const snippet = p.content ? getSnippet(p.content, query) : null;
+
+        if (inTitle || inDesc || snippet) {
+          return { type: "page" as const, item: p, snippet };
+        }
+        return null;
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
 
     // Search features
     const matchedFeatures = displayedFeatures
-      .filter(
-        (f) =>
-          f.title.toLowerCase().includes(query) ||
-          f.content.toLowerCase().includes(query),
-      )
-      .map((f) => ({ type: "feature" as const, item: f }));
+      .map((f) => {
+        const inTitle = f.title.toLowerCase().includes(query);
+        const snippet = getSnippet(f.content, query);
+
+        if (inTitle || snippet) {
+          return { type: "feature" as const, item: f, snippet };
+        }
+        return null;
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
 
     return [...matchedPages, ...matchedFeatures];
   })();
+
+  async function highlightAndScroll() {
+    await tick();
+
+    if (!contentContainer || !searchQuery) return;
+
+    highlightText(contentContainer, searchQuery);
+
+    const firstMark = contentContainer.querySelector("mark");
+    if (firstMark) {
+      firstMark.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
 
   function close() {
     dispatch("close");
@@ -331,6 +355,11 @@
 
     return "";
   })();
+
+  // Trigger highlighting and scrolling when content matches search
+  $: if (activeContentHtml && currentView === "content" && searchQuery) {
+    highlightAndScroll();
+  }
 
   // Icons
   const icons: Record<string, string> = {
@@ -560,9 +589,13 @@
                       <p
                         class="text-sm text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2"
                       >
-                        {result.type === "page"
-                          ? result.item.description
-                          : "Feature Highlight"}
+                        {#if result.snippet}
+                          {@html highlightSnippet(result.snippet, searchQuery)}
+                        {:else}
+                          {result.type === "page"
+                            ? result.item.description
+                            : "Feature Highlight"}
+                        {/if}
                       </p>
                     </div>
                   </button>
@@ -654,7 +687,10 @@
         {:else}
           <!-- Content View -->
           <div class="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
-            <div class="prose dark:prose-invert max-w-none">
+            <div
+              class="prose dark:prose-invert max-w-none"
+              bind:this={contentContainer}
+            >
               {@html activeContentHtml}
             </div>
 
