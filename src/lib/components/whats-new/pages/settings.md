@@ -1,37 +1,56 @@
 # Settings
 
-Customize the Visualizer to match your robot and workflow.
+Configure the visualizer and robot parameters.
 
-## Robot Configuration
+> **⚠️ Important:** These settings affect the **visualizer only**. Ensure your robot's code constants match these values for accurate simulation.
 
-- **Dimensions**: Set your robot's width and length in inches. This is crucial for accurate collision visualization.
-- **Image**: Upload a custom image of your robot to replace the default box.
-- **Safety Margin**: Define a buffer zone for collision avoidance.
+## ⌨️ Keyboard Shortcuts
 
-## Motion Parameters
+View and customize key bindings for faster editing.
+- Click **Open Editor** in the settings menu to manage shortcuts.
 
-These settings affect the simulation physics and time estimation.
+## 🤖 Robot Configuration
 
-- **Max Velocity**: The robot's maximum speed (in/s).
-- **Max Acceleration/Deceleration**: The robot's acceleration limits (in/s²).
-- **Angular Velocity**: Max rotation speed.
-- **Friction**: Friction coefficient for physics simulation.
+Set physical dimensions for collision detection.
 
-## Interface Settings
+- **Dimensions**: Set **Length** and **Width** (in inches).
+- **Safety Margin**: Buffer zone around obstacles (in inches).
+- **Validation**:
+  - **Field Boundaries**: Warn if the robot leaves the field.
+  - **Restrict Dragging**: Prevent moving points outside the field.
+- **Robot Image**: Upload a custom top-down image or use the default.
+  - *Fun:* Select **Use Potato Robot** for a starchy alternative. 🥔
 
-- **Theme**: Switch between Light and Dark mode.
-- **Field Map**: Select the specific game field (e.g., "Into The Deep", "Centerstage").
-- **Field Orientation**: Rotate the field view (0°, 90°, 180°, 270°).
-- **Grid**: Toggle the grid and set the snap size.
+## ⚡ Motion Parameters
 
-## Validation
+Simulate robot physics for path timing.
 
-- **Field Boundaries**: Enable validation to ensure points stay within the field.
-- **Drag Restrictions**: Prevent dragging points outside the playable area.
+- **Velocity**: Set **Max Velocity** (in/s) and **Angular Velocity** (π rad/s).
+- **Acceleration**: Set **Max Acceleration** and **Deceleration** (in/s²).
+- **Friction**: Adjust surface resistance coefficient.
 
-## Advanced
+## 🎨 Interface Settings
 
-- **Optimization**: Configure parameters for the path optimizer (iterations, population size, mutation rate).
-- **Onion Skinning**: Enable/disable ghost trails and adjust their spacing.
-- **Keyboard Shortcuts**: View and customize key bindings.
-- **Credits & Legal**: View open source licenses and contributors.
+Customize the visualizer appearance.
+
+- **Theme**: Light, Dark, or System Auto.
+- **Field Map**: Select the current season's field image.
+- **Orientation**: Rotate the field view (0°–270°).
+- **Velocity Heatmap**: Color-code the path based on speed (Green = Slow, Red = Fast).
+
+## 🛠️ Advanced Settings
+
+### Visualization
+- **Onion Layers**: Show ghost outlines of the robot along the path.
+- **Spacing**: Adjust distance between ghost layers.
+
+### Path Optimization
+Tune the genetic algorithm for automatic path refinement:
+- **Iterations**: Number of improvement cycles.
+- **Population**: Paths tested per cycle.
+- **Mutation Rate**: Frequency of point changes.
+- **Mutation Strength**: Max distance points move.
+
+## ℹ️ Credits & Legal
+- View version, contributors, and licenses.
+- **Reset All**: Restore default settings.
