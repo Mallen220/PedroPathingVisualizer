@@ -21,46 +21,10 @@
 
   import { fade, fly } from "svelte/transition";
   import { cubicInOut } from "svelte/easing";
-  import { tooltipPortal } from "../actions/portal";
-  import { onMount, onDestroy } from "svelte";
 
   // Speed dropdown state & helpers
   let showSpeedMenu = false;
   const speedOptions = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
-
-  // Hover tooltip state for timeline events
-  let hoveredEventName: string | null = null;
-  let hoveredEventAnchor: HTMLElement | null = null;
-
-  function resetHoverState() {
-    hoveredEventName = null;
-    hoveredEventAnchor = null;
-  }
-
-  function handleMarkerHoverEnter(e: MouseEvent, name: string) {
-    hoveredEventName = name;
-    hoveredEventAnchor = e.currentTarget as HTMLElement;
-  }
-
-  function handleMarkerHoverLeave() {
-    resetHoverState();
-  }
-
-  // Clean up hover state on layout changes (resize) to prevent stale tooltips
-  function handleWindowResize() {
-    resetHoverState();
-  }
-
-  onMount(() => {
-    window.addEventListener("resize", handleWindowResize);
-    return () => {
-      window.removeEventListener("resize", handleWindowResize);
-    };
-  });
-
-  onDestroy(() => {
-    resetHoverState();
-  });
 
   function toggleSpeedMenu() {
     showSpeedMenu = !showSpeedMenu;
@@ -234,7 +198,7 @@
   <div class="w-full relative h-6 flex items-center">
     <!-- Timeline Highlights Layer (Under slider) -->
     <div
-      class="absolute inset-0 w-full h-full pointer-events-none overflow-hidden rounded-full"
+      class="absolute inset-0 w-full h-full pointer-events-none overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700 shadow-inner"
     >
       {#each timelineItems as item}
         {#if item.type === "wait"}
@@ -302,7 +266,7 @@
       max="100"
       step="0.000001"
       aria-label="Animation progress"
-      class="w-full appearance-none slider focus:outline-none bg-transparent relative z-10"
+      class="w-full appearance-none slider focus:outline-none bg-transparent dark:bg-transparent relative z-10 timeline-slider"
       on:input={handleSeekInput}
     />
 
@@ -314,8 +278,6 @@
           class="absolute z-20 group"
           role="button"
           tabindex="0"
-          on:mouseenter={(e) => handleMarkerHoverEnter(e, item.name)}
-          on:mouseleave={handleMarkerHoverLeave}
           on:click={() => handleSeek(item.percent)}
           on:keydown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleSeek(item.percent);
@@ -323,14 +285,22 @@
           style="left: {item.percent}%; top: -14px; transform: translateX(-50%); cursor: pointer;"
           aria-label={item.name}
         >
+          <!-- Tooltip (CSS Hover) -->
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg text-xs text-neutral-800 dark:text-neutral-100 z-[100] pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          >
+            {item.name}
+          </div>
+
           <!-- Map Pin Icon -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="currentColor"
+            stroke-width="1.5"
             class={item.fromWait
-              ? "w-5 h-5 drop-shadow-md transition-transform group-hover:scale-125 text-black dark:text-white"
-              : "w-5 h-5 text-purple-500 drop-shadow-md transition-transform group-hover:scale-125"}
+              ? "w-5 h-5 drop-shadow-md transition-transform group-hover:scale-125 text-black dark:text-white stroke-white dark:stroke-neutral-900"
+              : "w-5 h-5 text-purple-500 drop-shadow-md transition-transform group-hover:scale-125 stroke-white dark:stroke-neutral-900"}
             style={item.fromWait ? "" : `color: ${item.color || "#a855f7"}`}
           >
             <path
@@ -342,36 +312,41 @@
         </div>
       {:else if item.type === "dot"}
         <div
-          class="absolute z-20"
+          class="absolute z-20 group ring-2 ring-black/5 dark:ring-white/20 rounded-full"
           role="button"
           tabindex="0"
-          on:mouseenter={(e) => handleMarkerHoverEnter(e, item.name)}
-          on:mouseleave={handleMarkerHoverLeave}
           on:click={() => handleSeek(item.percent)}
           on:keydown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleSeek(item.percent);
           }}
-          style={`left: ${item.percent}%; top: 6px; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 9999px; background: ${item.color}; box-shadow: 0 0 0 2px rgba(0,0,0,0.06); cursor: pointer;`}
+          style={`left: ${item.percent}%; top: 6px; transform: translateX(-50%); width: 12px; height: 12px; background: ${item.color}; cursor: pointer;`}
           aria-label={item.name}
-        ></div>
+        >
+          <!-- Tooltip (CSS Hover) -->
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg text-xs text-neutral-800 dark:text-neutral-100 z-[100] pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          >
+            {item.name}
+          </div>
+        </div>
       {/if}
     {/each}
   </div>
 </div>
 
-{#key hoveredEventName}
-  {#if hoveredEventName && hoveredEventAnchor}
-    <div
-      use:tooltipPortal={hoveredEventAnchor}
-      class="w-auto max-w-xs p-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg text-xs text-neutral-800 dark:text-neutral-200 z-50 pointer-events-none"
-      transition:fade={{ duration: 100 }}
-    >
-      {hoveredEventName}
-    </div>
-  {/if}
-{/key}
-
 <svelte:window
   on:click={() => (showSpeedMenu = false)}
   on:keydown={(e) => e.key === "Escape" && (showSpeedMenu = false)}
 />
+
+<style>
+  /* Make the timeline slider track transparent so the underlying highlights layer is visible */
+  .timeline-slider::-webkit-slider-runnable-track {
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+  :global(.dark) .timeline-slider::-webkit-slider-runnable-track {
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+</style>
