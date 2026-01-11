@@ -21,46 +21,10 @@
 
   import { fade, fly } from "svelte/transition";
   import { cubicInOut } from "svelte/easing";
-  import { tooltipPortal } from "../actions/portal";
-  import { onMount, onDestroy } from "svelte";
 
   // Speed dropdown state & helpers
   let showSpeedMenu = false;
   const speedOptions = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
-
-  // Hover tooltip state for timeline events
-  let hoveredEventName: string | null = null;
-  let hoveredEventAnchor: HTMLElement | null = null;
-
-  function resetHoverState() {
-    hoveredEventName = null;
-    hoveredEventAnchor = null;
-  }
-
-  function handleMarkerHoverEnter(e: MouseEvent, name: string) {
-    hoveredEventName = name;
-    hoveredEventAnchor = e.currentTarget as HTMLElement;
-  }
-
-  function handleMarkerHoverLeave() {
-    resetHoverState();
-  }
-
-  // Clean up hover state on layout changes (resize) to prevent stale tooltips
-  function handleWindowResize() {
-    resetHoverState();
-  }
-
-  onMount(() => {
-    window.addEventListener("resize", handleWindowResize);
-    return () => {
-      window.removeEventListener("resize", handleWindowResize);
-    };
-  });
-
-  onDestroy(() => {
-    resetHoverState();
-  });
 
   function toggleSpeedMenu() {
     showSpeedMenu = !showSpeedMenu;
@@ -311,11 +275,9 @@
     {#each timelineItems as item}
       {#if item.type === "marker"}
         <div
-          class="absolute z-20 group opacity-0 hover:opacity-100 transition-opacity duration-200"
+          class="absolute z-20 group"
           role="button"
           tabindex="0"
-          on:mouseenter={(e) => handleMarkerHoverEnter(e, item.name)}
-          on:mouseleave={handleMarkerHoverLeave}
           on:click={() => handleSeek(item.percent)}
           on:keydown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleSeek(item.percent);
@@ -323,6 +285,13 @@
           style="left: {item.percent}%; top: -14px; transform: translateX(-50%); cursor: pointer;"
           aria-label={item.name}
         >
+          <!-- Tooltip (CSS Hover) -->
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg text-xs text-neutral-800 dark:text-neutral-200 z-50 pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          >
+            {item.name}
+          </div>
+
           <!-- Map Pin Icon -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -342,34 +311,28 @@
         </div>
       {:else if item.type === "dot"}
         <div
-          class="absolute z-20 opacity-0 hover:opacity-100 transition-opacity duration-200"
+          class="absolute z-20 group"
           role="button"
           tabindex="0"
-          on:mouseenter={(e) => handleMarkerHoverEnter(e, item.name)}
-          on:mouseleave={handleMarkerHoverLeave}
           on:click={() => handleSeek(item.percent)}
           on:keydown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleSeek(item.percent);
           }}
           style={`left: ${item.percent}%; top: 6px; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 9999px; background: ${item.color}; box-shadow: 0 0 0 2px rgba(0,0,0,0.06); cursor: pointer;`}
           aria-label={item.name}
-        ></div>
+        >
+          <!-- Tooltip (CSS Hover) -->
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg text-xs text-neutral-800 dark:text-neutral-200 z-50 pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          >
+            {item.name}
+          </div>
+        </div>
       {/if}
     {/each}
   </div>
 </div>
 
-{#key hoveredEventName}
-  {#if hoveredEventName && hoveredEventAnchor}
-    <div
-      use:tooltipPortal={hoveredEventAnchor}
-      class="w-auto max-w-xs p-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg text-xs text-neutral-800 dark:text-neutral-200 z-50 pointer-events-none"
-      transition:fade={{ duration: 100 }}
-    >
-      {hoveredEventName}
-    </div>
-  {/if}
-{/key}
 
 <svelte:window
   on:click={() => (showSpeedMenu = false)}
