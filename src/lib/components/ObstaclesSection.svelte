@@ -2,9 +2,11 @@
 <script lang="ts">
   import { createTriangle } from "../../utils";
   import { snapToGrid, showGrid, gridSize } from "../../stores";
+  import { settingsStore } from "../projectStore";
   import TrashIcon from "./icons/TrashIcon.svelte";
   import SectionHeader from "./common/SectionHeader.svelte";
   import type { Shape } from "../../types";
+  import { slide } from "svelte/transition";
 
   export let shapes: Shape[];
   export let collapsedObstacles: boolean[];
@@ -38,7 +40,12 @@
   />
 
   {#if !collapsed}
-    <div class="p-2 flex flex-col gap-2">
+    <div
+      class="p-2 flex flex-col gap-2"
+      transition:slide={{
+        duration: $settingsStore?.enableTransitions ? 200 : 0,
+      }}
+    >
       {#if shapes.length === 0}
         <div class="text-xs text-neutral-500 italic p-2 text-center">
           No obstacles defined. Click + to add one.
@@ -116,6 +123,9 @@
             {#if !collapsedObstacles[shapeIdx]}
               <div
                 class="flex flex-col gap-2 w-full mt-2 pl-4 pr-1 border-l-2 border-neutral-200 dark:border-neutral-700"
+                transition:slide={{
+                  duration: $settingsStore?.enableTransitions ? 200 : 0,
+                }}
               >
                 <div class="flex flex-col gap-2">
                   {#each shape.vertices as vertex, vertexIdx}

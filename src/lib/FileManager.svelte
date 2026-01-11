@@ -741,7 +741,11 @@
   <!-- Sidebar -->
   <div
     class="relative flex flex-col h-full bg-white dark:bg-neutral-900 shadow-2xl transform transition-transform duration-300 ease-in-out border-r border-neutral-200 dark:border-neutral-800"
-    style="width: {isOpen ? sidebarWidth : 384}px"
+    style="width: {isOpen
+      ? sidebarWidth
+      : 384}px; transition-duration: {settings.enableTransitions
+      ? '300ms'
+      : '0ms'}"
     class:translate-x-0={isOpen}
     class:-translate-x-full={!isOpen}
   >

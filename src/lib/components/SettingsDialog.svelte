@@ -256,14 +256,21 @@
 
 {#if isOpen}
   <div
-    transition:fade={{ duration: 500, easing: cubicInOut }}
+    transition:fade={{
+      duration: settings.enableTransitions ? 500 : 0,
+      easing: cubicInOut,
+    }}
     class="bg-black bg-opacity-25 flex flex-col justify-center items-center absolute top-0 left-0 w-full h-full z-[1005]"
     role="dialog"
     aria-modal="true"
     aria-labelledby="settings-title"
   >
     <div
-      transition:fly={{ duration: 500, easing: cubicInOut, y: 20 }}
+      transition:fly={{
+        duration: settings.enableTransitions ? 500 : 0,
+        easing: cubicInOut,
+        y: 20,
+      }}
       class="flex flex-col justify-start items-start p-6 bg-white dark:bg-neutral-900 rounded-lg w-full max-w-md max-h-[92vh]"
     >
       <!-- Header -->
@@ -1049,6 +1056,28 @@
                   bind:checked={settings.showVelocityHeatmap}
                   class="w-5 h-5 rounded border-neutral-300 dark:border-neutral-600 text-emerald-500 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                   title="Toggle velocity heatmap visualization"
+                />
+              </div>
+
+              <!-- Enable Transitions Toggle -->
+              <div
+                class="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
+              >
+                <div>
+                  <div
+                    class="text-sm font-medium text-neutral-700 dark:text-neutral-300 block mb-1"
+                  >
+                    Enable Transitions
+                  </div>
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Enable UI animations and transitions
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  bind:checked={settings.enableTransitions}
+                  class="w-5 h-5 rounded border-neutral-300 dark:border-neutral-600 text-purple-500 focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                  title="Toggle UI animations"
                 />
               </div>
             </div>

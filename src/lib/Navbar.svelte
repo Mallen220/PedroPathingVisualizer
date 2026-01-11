@@ -691,7 +691,10 @@
         {#if saveDropdownOpen}
           <div
             bind:this={saveDropdownRef}
-            class="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-xl py-1 z-50 border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in-95 duration-100"
+            class="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-xl py-1 z-50 border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in-95"
+            style="animation-duration: {settings?.enableTransitions
+              ? 100
+              : 0}ms"
           >
             <button
               on:click={() => {
@@ -743,7 +746,10 @@
         {#if exportMenuOpen}
           <div
             bind:this={exportMenuRef}
-            class="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-lg shadow-xl py-1 z-50 border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in-95 duration-100"
+            class="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-lg shadow-xl py-1 z-50 border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in-95"
+            style="animation-duration: {settings?.enableTransitions
+              ? 100
+              : 0}ms"
           >
             <button
               on:click={() => handleExport("java")}

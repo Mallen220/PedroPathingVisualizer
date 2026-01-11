@@ -5,6 +5,8 @@
   import type { SequenceWaitItem, SequenceItem } from "../../types";
   import { isWaitLinked, handleWaitRename } from "../../utils/pointLinking";
   import { tooltipPortal } from "../actions/portal";
+  import { settingsStore } from "../projectStore";
+  import { slide } from "svelte/transition";
 
   export let wait: SequenceWaitItem;
   export let sequence: SequenceItem[];
@@ -348,26 +350,33 @@
   </div>
 
   {#if !collapsed}
-    <div class={`h-[0.75px] w-full bg-amber-400/50 my-1`} />
+    <div
+      class="w-full"
+      transition:slide={{
+        duration: $settingsStore?.enableTransitions ? 200 : 0,
+      }}
+    >
+      <div class={`h-[0.75px] w-full bg-amber-400/50 my-1`} />
 
-    <div class="flex flex-col justify-start items-start w-full gap-2 pl-2">
-      <!-- Duration Input -->
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-light" id="wait-duration-label-{wait.id}"
-          >Duration:</span
-        >
-        <input
-          class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none focus:ring-2 focus:ring-blue-500 w-24"
-          type="number"
-          min="0"
-          step="50"
-          value={wait.durationMs}
-          on:change={handleDurationChange}
-          on:click|stopPropagation
-          disabled={wait.locked}
-          aria-labelledby="wait-duration-label-{wait.id}"
-        />
-        <span class="text-sm font-extralight">ms</span>
+      <div class="flex flex-col justify-start items-start w-full gap-2 pl-2">
+        <!-- Duration Input -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-light" id="wait-duration-label-{wait.id}"
+            >Duration:</span
+          >
+          <input
+            class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none focus:ring-2 focus:ring-blue-500 w-24"
+            type="number"
+            min="0"
+            step="50"
+            value={wait.durationMs}
+            on:change={handleDurationChange}
+            on:click|stopPropagation
+            disabled={wait.locked}
+            aria-labelledby="wait-duration-label-{wait.id}"
+          />
+          <span class="text-sm font-extralight">ms</span>
+        </div>
       </div>
     </div>
   {/if}

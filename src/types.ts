@@ -138,6 +138,7 @@ export interface Settings {
   recentFiles?: string[];
   fileManagerSortMode?: "name" | "date"; // File manager sort preference
   lastSeenVersion?: string; // Version of the app the user last saw (for What's New dialog)
+  enableTransitions?: boolean; // Toggle UI animations
 }
 
 export interface Shape {

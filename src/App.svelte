@@ -838,12 +838,15 @@
     <!-- Control Tab -->
     <div
       bind:this={controlTabContainer}
-      class="relative flex-1 h-auto lg:h-full min-h-0 min-w-0 transition-transform duration-300 ease-in-out transform bg-neutral-50 dark:bg-neutral-900"
+      class="relative flex-1 h-auto lg:h-full min-h-0 min-w-0 transform bg-neutral-50 dark:bg-neutral-900"
       class:translate-x-full={!showSidebar && isLargeScreen}
       class:translate-y-full={!showSidebar && !isLargeScreen}
       class:overflow-hidden={!showSidebar}
       class:hidden={controlTabHidden}
       class:controlTabBlurred={statsOpen}
+      style="transition: {settings.enableTransitions
+        ? 'transform 300ms ease-in-out, filter 0.15s ease, opacity 0.15s ease'
+        : 'none'};"
     >
       {#if statsOpen}
         <div
@@ -894,9 +897,7 @@
   .controlTabBlurred {
     filter: blur(4px);
     opacity: 0.88;
-    transition:
-      filter 0.15s ease,
-      opacity 0.15s ease;
+    /* Transition is handled dynamically via inline styles on the element */
     position: relative;
   }
 

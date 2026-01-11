@@ -5,6 +5,8 @@
   import type { SequenceRotateItem, SequenceItem } from "../../types";
   import { isRotateLinked, handleRotateRename } from "../../utils/pointLinking";
   import { tooltipPortal } from "../actions/portal";
+  import { settingsStore } from "../projectStore";
+  import { slide } from "svelte/transition";
 
   export let rotate: SequenceRotateItem;
   export let sequence: SequenceItem[];
@@ -350,26 +352,33 @@
   </div>
 
   {#if !collapsed}
-    <div class={`h-[0.75px] w-full bg-pink-400/50 my-1`} />
+    <div
+      class="w-full"
+      transition:slide={{
+        duration: $settingsStore?.enableTransitions ? 200 : 0,
+      }}
+    >
+      <div class={`h-[0.75px] w-full bg-pink-400/50 my-1`} />
 
-    <div class="flex flex-col justify-start items-start w-full gap-2 pl-2">
-      <!-- Degrees Input -->
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-light">Heading:</span>
-        <input
-          tabindex="-1"
-          class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none w-24"
-          type="number"
-          step="any"
-          value={rotate.degrees}
-          on:change={handleDegreesChange}
-          on:click|stopPropagation
-          disabled={rotate.locked}
-        />
-        <span class="text-sm font-extralight">deg</span>
+      <div class="flex flex-col justify-start items-start w-full gap-2 pl-2">
+        <!-- Degrees Input -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-light">Heading:</span>
+          <input
+            tabindex="-1"
+            class="pl-1.5 rounded-md bg-neutral-100 dark:bg-neutral-950 dark:border-neutral-700 border-[0.5px] focus:outline-none w-24"
+            type="number"
+            step="any"
+            value={rotate.degrees}
+            on:change={handleDegreesChange}
+            on:click|stopPropagation
+            disabled={rotate.locked}
+          />
+          <span class="text-sm font-extralight">deg</span>
+        </div>
+
+        <!-- Event Markers could be added here later as per prompt, but for now prompt says focus on creating the new type -->
       </div>
-
-      <!-- Event Markers could be added here later as per prompt, but for now prompt says focus on creating the new type -->
     </div>
   {/if}
 </div>

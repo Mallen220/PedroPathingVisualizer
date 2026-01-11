@@ -64,6 +64,9 @@
     calculateStats();
   }
 
+  // Duration for transitions
+  $: transitionDuration = settings?.enableTransitions ? 200 : 0;
+
   function calculateStats() {
     // Basic time and distance from standard calculator
     const timePred = calculatePathTime(startPoint, lines, settings, sequence);
@@ -329,7 +332,7 @@
   <div
     class="z-50 flex flex-col overflow-hidden bg-white dark:bg-neutral-800 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700"
     style={panelStyle}
-    transition:slide={{ duration: 200 }}
+    transition:slide={{ duration: transitionDuration }}
     role="dialog"
     aria-modal="false"
     aria-labelledby="stats-title"

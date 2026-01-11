@@ -1287,7 +1287,9 @@
         {#if optimizationOpen}
           <div
             class="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-100 dark:bg-neutral-800 p-4"
-            transition:slide
+            transition:slide={{
+              duration: settings.enableTransitions ? 400 : 0,
+            }}
           >
             <OptimizationDialog
               bind:this={optDialogRef}

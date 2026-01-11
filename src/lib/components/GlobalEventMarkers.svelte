@@ -13,6 +13,8 @@
     selectedPointId,
     hoveredMarkerId,
   } from "../../stores";
+  import { settingsStore } from "../projectStore";
+  import { slide } from "svelte/transition";
 
   export let sequence: SequenceItem[];
   export let lines: Line[];
@@ -336,7 +338,12 @@
   />
 
   {#if !collapsedMarkers}
-    <div class="p-2 flex flex-col gap-2">
+    <div
+      class="p-2 flex flex-col gap-2"
+      transition:slide={{
+        duration: $settingsStore?.enableTransitions ? 200 : 0,
+      }}
+    >
       {#if allMarkers.length === 0}
         <div class="text-xs text-neutral-500 italic p-2 text-center">
           No event markers defined. Click + to add one.

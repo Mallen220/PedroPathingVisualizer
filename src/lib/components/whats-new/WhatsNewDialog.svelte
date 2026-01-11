@@ -677,6 +677,7 @@
   </div>
 {/if}
 
+<!-- No transition imported, uses CSS animation -->
 <style lang="postcss">
   /* Global styles for rendered markdown */
   :global(.prose h1) {
