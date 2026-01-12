@@ -262,14 +262,21 @@ install_linux() {
     candidate_url=""
 
     if [[ "$arch" == "x86_64" || "$arch" == "amd64" || "$arch" == "x64" ]]; then
-        candidate_url=$(select_asset_by_pattern "\.deb\|\.AppImage\|\.tar\.gz")
+        # Use ERE syntax with | for alternation (grep -Ei)
+        candidate_url=$(select_asset_by_pattern "\.deb|\.AppImage|\.tar\.gz")
     else
         # For arm machines prefer arm builds or AppImage
-        candidate_url=$(select_asset_by_pattern "\.AppImage\|\.deb\|\.tar\.gz")
+        candidate_url=$(select_asset_by_pattern "\.AppImage|\.deb|\.tar\.gz")
     fi
 
     if [ -z "$candidate_url" ]; then
-        print_error "No Linux assets found in latest release. You can manually provide a direct download URL."
+        # This should rarely happen now since the selector shows all options
+        print_error "No Linux assets found in latest release."
+        print_info "Available assets for this platform:"
+        get_download_urls "\.deb|\.AppImage|\.tar\.gz" | while read -r url; do
+            echo "  - $(basename "$url")" >&2
+        done
+        echo "" >&2
         read -p "Enter a direct download URL (AppImage, .deb, or .tar.gz): " candidate_url < /dev/tty
         if [ -z "$candidate_url" ]; then
             print_error "No URL provided. Aborting."
