@@ -116,7 +116,12 @@ if (!gotTheLock) {
       }
     }
 
-    await startServer();
+    if (!app.isPackaged) {
+      await startServer();
+    } else {
+      console.log("Skipping local HTTP server in packaged app; loading files directly from dist/");
+    }
+
     createWindow();
     createMenu();
     updateDockMenu();
@@ -287,28 +292,57 @@ const createWindow = async () => {
     }
   }
 
-  // Ensure our local server is actually ready before trying to load the UI.
-  // This prevents creating windows that immediately fail to load because the
-  // server hasn't bound yet (a common race when creating windows quickly).
-  try {
-    await waitForServerReady(5000);
-  } catch (err) {
-    console.error("Server not ready when creating window:", err);
+  if (app.isPackaged) {
+    // In packaged app, load the index file directly from the ASAR 'dist' directory.
+    const indexPath = path.join(__dirname, "../dist/index.html");
     try {
-      const focused = BrowserWindow.getFocusedWindow() || newWindow;
-      dialog.showMessageBox(focused, {
-        type: "error",
-        title: "Load Error",
-        message:
-          "The local app server did not start in time. The window will attempt to load; if it fails, please try again.",
-      });
-    } catch (dialogErr) {
-      console.warn("Failed to show load error dialog:", dialogErr);
+      newWindow.loadFile(indexPath);
+    } catch (err) {
+      console.error("Failed to load index file from packaged app:", err);
+      // Fallback: try starting local server and load via http
+      try {
+        await startServer();
+        await waitForServerReady(5000);
+        newWindow.loadURL(`http://localhost:${serverPort}`);
+      } catch (err2) {
+        console.error("Fallback server start/load failed:", err2);
+        const focused = BrowserWindow.getFocusedWindow() || newWindow;
+        try {
+          dialog.showMessageBox(focused, {
+            type: "error",
+            title: "Load Error",
+            message:
+              "Failed to load the application UI. Please reinstall or contact support.",
+          });
+        } catch (dialogErr) {
+          console.warn("Failed to show load error dialog:", dialogErr);
+        }
+      }
     }
-  }
+  } else {
+    // Ensure our local server is actually ready before trying to load the UI.
+    // This prevents creating windows that immediately fail to load because the
+    // server hasn't bound yet (a common race when creating windows quickly).
+    try {
+      await waitForServerReady(5000);
+    } catch (err) {
+      console.error("Server not ready when creating window:", err);
+      try {
+        const focused = BrowserWindow.getFocusedWindow() || newWindow;
+        dialog.showMessageBox(focused, {
+          type: "error",
+          title: "Load Error",
+          message:
+            "The local app server did not start in time. The window will attempt to load; if it fails, please try again.",
+        });
+      } catch (dialogErr) {
+        console.warn("Failed to show load error dialog:", dialogErr);
+      }
+    }
 
-  // Load the app from the local server (retry logic is handled above)
-  newWindow.loadURL(`http://localhost:${serverPort}`);
+    // Load the app from the local server (retry logic is handled above)
+    newWindow.loadURL(`http://localhost:${serverPort}`);
+  }
 
   // Handle "Save As" dialog native behavior
   newWindow.webContents.session.on(
