@@ -1,7 +1,7 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import { selectedPointId, selectedLineId } from "../../stores";
-  import TrashIcon from "./icons/TrashIcon.svelte";
+  import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm.svelte";
   import type { SequenceRotateItem, SequenceItem } from "../../types";
   import { isRotateLinked, handleRotateRename } from "../../utils/pointLinking";
   import { tooltipPortal } from "../actions/portal";
@@ -333,19 +333,14 @@
         </svg>
       </button>
 
-      <button
-        tabindex="-1"
+      <DeleteButtonWithConfirm
         title="Remove Rotate"
-        aria-label="Remove Rotate"
-        class="text-red-500 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
-        on:click|stopPropagation={() => {
+        className="text-red-500 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={rotate.locked}
+        on:click={() => {
           if (!rotate.locked && onRemove) onRemove();
         }}
-        aria-disabled={rotate.locked}
-        disabled={rotate.locked}
-      >
-        <TrashIcon className="size-5" strokeWidth={2} />
-      </button>
+      />
     </div>
   </div>
 

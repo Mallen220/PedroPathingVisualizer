@@ -1,7 +1,7 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import { selectedPointId, selectedLineId } from "../../stores";
-  import TrashIcon from "./icons/TrashIcon.svelte";
+  import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm.svelte";
   import type { SequenceWaitItem, SequenceItem } from "../../types";
   import { isWaitLinked, handleWaitRename } from "../../utils/pointLinking";
   import { tooltipPortal } from "../actions/portal";
@@ -332,18 +332,14 @@
         </svg>
       </button>
 
-      <button
+      <DeleteButtonWithConfirm
         title="Remove Wait"
-        aria-label="Remove Wait"
-        class="text-red-500 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed rounded focus:outline-none focus:ring-2 focus:ring-red-500"
-        on:click|stopPropagation={() => {
+        className="text-red-500 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+        disabled={wait.locked}
+        on:click={() => {
           if (!wait.locked && onRemove) onRemove();
         }}
-        aria-disabled={wait.locked}
-        disabled={wait.locked}
-      >
-        <TrashIcon className="size-5" strokeWidth={2} />
-      </button>
+      />
     </div>
   </div>
 

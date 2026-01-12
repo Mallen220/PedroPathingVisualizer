@@ -6,7 +6,7 @@
   import HeadingControls from "./HeadingControls.svelte";
   import ColorPicker from "./ColorPicker.svelte";
   import { selectedLineId, selectedPointId, focusRequest } from "../../stores";
-  import TrashIcon from "./icons/TrashIcon.svelte";
+  import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm.svelte";
   import { handleWaypointRename, isLineLinked } from "../../utils/pointLinking";
   import { tooltipPortal } from "../actions/portal";
 
@@ -352,19 +352,14 @@
       </button>
 
       {#if lines.length > 1}
-        <button
-          tabindex="-1"
+        <DeleteButtonWithConfirm
           title="Remove Line"
-          aria-label="Remove Line"
-          class="text-red-500 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="text-red-500 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled={line.locked}
           on:click={() => {
             if (!line.locked && onRemove) onRemove();
           }}
-          aria-disabled={line.locked}
-          disabled={line.locked}
-        >
-          <TrashIcon className="size-5" strokeWidth={2} />
-        </button>
+        />
       {/if}
     </div>
   </div>
