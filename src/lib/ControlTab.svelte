@@ -1075,9 +1075,9 @@
   class="flex-1 flex flex-col justify-start items-center gap-2 h-full relative"
 >
   <!-- Tab Switcher -->
-  <div class="w-full px-2 pt-2 flex-none z-10 flex gap-2">
+  <div class="w-full px-4 pt-4 flex-none z-10 flex gap-3">
     <div
-      class="flex-1 flex flex-row bg-neutral-200 dark:bg-neutral-800 rounded-lg p-1 gap-1"
+      class="flex-1 flex flex-row bg-neutral-200/60 dark:bg-neutral-800/60 p-1.5 gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm"
       role="tablist"
       aria-label="Editor View Selection"
     >
@@ -1086,10 +1086,10 @@
         aria-selected={activeTab === "path"}
         aria-controls="path-panel"
         id="path-tab"
-        class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2 {activeTab ===
+        class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 flex items-center justify-center gap-2 {activeTab ===
         'path'
-          ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
-          : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
+          ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white ring-1 ring-black/5 dark:ring-white/5'
+          : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50/50 dark:hover:bg-neutral-700/50'}"
         on:click={() => (activeTab = "path")}
       >
         <svg
@@ -1117,10 +1117,10 @@
         aria-selected={activeTab === "field"}
         aria-controls="field-panel"
         id="field-tab"
-        class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2 {activeTab ===
+        class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 flex items-center justify-center gap-2 {activeTab ===
         'field'
-          ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
-          : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
+          ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white ring-1 ring-black/5 dark:ring-white/5'
+          : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50/50 dark:hover:bg-neutral-700/50'}"
         on:click={() => (activeTab = "field")}
       >
         <svg
@@ -1132,7 +1132,6 @@
           aria-hidden="true"
         >
           <rect x="3" y="4" width="18" height="16" rx="1.5" stroke-width="2" />
-          <!-- Triangle from top-left & top-right corners to center point -->
           <path
             d="M3 4 L21 4 L12 12 Z"
             fill="currentColor"
@@ -1141,7 +1140,6 @@
             stroke-width="1.5"
             stroke-linejoin="round"
           />
-          <!-- Stronger edges for clarity -->
           <path
             d="M3 4 L12 12 M21 4 L12 12"
             stroke="currentColor"
@@ -1157,10 +1155,10 @@
         aria-selected={activeTab === "table"}
         aria-controls="table-panel"
         id="table-tab"
-        class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2 {activeTab ===
+        class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 flex items-center justify-center gap-2 {activeTab ===
         'table'
-          ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
-          : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}"
+          ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white ring-1 ring-black/5 dark:ring-white/5'
+          : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50/50 dark:hover:bg-neutral-700/50'}"
         on:click={() => (activeTab = "table")}
       >
         <svg
@@ -1172,7 +1170,6 @@
           aria-hidden="true"
         >
           <rect x="3" y="4" width="18" height="16" rx="1.5" stroke-width="2" />
-          <!-- subtle header fill for legibility -->
           <rect
             x="3"
             y="4"
@@ -1213,7 +1210,7 @@
     </div>
     <button
       on:click={() => (statsOpen = !statsOpen)}
-      class="flex-none flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 gap-2"
+      class="flex-none flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-200 gap-2 shadow-sm"
       title="Path Statistics"
       aria-label="View path statistics"
     >

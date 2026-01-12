@@ -136,12 +136,12 @@
 
 <svelte:window on:dragover={handleWindowDragOver} on:drop={handleWindowDrop} />
 
-<div class="flex flex-col w-full justify-start items-start mt-2">
+<div class="flex flex-col w-full justify-start items-start">
   <!-- Control Points header with toggle and add button -->
-  <div class="flex items-center justify-between w-full">
+  <div class="flex items-center justify-between w-full py-1">
     <button
       on:click={toggleCollapsed}
-      class="flex items-center gap-2 font-light hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="flex items-center gap-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide hover:text-neutral-800 dark:hover:text-neutral-300 transition-colors"
       title="{collapsed ? 'Show' : 'Hide'} control points"
       aria-expanded={!collapsed}
       aria-controls="control-points-list-{lineIdx}"
@@ -150,20 +150,21 @@
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
-        stroke-width={2}
+        stroke-width={2.5}
         stroke="currentColor"
-        class="size-3 transition-transform {collapsed
-          ? 'rotate-0'
-          : 'rotate-90'}"
+        class="size-3 transition-transform duration-200 {collapsed
+          ? '-rotate-90'
+          : 'rotate-0'}"
       >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
-          d="m8.25 4.5 7.5 7.5-7.5 7.5"
+          d="m19.5 8.25-7.5 7.5-7.5-7.5"
         />
       </svg>
       Control Points ({line.controlPoints.length})
     </button>
+
     <button
       on:click={() => {
         line.controlPoints = [
@@ -175,7 +176,7 @@
         ];
         recordChange();
       }}
-      class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded transition-colors"
       title="Add Control Point"
       disabled={line.locked}
       aria-label="Add Control Point"
@@ -184,9 +185,9 @@
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
-        stroke-width={2}
+        stroke-width={2.5}
         stroke="currentColor"
-        class="size-4"
+        class="size-3"
       >
         <path
           stroke-linecap="round"
@@ -194,7 +195,7 @@
           d="M12 4.5v15m7.5-7.5h-15"
         />
       </svg>
-      Add Control Point
+      Add
     </button>
   </div>
 
@@ -212,7 +213,7 @@
           draggable={!line.locked}
           on:dragstart={(e) => handleDragStart(e, idx)}
           on:dragend={handleDragEnd}
-          class="flex flex-col p-2 border border-blue-300 dark:border-blue-700 rounded-md bg-blue-50 dark:bg-blue-900/20 transition-all duration-200"
+          class="flex items-center gap-3 p-2 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 transition-all duration-200 group"
           class:border-t-4={dragOverIndex === idx && dragPosition === "top"}
           class:border-b-4={dragOverIndex === idx && dragPosition === "bottom"}
           class:border-blue-500={dragOverIndex === idx}
@@ -220,42 +221,46 @@
           class:opacity-50={draggingIndex === idx}
           class:cursor-move={!line.locked}
         >
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              {#if !line.locked}
-                <div
-                  class="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    class="w-4 h-4"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 3a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </div>
-              {/if}
-              <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span
-                class="text-sm font-medium text-blue-700 dark:text-blue-300"
+          <!-- Drag Handle -->
+          {#if !line.locked}
+            <div
+              class="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 pl-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                class="w-4 h-4"
               >
-                Control Point {idx + 1}
-              </span>
+                <path
+                  fill-rule="evenodd"
+                  d="M10 3a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+                  clip-rule="evenodd"
+                />
+              </svg>
             </div>
+          {/if}
 
-            <div class="flex items-center gap-1">
-              <!-- Move Up/Down Buttons -->
-              <div class="flex flex-row gap-0.5 mr-2">
+          <!-- Content -->
+          <div class="flex-1 flex flex-col gap-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span
+                class="text-xs font-semibold text-blue-600 dark:text-blue-400"
+                >Point {idx + 1}</span
+              >
+
+              <!-- Spacer -->
+              <div class="flex-1"></div>
+
+              <!-- Reorder Buttons -->
+              <div
+                class="flex items-center bg-white dark:bg-neutral-800 rounded border border-neutral-200 dark:border-neutral-700 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
                 <button
                   title={line.locked ? "Locked" : "Move up"}
                   aria-label="Move control point up"
                   on:click|stopPropagation={() => moveControlPoint(idx, -1)}
-                  class="p-1 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 bg-neutral-100/70 dark:bg-neutral-900/70 border border-neutral-200/70 dark:border-neutral-700/70 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="p-0.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 disabled:opacity-30"
                   disabled={idx === 0 || line.locked}
                 >
                   <svg
@@ -273,11 +278,12 @@
                     />
                   </svg>
                 </button>
+                <div class="w-px h-3 bg-neutral-200 dark:bg-neutral-700"></div>
                 <button
                   title={line.locked ? "Locked" : "Move down"}
                   aria-label="Move control point down"
                   on:click|stopPropagation={() => moveControlPoint(idx, 1)}
-                  class="p-1 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 bg-neutral-100/70 dark:bg-neutral-900/70 border border-neutral-200/70 dark:border-neutral-700/70 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="p-0.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 disabled:opacity-30"
                   disabled={idx === line.controlPoints.length - 1 ||
                     line.locked}
                 >
@@ -298,6 +304,7 @@
                 </button>
               </div>
 
+              <!-- Delete Button -->
               <button
                 on:click={() => {
                   let _pts = line.controlPoints;
@@ -305,7 +312,7 @@
                   line.controlPoints = _pts;
                   recordChange();
                 }}
-                class="text-red-500 hover:text-red-600 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                class="text-neutral-400 hover:text-red-500 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 title="Remove Control Point"
                 aria-label="Remove Control Point"
                 disabled={line.locked}
@@ -315,67 +322,65 @@
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke-width={2}
-                  class="size-4"
+                  class="size-3.5"
                   stroke="currentColor"
                 >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
               </button>
             </div>
-          </div>
 
-          <!-- Control Point Position Inputs -->
-          <div class="flex flex-wrap items-center gap-2">
+            <!-- Position Inputs -->
             <div class="flex items-center gap-2">
-              <span class="text-xs text-neutral-600 dark:text-neutral-400"
-                >X:</span
-              >
-              <input
-                bind:this={xInputs[idx]}
-                bind:value={point.x}
-                type="number"
-                min="0"
-                max="144"
-                step={$snapToGrid && $showGrid ? $gridSize : 0.1}
-                class="w-16 sm:w-20 px-2 py-1 text-xs rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Line {lineIdx + 1} Control Point {idx + 1} X"
-                on:change={() => {
-                  // Update the array to trigger reactivity
-                  line.controlPoints = [...line.controlPoints];
-                }}
-                disabled={line.locked}
-                title={snapToGridTitle}
-              />
+              <div class="relative flex-1">
+                <span
+                  class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-neutral-400 select-none"
+                  >X</span
+                >
+                <input
+                  bind:this={xInputs[idx]}
+                  bind:value={point.x}
+                  type="number"
+                  min="0"
+                  max="144"
+                  step={$snapToGrid && $showGrid ? $gridSize : 0.1}
+                  class="w-full pl-5 pr-1 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Line {lineIdx + 1} Control Point {idx + 1} X"
+                  on:change={() => {
+                    // Update the array to trigger reactivity
+                    line.controlPoints = [...line.controlPoints];
+                  }}
+                  disabled={line.locked}
+                  title={snapToGridTitle}
+                />
+              </div>
+              <div class="relative flex-1">
+                <span
+                  class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-neutral-400 select-none"
+                  >Y</span
+                >
+                <input
+                  bind:this={yInputs[idx]}
+                  bind:value={point.y}
+                  type="number"
+                  min="0"
+                  max="144"
+                  step={$snapToGrid && $showGrid ? $gridSize : 0.1}
+                  class="w-full pl-5 pr-1 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Line {lineIdx + 1} Control Point {idx + 1} Y"
+                  on:change={() => {
+                    // Update the array to trigger reactivity
+                    line.controlPoints = [...line.controlPoints];
+                  }}
+                  disabled={line.locked}
+                  title={snapToGridTitle}
+                />
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-neutral-600 dark:text-neutral-400"
-                >Y:</span
-              >
-              <input
-                bind:this={yInputs[idx]}
-                bind:value={point.y}
-                type="number"
-                min="0"
-                max="144"
-                step={$snapToGrid && $showGrid ? $gridSize : 0.1}
-                class="w-16 sm:w-20 px-2 py-1 text-xs rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Line {lineIdx + 1} Control Point {idx + 1} Y"
-                on:change={() => {
-                  // Update the array to trigger reactivity
-                  line.controlPoints = [...line.controlPoints];
-                }}
-                disabled={line.locked}
-                title={snapToGridTitle}
-              />
-            </div>
-          </div>
-
-          <div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            Line {lineIdx + 1}, Control Point {idx + 1}
           </div>
         </div>
       {/each}
