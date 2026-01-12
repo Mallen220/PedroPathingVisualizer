@@ -1006,11 +1006,6 @@
         ...s,
         showVelocityHeatmap: !s.showVelocityHeatmap,
       })),
-    toggleGhostPaths: () =>
-      settingsStore.update((s) => ({
-        ...s,
-        showGhostPaths: !s.showGhostPaths,
-      })),
     addObstacle: () => {
       shapesStore.update((s) => [...s, createTriangle(s.length)]);
       activeControlTab = "field";

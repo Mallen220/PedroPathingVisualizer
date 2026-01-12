@@ -322,13 +322,6 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     action: "toggleVelocityHeatmap",
     category: "View",
   },
-  {
-    id: "toggle-ghost-paths",
-    key: "shift+g",
-    description: "Toggle Ghost Paths",
-    action: "toggleGhostPaths",
-    category: "View",
-  },
 
   // Navigation
   {
