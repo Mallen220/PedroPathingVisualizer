@@ -1,3 +1,7 @@
+## 1.6.0 (2026-01-12)
+
+- Add Path Statistics dialog and integration. Add support for 'Rotate' sequence items that use PedroPathings turnto() method, including keybind, event marker, and sequential command support. Add Velocity Heatmap visualization in settings. Refactored event markers into global event markers for a better user experience and updated the obstacles UI to match, both are now in the control tab’s field tab. Reverse quality slider direction in ExportGifDialog. Add support for opening external links in default browser instead of Electron. Fix animation export cancellation support. Remove frame cap for GIF/APNG export and improve timing. Always new keybinds. Add "What's New" dialog for first launch and docs (Shift + N to open). Updated with support for PedroPathingPlus v1.0.6. Unify UI colors for event types: Path (Green), Wait (Amber), Rotate (Pink). Dramatically improve timeline visualizer with event markers, wait highlights, and rotate markers.
+
 ## 1.5.1 (2026-01-08)
 
 - Fixed critical error on Windows systems. Added context to the waypoint menu.
