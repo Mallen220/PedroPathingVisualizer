@@ -127,3 +127,4 @@ src/lib/components/whats-new/searchUtils.ts
 src/tests/searchUtils.test.ts
 src/utils/projectLifecycle.ts
 src/types.d.ts
+src/lib/components/settings/RobotProfileManager.svelte
