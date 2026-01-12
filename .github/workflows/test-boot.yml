@@ -14,22 +14,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
-        # ubuntu-latest is x64
-        # macos-latest is x64 (until GH changes default) or M1?
-        # Currently macos-latest is macos-14 (Arm64) in some contexts but let's be explicit.
-        # Actually macos-latest is now macos-14 (Arm64) as of recent updates, but macos-13 is Intel.
-        # To be safe and explicit:
-        # macos-13 is Intel.
-        # macos-14 is Apple Silicon.
-        # We want to test both if possible.
         include:
-          - os: macos-13
+          # Test macOS x64 build (likely running on ARM runner via Rosetta if macos-latest is ARM)
+          # macos-13 is deprecated, so we use macos-latest for the "other" mac test.
+          - os: macos-latest
             arch: x64
+          # Test macOS ARM64 build
           - os: macos-14
             arch: arm64
+          # Test Linux x64
           - os: ubuntu-latest
             arch: x64
+          # Test Windows x64
           - os: windows-latest
             arch: x64
           # For ARM Ubuntu, there are no standard hosted runners yet.
@@ -61,16 +57,16 @@ jobs:
         # We use --dir to get the unpacked executable
         run: npx electron-builder --win --x64 --dir
 
-      - name: Build Application (macOS Intel)
-        if: matrix.os == 'macos-13'
+      - name: Build Application (macOS x64)
+        if: runner.os == 'macOS' && matrix.arch == 'x64'
         # We build for x64.
         # Note: --mac implies default target (dmg + zip + mas potentially), but we just need the .app
         # electron-builder defaults to universal or current arch?
         # We specify --x64 explicitly.
         run: npx electron-builder --mac --x64 --dir --publish=never
 
-      - name: Build Application (macOS Apple Silicon)
-        if: matrix.os == 'macos-14'
+      - name: Build Application (macOS arm64)
+        if: runner.os == 'macOS' && matrix.arch == 'arm64'
         # We build for arm64.
         run: npx electron-builder --mac --arm64 --dir --publish=never
 
