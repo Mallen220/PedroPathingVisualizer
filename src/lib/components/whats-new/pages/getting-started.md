@@ -22,8 +22,8 @@ Welcome to Matthew Allen's **Pedro Pathing Visualizer**, the modern path planner
 
 Don't stop at simple lines! The visualizer allows for advanced control:
 
-- **⚡ Path Optimization**: Automatically refine your path for maximum speed and safety. Click the _Table_ icon to try it. [Learn more](/optimization)
-- **📍 Event Markers**: Trigger robot actions (like "Open Claw") at exact points along the path. [Learn more](/event-markers)
+- **⚡ Path Optimization**: Automatically refine your path for maximum speed and safety. Click the _Table_ icon to try it. [Learn more](optimization.md)
+- **📍 Event Markers**: Trigger robot actions (like "Open Claw") at exact points along the path. [Learn more](event-markers.md)
 
 ## 4. Visualize & Export
 
