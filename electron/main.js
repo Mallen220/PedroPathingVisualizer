@@ -185,7 +185,8 @@ const startServer = async () => {
 
   if (app.isPackaged) {
     // In production: files are in app.asar at root
-    distPath = path.join(process.resourcesPath, "app.asar", "dist");
+    // But we unpack 'dist' to ensure express.static works reliably on all platforms (esp Linux)
+    distPath = path.join(process.resourcesPath, "app.asar.unpacked", "dist");
   } else {
     // In development
     distPath = path.join(__dirname, "../dist");

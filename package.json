@@ -84,7 +84,8 @@
     "productName": "Pedro Pathing Visualizer",
     "asar": true,
     "asarUnpack": [
-      "node_modules/electron-updater"
+      "node_modules/electron-updater",
+      "dist/**/*"
     ],
     "directories": {
       "output": "release",
