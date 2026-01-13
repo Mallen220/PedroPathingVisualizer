@@ -20,6 +20,7 @@
   import { getRandomColor } from "../utils";
   import { makeId, renumberDefaultPathNames } from "../utils/nameGenerator";
   import ObstaclesSection from "./components/ObstaclesSection.svelte";
+  import AnnotationsSection from "./components/AnnotationsSection.svelte";
   import RobotPositionDisplay from "./components/RobotPositionDisplay.svelte";
   import StartingPointSection from "./components/StartingPointSection.svelte";
   import CollapseAllButton from "./components/CollapseAllButton.svelte";
@@ -62,6 +63,7 @@
   $: showDebug = (settings as any)?.showDebugSequence;
 
   export let shapes: Shape[];
+  export let annotations: import("../types").Annotation[] = [];
   export let recordChange: () => void;
   export let onPreviewChange: ((lines: Line[] | null) => void) | null = null;
 
@@ -1315,6 +1317,8 @@
           bind:collapsedObstacles={collapsedSections.obstacles}
           bind:collapsed={collapsedSections.obstaclesSection}
         />
+
+        <AnnotationsSection bind:annotations />
       </div>
     {/if}
 

@@ -163,6 +163,17 @@ export interface Shape {
   fillColor: string;
 }
 
+export interface Annotation {
+  id: string;
+  type: "text";
+  x: number;
+  y: number;
+  content: string;
+  color: string;
+  fontSize: number;
+  locked?: boolean;
+}
+
 export type TimelineEventType = "travel" | "wait";
 
 export interface TimelineEvent {

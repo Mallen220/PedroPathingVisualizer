@@ -41,6 +41,7 @@
     loopAnimationStore,
     playbackSpeedStore,
     ensureSequenceConsistency,
+    annotationsStore,
   } from "./lib/projectStore";
 
   // Utils
@@ -186,6 +187,7 @@
   $: startPoint = $startPointStore;
   $: lines = $linesStore;
   $: shapes = $shapesStore;
+  $: annotations = $annotationsStore;
   $: sequence = $sequenceStore;
   $: percent = $percentStore;
   $: playing = $playingStore;
@@ -237,6 +239,7 @@
       startPoint: get(startPointStore),
       lines: get(linesStore),
       shapes: get(shapesStore),
+      annotations: get(annotationsStore),
       sequence: get(sequenceStore),
       settings: get(settingsStore),
     };
@@ -272,6 +275,7 @@
       startPointStore.set(prev.startPoint);
       linesStore.set(prev.lines);
       shapesStore.set(prev.shapes);
+      annotationsStore.set(prev.annotations || []);
       sequenceStore.set(prev.sequence);
 
       // Preserve the current onion layer visibility when undoing so that
@@ -298,6 +302,7 @@
       startPointStore.set(next.startPoint);
       linesStore.set(next.lines);
       shapesStore.set(next.shapes);
+      annotationsStore.set(next.annotations || []);
       sequenceStore.set(next.sequence);
 
       // Preserve onion layer visibility when redoing as well.
@@ -880,6 +885,7 @@
         bind:robotXY={$robotXYStore}
         bind:robotHeading={$robotHeadingStore}
         bind:shapes={$shapesStore}
+        bind:annotations={$annotationsStore}
         {handleSeek}
         bind:loopAnimation={$loopAnimationStore}
         {resetAnimation}

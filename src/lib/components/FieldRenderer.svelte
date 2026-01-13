@@ -22,6 +22,7 @@
     linesStore,
     startPointStore,
     shapesStore,
+    annotationsStore,
     settingsStore,
     robotXYStore,
     robotHeadingStore,
@@ -154,6 +155,7 @@
   $: startPoint = $startPointStore;
   $: lines = $linesStore;
   $: shapes = $shapesStore;
+  $: annotations = $annotationsStore;
   $: settings = $settingsStore;
   $: robotXY = $robotXYStore;
   $: robotHeading = $robotHeadingStore;
@@ -280,6 +282,59 @@
       });
     });
     return _points;
+  })();
+
+  // Annotations
+  $: annotationElements = (() => {
+    let _annotations: any[] = [];
+    annotations.forEach((ann, idx) => {
+      let group = new Two.Group();
+      group.id = `annotation-${idx}`; // Use index for ID to match store updates
+
+      let text = new Two.Text(ann.content, x(ann.x), y(ann.y));
+      text.fill = ann.color;
+      // Convert font size from roughly screen pixels to field units or just use raw scale
+      // uiLength scales inches to pixels. ann.fontSize is in pixels relative to UI?
+      // Let's assume fontSize is relative to the field scale so it zooms correctly.
+      // But user inputs 24, which is large.
+      // Let's treat fontSize as "inches * 2" or something? No, user expects font size like 12px, 24px.
+      // Two.js size is in pixels. If we want it to scale with zoom, we need to apply scale.
+      // If we want it fixed size on screen, we divide by scale.
+      // Usually annotations should zoom.
+      // 1 inch = ppI pixels.
+      // If user says size 24, maybe they mean 24 inches? No.
+      // Let's assume input is "points" approx.
+      // Let's try scaling it by ppI/some_factor to make 12 look normal-ish (e.g. 1ft text)
+      // Actually, let's just use the value as inches of height for now?
+      // If user inputs 24, that's huge (2ft).
+      // Let's assume the input is effectively "Inches * 10" or similar?
+      // Or just let user input "Size" and we map it.
+      // Let's map size 10 -> 2 inches.
+      const sizeInInches = ann.fontSize / 10;
+      text.size = uiLength(sizeInInches);
+
+      text.alignment = "center";
+      text.baseline = "middle";
+      text.weight = 600;
+
+      group.add(text);
+
+      // Add a transparent hit box for easier dragging
+      // Approx width based on char count
+      const approxWidth = ann.content.length * sizeInInches * 0.6;
+      const hitBox = new Two.Rectangle(
+        x(ann.x),
+        y(ann.y),
+        uiLength(approxWidth),
+        uiLength(sizeInInches),
+      );
+      hitBox.fill = "transparent"; // invisible but clickable
+      hitBox.noStroke();
+      group.add(hitBox);
+
+      _annotations.push(group);
+    });
+    return _annotations;
   })();
 
   // Paths (Lines)
@@ -973,6 +1028,8 @@
 
     const shapeGroup = new Two.Group();
     shapeGroup.id = "shape-group";
+    const annotationGroup = new Two.Group();
+    annotationGroup.id = "annotation-group";
     const lineGroup = new Two.Group();
     lineGroup.id = "line-group";
     const pointGroup = new Two.Group();
@@ -989,6 +1046,8 @@
     if (ghostPathElement) shapeGroup.add(ghostPathElement);
     onionLayerElements.forEach((el) => shapeGroup.add(el));
 
+    annotationElements.forEach((el) => annotationGroup.add(el));
+
     path.forEach((el) => lineGroup.add(el));
     previewPathElements.forEach((el) => lineGroup.add(el));
 
@@ -999,6 +1058,7 @@
     collisionElements.forEach((el) => collisionGroup.add(el));
 
     two.add(shapeGroup);
+    two.add(annotationGroup);
     two.add(lineGroup);
     two.add(eventGroup);
     two.add(pointGroup);
@@ -1145,6 +1205,13 @@
           shapes[shapeIdx].vertices[vertexIdx].x = inchX;
           shapes[shapeIdx].vertices[vertexIdx].y = inchY;
           shapesStore.set(shapes);
+        } else if (currentElem.startsWith("annotation-")) {
+          const idx = Number(currentElem.split("-")[1]);
+          if (annotations[idx] && !annotations[idx].locked) {
+            annotations[idx].x = inchX;
+            annotations[idx].y = inchY;
+            annotationsStore.set(annotations);
+          }
         } else {
           const line = Number(currentElem.split("-")[1]) - 1;
           const point = Number(currentElem.split("-")[2]);
@@ -1209,7 +1276,8 @@
 
         if (
           target?.id.startsWith("point") ||
-          target?.id.startsWith("obstacle")
+          target?.id.startsWith("obstacle") ||
+          target?.id.startsWith("annotation")
         ) {
           two.renderer.domElement.style.cursor = "pointer";
           currentElem = target.id;
@@ -1256,7 +1324,11 @@
       // Optimization: use evt.target
       const el = evt.target as Element;
       if (el?.id) {
-        if (el.id.startsWith("point") || el.id.startsWith("obstacle-"))
+        if (
+          el.id.startsWith("point") ||
+          el.id.startsWith("obstacle-") ||
+          el.id.startsWith("annotation-")
+        )
           clickedElem = el.id;
         else if (el.id.includes("event-")) {
           // Logic to normalize ID
@@ -1338,6 +1410,12 @@
           if (shapes[shapeIdx]?.vertices[vertexIdx]) {
             objectX = shapes[shapeIdx].vertices[vertexIdx].x;
             objectY = shapes[shapeIdx].vertices[vertexIdx].y;
+          }
+        } else if (currentElem.startsWith("annotation-")) {
+          const idx = Number(currentElem.split("-")[1]);
+          if (annotations[idx]) {
+            objectX = annotations[idx].x;
+            objectY = annotations[idx].y;
           }
         } else if (currentElem.startsWith("point-")) {
           const line = Number(currentElem.split("-")[1]) - 1;

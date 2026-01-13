@@ -7,6 +7,7 @@ import type {
   Shape,
   Settings,
   SequencePathItem,
+  Annotation,
 } from "../types";
 import {
   getDefaultStartPoint,
@@ -81,6 +82,7 @@ const initialDefaultLines = normalizeLines(getDefaultLines());
 
 export const linesStore = writable<Line[]>(initialDefaultLines);
 export const shapesStore = writable<Shape[]>(getDefaultShapes());
+export const annotationsStore = writable<Annotation[]>([]);
 
 export const sequenceStore = writable<SequenceItem[]>(
   initialDefaultLines.map((ln) => ({
@@ -105,6 +107,7 @@ export function resetProject() {
   const newLines = normalizeLines(getDefaultLines());
   linesStore.set(newLines);
   shapesStore.set(getDefaultShapes());
+  annotationsStore.set([]);
   sequenceStore.set(
     newLines.map((ln) => ({
       kind: "path",
@@ -171,6 +174,7 @@ export function loadProjectData(data: any) {
 
   linesStore.set(renamedLines);
   shapesStore.set(data.shapes || []);
+  annotationsStore.set(data.annotations || []);
   sequenceStore.set(sanitized);
 
   // settings are usually loaded separately or merged?
