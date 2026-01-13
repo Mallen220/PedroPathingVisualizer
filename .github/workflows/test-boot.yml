@@ -1,0 +1,98 @@
+name: Boot Test
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test-boot:
+    name: Test Boot on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Test macOS x64 build (likely running on ARM runner via Rosetta if macos-latest is ARM)
+          # macos-13 is deprecated, so we use macos-latest for the "other" mac test.
+          - os: macos-latest
+            arch: x64
+          # Test macOS ARM64 build
+          - os: macos-14
+            arch: arm64
+          # Test Linux x64
+          - os: ubuntu-latest
+            arch: x64
+          # Test Windows x64
+          - os: windows-latest
+            arch: x64
+          # For ARM Ubuntu, there are no standard hosted runners yet.
+          # If you have a self-hosted runner, you can uncomment this:
+          # - os: ubuntu-arm64
+          #   arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Assets
+        run: npm run build
+
+      - name: Build Application (Linux)
+        if: runner.os == 'Linux'
+        # We use --dir to get the unpacked executable for easier testing
+        run: npx electron-builder --linux --x64 --dir
+
+      - name: Build Application (Windows)
+        if: runner.os == 'Windows'
+        # We use --dir to get the unpacked executable
+        run: npx electron-builder --win --x64 --dir
+
+      - name: Build Application (macOS x64)
+        if: runner.os == 'macOS' && matrix.arch == 'x64'
+        # We build for x64.
+        # Note: --mac implies default target (dmg + zip + mas potentially), but we just need the .app
+        # electron-builder defaults to universal or current arch?
+        # We specify --x64 explicitly.
+        run: npx electron-builder --mac --x64 --dir --publish=never
+
+      - name: Build Application (macOS arm64)
+        if: runner.os == 'macOS' && matrix.arch == 'arm64'
+        # We build for arm64.
+        run: npx electron-builder --mac --arm64 --dir --publish=never
+
+      - name: Ad-hoc Sign Application (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          find release -name "*.app" -exec codesign --force --deep -s - {} \;
+
+      - name: Run Playwright Tests
+        shell: bash
+        env:
+          # On Linux, we need xvfb for Electron to run
+          # Using xvfb-run to wrap the test command
+          # On others, run directly
+          # We need to determine if we should use xvfb-run
+          USE_XVFB: ${{ runner.os == 'Linux' }}
+        run: |
+          npx playwright install-deps
+          if [ "$USE_XVFB" = "true" ]; then
+            xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test
+          else
+            npx playwright test
+          fi
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test-results/

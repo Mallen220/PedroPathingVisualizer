@@ -17,6 +17,7 @@
     "test": "vitest",
     "tests": "vitest",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
+    "test:e2e": "playwright test",
     "dev": "npm run fix:headers && npm run format && npm run fix:notice && npm run build && electron .",
     "start": "npm run build && electron .",
     "dist:mac": "npm run build && electron-builder --mac --arm64 --publish=never",
@@ -90,6 +91,7 @@
       "output": "release",
       "buildResources": "build"
     },
+    "artifactName": "Pedro-Pathing-Visualizer-${version}-${arch}.${ext}",
     "files": [
       "dist/**/*",
       "public/**/*",
@@ -124,7 +126,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "perMachine": true
+      "perMachine": true,
+      "artifactName": "Pedro-Pathing-Visualizer-Setup-${version}.${ext}"
     },
     "linux": {
       "target": [
