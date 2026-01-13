@@ -160,6 +160,51 @@ select_asset_by_pattern() {
     done
 }
 
+install_dependencies() {
+    print_info "Checking for required system dependencies..."
+    if command -v apt-get &> /dev/null; then
+        # Ubuntu/Debian
+        deps=()
+
+        # Check for libfuse2 (needed for AppImage on Ubuntu 22.04+)
+        if ! dpkg -l | grep -q libfuse2; then
+            deps+=("libfuse2")
+        fi
+
+        # Check for zlib1g (usually present, but user reported error)
+        if ! dpkg -l | grep -q zlib1g; then
+            deps+=("zlib1g")
+        fi
+
+        if [ ${#deps[@]} -gt 0 ]; then
+            print_warning "Missing dependencies: ${deps[*]}"
+            print_status "Installing missing dependencies (requires sudo)..."
+            sudo apt-get update
+            sudo apt-get install -y "${deps[@]}"
+        else
+            print_status "Dependencies met."
+        fi
+    else
+        print_warning "Package manager not detected or supported for auto-dependency installation. Ensure libfuse2 and zlib1g are installed."
+    fi
+}
+
+install_icon() {
+    ICON_DIR="$HOME/.local/share/icons/hicolor/512x512/apps"
+    mkdir -p "$ICON_DIR"
+    ICON_PATH="$ICON_DIR/pedro-pathing-visualizer.png"
+
+    # URL to the icon in the repo
+    ICON_URL="https://raw.githubusercontent.com/Mallen220/PedroPathingVisualizer/main/build/icon.png"
+
+    print_info "Downloading icon..."
+    if curl -L -s -o "$ICON_PATH" "$ICON_URL"; then
+        print_status "Icon installed to $ICON_PATH"
+    else
+        print_warning "Failed to download icon. Desktop entry might be missing the icon."
+    fi
+}
+
 install_mac() {
     print_header "Starting macOS Installation..."
     
@@ -257,6 +302,8 @@ install_mac() {
 install_linux() {
     print_header "Starting Linux Installation..."
 
+    install_dependencies
+
     # Try to find .deb, .AppImage, or .tar.gz; prefer architecture-matching debs for x86_64
     arch=$(uname -m)
     candidate_url=""
@@ -316,24 +363,29 @@ install_linux() {
         print_status "Making executable..."
         chmod +x "$APP_PATH"
 
+        install_icon
+
         # Optional: Create Desktop Entry
         if [ -d "$HOME/.local/share/applications" ]; then
             print_info "Creating desktop entry..."
             cat > "$HOME/.local/share/applications/pedro-visualizer.desktop" << EOL
 [Desktop Entry]
 Name=Pedro Pathing Visualizer
-Exec=$APP_PATH
-Icon=utilities-terminal
+Exec="$APP_PATH" --no-sandbox
+Icon=pedro-pathing-visualizer
 Type=Application
 Categories=Development;
 Comment=Visualizer for Pedro Pathing
 Terminal=false
+StartupWMClass=pedro-pathing-visualizer
 EOL
             print_status "Desktop shortcut created."
         fi
 
         print_status "Installation Complete!"
         echo "Run it via: $APP_PATH"
+        echo "Note: '--no-sandbox' flag added to desktop entry to ensure compatibility with newer Ubuntu versions."
+
     elif [[ "$lower" == *.deb ]]; then
         TMP_DEB="/tmp/$fname"
         print_info "Downloading .deb to $TMP_DEB..."
@@ -341,10 +393,16 @@ EOL
             print_error "Download failed. Aborting."
             exit 1
         fi
+
         print_status "Installing via dpkg..."
         sudo dpkg -i "$TMP_DEB" || (print_warning "dpkg returned errors; attempting to fix with apt-get -f install" && sudo apt-get -f install -y)
+
+        # Ensure icon is installed for local user just in case
+        install_icon
+
         rm -f "$TMP_DEB"
         print_status "Installation Complete! Launch from your applications menu."
+
     elif [[ "$lower" == *.tar.gz ]]; then
         TMP_TAR="/tmp/$fname"
         DEST_DIR="$INSTALL_DIR/pedro-pathing-visualizer"
