@@ -1,11 +1,10 @@
 name: Boot Test
 
 on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   test-boot:
@@ -16,8 +15,9 @@ jobs:
       matrix:
         include:
           # Test macOS x64 build (likely running on ARM runner via Rosetta if macos-latest is ARM)
-          # - os: macos-latest
-          #   arch: x64
+          # macos-13 is deprecated, so we use macos-latest for the "other" mac test.
+          - os: macos-latest
+            arch: x64
           # Test macOS ARM64 build
           - os: macos-14
             arch: arm64
@@ -82,8 +82,6 @@ jobs:
           # On others, run directly
           # We need to determine if we should use xvfb-run
           USE_XVFB: ${{ runner.os == 'Linux' }}
-          # Wait (ms) before taking boot screenshot in Playwright tests
-          BOOT_SCREENSHOT_DELAY_MS: '10000'
         run: |
           npx playwright install-deps
           if [ "$USE_XVFB" = "true" ]; then
