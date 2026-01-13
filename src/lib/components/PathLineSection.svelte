@@ -329,18 +329,25 @@
       >
         <!-- Target Position -->
         <div class="space-y-2">
+          <!-- svelte-ignore a11y-label-has-associated-control -->
           <label
             class="text-xs font-semibold text-neutral-500 uppercase tracking-wide block"
+            id="target-position-label-{line.id}"
           >
             Target Position
           </label>
-          <div class="flex items-center gap-2">
+          <div
+            class="flex items-center gap-2"
+            aria-labelledby="target-position-label-{line.id}"
+          >
             <div class="relative flex-[0.5] min-w-0 max-w-[200px]">
+              <label for="end-x-{line.id}" class="sr-only">X Coordinate</label>
               <span
                 class="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400 select-none"
-                >X</span
+                aria-hidden="true">X</span
               >
               <input
+                id="end-x-{line.id}"
                 bind:this={xInput}
                 tabindex="-1"
                 class="w-full pl-6 pr-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
@@ -354,11 +361,13 @@
               />
             </div>
             <div class="relative flex-[0.5] min-w-0 max-w-[200px]">
+              <label for="end-y-{line.id}" class="sr-only">Y Coordinate</label>
               <span
                 class="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400 select-none"
-                >Y</span
+                aria-hidden="true">Y</span
               >
               <input
+                id="end-y-{line.id}"
                 bind:this={yInput}
                 tabindex="-1"
                 class="w-full pl-6 pr-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
@@ -376,22 +385,26 @@
 
         <!-- Heading Control -->
         <div class="space-y-2" class:col-span-2={!isNarrow}>
+          <!-- svelte-ignore a11y-label-has-associated-control -->
           <label
+            id="heading-label-{line.id}"
             class="text-xs font-semibold text-neutral-500 uppercase tracking-wide block"
           >
             Heading
           </label>
-          <HeadingControls
-            bind:this={headingControls}
-            endPoint={line.endPoint}
-            locked={line.locked}
-            tabindex={-1}
-            on:change={() => (lines = [...lines])}
-            on:commit={() => {
-              lines = [...lines];
-              recordChange();
-            }}
-          />
+          <div aria-labelledby="heading-label-{line.id}">
+            <HeadingControls
+              bind:this={headingControls}
+              endPoint={line.endPoint}
+              locked={line.locked}
+              tabindex={-1}
+              on:change={() => (lines = [...lines])}
+              on:commit={() => {
+                lines = [...lines];
+                recordChange();
+              }}
+            />
+          </div>
         </div>
       </div>
 
