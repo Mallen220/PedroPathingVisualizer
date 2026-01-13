@@ -12,9 +12,17 @@ import {
   shapesStore,
   sequenceStore,
   settingsStore,
+  checkpointsStore,
 } from "../lib/projectStore";
 import { loadTrajectoryFromFile, downloadTrajectory } from "./index";
-import type { Line, Point, SequenceItem, Settings, Shape } from "../types";
+import type {
+  Line,
+  Point,
+  SequenceItem,
+  Settings,
+  Shape,
+  Checkpoint,
+} from "../types";
 import { makeId } from "./nameGenerator";
 
 interface ExtendedElectronAPI {
@@ -92,6 +100,13 @@ export function loadProjectData(data: any) {
     sequenceStore.set(seq);
   }
   if (data.shapes) shapesStore.set(data.shapes);
+
+  // Load checkpoints if present (also handled in projectStore's loadProjectData, keeping consistent)
+  if (data.checkpoints && Array.isArray(data.checkpoints)) {
+    checkpointsStore.set(data.checkpoints);
+  } else {
+    checkpointsStore.set([]);
+  }
 }
 
 function addToRecentFiles(path: string, settings?: Settings) {
@@ -146,6 +161,7 @@ async function performSave(
   settings: Settings,
   sequence: SequenceItem[],
   shapes: Shape[],
+  checkpoints: Checkpoint[],
   targetPath: string | undefined,
 ) {
   const electronAPI = getElectronAPI();
@@ -208,6 +224,7 @@ async function performSave(
       settings,
       sequence: sequenceToSave,
       shapes,
+      checkpoints, // Include checkpoints in save
     };
 
     const jsonString = JSON.stringify(projectData, null, 2);
@@ -287,6 +304,7 @@ export async function saveProject(
   settings?: Settings,
   sequence?: SequenceItem[],
   shapes?: Shape[],
+  checkpoints?: Checkpoint[],
   saveAs: boolean = false,
 ) {
   const electronAPI = getElectronAPI();
@@ -296,6 +314,7 @@ export async function saveProject(
   const st = settings || get(settingsStore);
   const seq = sequence || get(sequenceStore);
   const sh = shapes || get(shapesStore);
+  const cps = checkpoints || get(checkpointsStore);
 
   let targetPath = get(currentFilePath) || undefined;
   if (saveAs) {
@@ -307,7 +326,7 @@ export async function saveProject(
     return true;
   }
 
-  return await performSave(sp, ln, st, seq, sh, targetPath);
+  return await performSave(sp, ln, st, seq, sh, cps, targetPath);
 }
 
 export function saveFileAs() {
@@ -345,6 +364,7 @@ export async function exportAsPP() {
       lines: get(linesStore),
       shapes: get(shapesStore),
       sequence: get(sequenceStore),
+      checkpoints: get(checkpointsStore),
     },
     null,
     2,

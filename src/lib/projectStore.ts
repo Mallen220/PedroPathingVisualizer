@@ -7,6 +7,7 @@ import type {
   Shape,
   Settings,
   SequencePathItem,
+  Checkpoint,
 } from "../types";
 import {
   getDefaultStartPoint,
@@ -15,6 +16,7 @@ import {
   DEFAULT_SETTINGS,
 } from "../config";
 import { getRandomColor } from "../utils";
+import { notification } from "../stores";
 
 export function normalizeLines(input: Line[]): Line[] {
   return (input || []).map((line) => ({
@@ -89,6 +91,7 @@ export const sequenceStore = writable<SequenceItem[]>(
   })),
 );
 export const settingsStore = writable<Settings>({ ...DEFAULT_SETTINGS });
+export const checkpointsStore = writable<Checkpoint[]>([]);
 
 // Animation state
 export const percentStore = writable(0);
@@ -111,6 +114,7 @@ export function resetProject() {
       lineId: ln.id!,
     })),
   );
+  checkpointsStore.set([]);
   // We don't reset settings usually, or maybe we do?
   // The original App.svelte reset code:
   // startPoint = getDefaultStartPoint();
@@ -173,6 +177,13 @@ export function loadProjectData(data: any) {
   shapesStore.set(data.shapes || []);
   sequenceStore.set(sanitized);
 
+  // Load checkpoints if present
+  if (data.checkpoints && Array.isArray(data.checkpoints)) {
+    checkpointsStore.set(data.checkpoints);
+  } else {
+    checkpointsStore.set([]);
+  }
+
   // settings are usually loaded separately or merged?
   // In App.svelte loadData does NOT load settings from the file data usually,
   // except if it's a full project save.
@@ -197,4 +208,59 @@ export function ensureSequenceConsistency() {
     linesStore.set(renamed);
   }
 }
-// The App.svelte `loadData` function DOES NOT update settings.
+
+// --- Checkpoint Functions ---
+
+export function createCheckpoint(name: string) {
+  const snapshot: Checkpoint = {
+    id: crypto.randomUUID(),
+    name: name.trim() || `Checkpoint ${new Date().toLocaleTimeString()}`,
+    timestamp: Date.now(),
+    data: {
+      startPoint: JSON.parse(JSON.stringify(get(startPointStore))),
+      lines: JSON.parse(JSON.stringify(get(linesStore))),
+      shapes: JSON.parse(JSON.stringify(get(shapesStore))),
+      sequence: JSON.parse(JSON.stringify(get(sequenceStore))),
+      settings: JSON.parse(JSON.stringify(get(settingsStore))),
+    },
+  };
+
+  checkpointsStore.update((curr) => [...curr, snapshot]);
+  notification.set({
+    message: `Checkpoint "${snapshot.name}" saved`,
+    type: "success",
+  });
+}
+
+export function restoreCheckpoint(id: string) {
+  const checkpoints = get(checkpointsStore);
+  const checkpoint = checkpoints.find((cp) => cp.id === id);
+
+  if (!checkpoint) {
+    notification.set({
+      message: "Checkpoint not found",
+      type: "error",
+    });
+    return;
+  }
+
+  // Restore state
+  startPointStore.set(JSON.parse(JSON.stringify(checkpoint.data.startPoint)));
+  linesStore.set(JSON.parse(JSON.stringify(checkpoint.data.lines)));
+  shapesStore.set(JSON.parse(JSON.stringify(checkpoint.data.shapes)));
+  sequenceStore.set(JSON.parse(JSON.stringify(checkpoint.data.sequence)));
+  settingsStore.set(JSON.parse(JSON.stringify(checkpoint.data.settings)));
+
+  notification.set({
+    message: `Restored "${checkpoint.name}"`,
+    type: "success",
+  });
+}
+
+export function deleteCheckpoint(id: string) {
+  checkpointsStore.update((curr) => curr.filter((cp) => cp.id !== id));
+  notification.set({
+    message: "Checkpoint deleted",
+    type: "info",
+  });
+}

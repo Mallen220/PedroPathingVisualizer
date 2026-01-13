@@ -21,6 +21,7 @@
   import SettingsDialog from "./components/SettingsDialog.svelte";
   import KeyboardShortcutsDialog from "./components/KeyboardShortcutsDialog.svelte";
   import ExportCodeDialog from "./components/ExportCodeDialog.svelte";
+  import CheckpointsDialog from "./components/CheckpointsDialog.svelte";
   import { SaveIcon } from "./components/icons";
   import { calculatePathTime, formatTime } from "../utils";
   import { showShortcuts } from "../stores";
@@ -50,6 +51,7 @@
 
   let shortcutsOpen = false;
   let exportMenuOpen = false;
+  let checkpointsOpen = false;
   let exportDialog: ExportCodeDialog;
 
   let saveDropdownOpen = false;
@@ -187,6 +189,10 @@
 
 <SettingsDialog bind:isOpen={$showSettings} bind:settings />
 <KeyboardShortcutsDialog bind:isOpen={shortcutsOpen} bind:settings />
+<CheckpointsDialog
+  bind:isOpen={checkpointsOpen}
+  onClose={() => (checkpointsOpen = false)}
+/>
 
 <div
   class="w-full z-50 bg-neutral-50 dark:bg-neutral-900 shadow-md flex flex-wrap justify-between items-center px-4 md:px-6 py-3 border-b border-neutral-200 dark:border-neutral-800"
@@ -660,6 +666,29 @@
 
     <!-- Main Actions -->
     <div class="flex items-center gap-2">
+      <!-- Checkpoints Button -->
+      <button
+        on:click={() => (checkpointsOpen = true)}
+        class="flex items-center gap-1 p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
+        title="Checkpoints"
+        aria-label="Manage Checkpoints"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+          class="size-5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
+        </svg>
+      </button>
+
       <!-- Save -->
       <div class="relative">
         <button

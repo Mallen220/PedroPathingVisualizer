@@ -163,6 +163,19 @@ export interface Shape {
   fillColor: string;
 }
 
+export interface Checkpoint {
+  id: string;
+  name: string;
+  timestamp: number;
+  data: {
+    startPoint: Point;
+    lines: Line[];
+    shapes: Shape[];
+    sequence: SequenceItem[];
+    settings: Settings;
+  };
+}
+
 export type TimelineEventType = "travel" | "wait";
 
 export interface TimelineEvent {
