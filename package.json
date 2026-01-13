@@ -127,6 +127,8 @@
       "perMachine": true
     },
     "linux": {
+      "productName": "PedroPathingVisualizer",
+      "executableName": "pedro-pathing-visualizer",
       "target": [
         "AppImage",
         "deb"
