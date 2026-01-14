@@ -7,9 +7,11 @@ import type { BasePoint } from "../types";
 /**
  * Determines if a point is inside a polygon using ray casting algorithm
  */
-export function pointInPolygon(point: number[], polygon: BasePoint[]): boolean {
-  const x = point[0],
-    y = point[1];
+export function pointInPolygon(
+  x: number,
+  y: number,
+  polygon: BasePoint[],
+): boolean {
   let inside = false;
 
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {

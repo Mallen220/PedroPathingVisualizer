@@ -361,7 +361,7 @@ export class PathOptimizer {
         for (const shape of this.activeShapes) {
           // Check if any robot corner is in shape
           for (const corner of corners) {
-            if (pointInPolygon([corner.x, corner.y], shape.vertices)) {
+            if (pointInPolygon(corner.x, corner.y, shape.vertices)) {
               isColliding = true;
               break;
             }
@@ -370,7 +370,7 @@ export class PathOptimizer {
 
           // Also check if any shape vertex is inside the robot
           for (const v of shape.vertices) {
-            if (pointInPolygon([v.x, v.y], corners)) {
+            if (pointInPolygon(v.x, v.y, corners)) {
               isColliding = true;
               break;
             }

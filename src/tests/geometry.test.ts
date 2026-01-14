@@ -20,12 +20,12 @@ describe("Geometry Utils", () => {
     ];
 
     it("returns true for point inside polygon", () => {
-      expect(pointInPolygon([5, 5], square)).toBe(true);
+      expect(pointInPolygon(5, 5, square)).toBe(true);
     });
 
     it("returns false for point outside polygon", () => {
-      expect(pointInPolygon([15, 5], square)).toBe(false);
-      expect(pointInPolygon([5, 15], square)).toBe(false);
+      expect(pointInPolygon(15, 5, square)).toBe(false);
+      expect(pointInPolygon(5, 15, square)).toBe(false);
     });
 
     it("should handle ray casting edge cases gracefully", () => {
@@ -54,7 +54,7 @@ describe("Geometry Utils", () => {
 
       // So [0,0] is considered Inside.
 
-      expect(pointInPolygon([0, 0], square)).toBe(true);
+      expect(pointInPolygon(0, 0, square)).toBe(true);
     });
   });
 
@@ -194,7 +194,7 @@ describe("Geometry Utils", () => {
             const hull = convexHull(uniquePoints);
 
             return uniquePoints.every((p) => {
-              const isInside = pointInPolygon([p.x, p.y], hull);
+              const isInside = pointInPolygon(p.x, p.y, hull);
               if (isInside) return true;
 
               // If considered outside, check if it's on the boundary

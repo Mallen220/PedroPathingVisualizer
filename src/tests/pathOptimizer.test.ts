@@ -136,7 +136,7 @@ describe("PathOptimizer", () => {
     // Check if any corner is in obstacle
     let isColliding = false;
     for (const corner of corners) {
-      if (pointInPolygon([corner.x, corner.y], obstacleVertices)) {
+      if (pointInPolygon(corner.x, corner.y, obstacleVertices)) {
         isColliding = true;
         break;
       }
