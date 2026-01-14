@@ -1248,6 +1248,27 @@
               <!-- Onion Layer Spacing -->
               {#if settings.showOnionLayers}
                 <div
+                  class="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
+                >
+                  <div>
+                    <div
+                      class="text-sm font-medium text-neutral-700 dark:text-neutral-300 block mb-1"
+                    >
+                      Show Only on Current Path
+                    </div>
+                    <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                      Only show onion layers for the selected path
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    bind:checked={settings.onionSkinCurrentPathOnly}
+                    class="w-5 h-5 rounded border-neutral-300 dark:border-neutral-600 text-indigo-500 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    title="Toggle current path only onion layers"
+                  />
+                </div>
+
+                <div
                   class="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
                 >
                   <div
