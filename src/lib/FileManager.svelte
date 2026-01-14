@@ -3,7 +3,7 @@
   declare global {
     interface Window {
       electronAPI: {
-        getDirectory: () => Promise<string>;
+        getDirectory: () => Promise<string | null>;
         setDirectory: (path?: string) => Promise<string | null>;
         listFiles: (directory: string) => Promise<FileInfo[]>;
         readFile: (filePath: string) => Promise<string>;
@@ -40,6 +40,8 @@
     fileManagerSessionState,
     fileManagerNewFileMode,
   } from "../stores";
+  import { settingsStore } from "./projectStore";
+  import { saveProject } from "../utils/fileHandlers";
   import { saveAutoPathsDirectory } from "../utils/directorySettings";
   import { mirrorPathData, reversePathData } from "../utils/pathTransform";
 
@@ -226,7 +228,8 @@
       if (savedDir && savedDir.trim() !== "") {
         currentDirectory = savedDir;
       } else {
-        currentDirectory = await electronAPI.getDirectory();
+        const dir = await electronAPI.getDirectory();
+        currentDirectory = dir || "";
       }
       await refreshDirectory();
     } catch (error) {
@@ -493,6 +496,25 @@
 
   async function loadFile(file: FileInfo) {
     if (file.error) return;
+
+    // Autosave on Close Logic
+    const currentSettings = get(settingsStore);
+    if (
+      currentSettings.autosaveMode === "close" &&
+      get(isUnsaved) &&
+      get(currentFilePath)
+    ) {
+      await saveProject(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        { quiet: true },
+      );
+    }
+
     try {
       const content = await electronAPI.readFile(file.path);
       const data = JSON.parse(content);
@@ -552,6 +574,24 @@
 
     const fileName = name.endsWith(".pp") ? name : name + ".pp";
     const filePath = path.join(currentDirectory, fileName);
+
+    // Autosave on Close Logic
+    const currentSettings = get(settingsStore);
+    if (
+      currentSettings.autosaveMode === "close" &&
+      get(isUnsaved) &&
+      get(currentFilePath)
+    ) {
+      await saveProject(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        { quiet: true },
+      );
+    }
 
     try {
       if (await electronAPI.fileExists(filePath)) {

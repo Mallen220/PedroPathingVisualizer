@@ -26,6 +26,7 @@
     robotXYStore,
     robotHeadingStore,
     sequenceStore, // Imported for potential use, though main logic uses lines
+    percentStore,
   } from "../projectStore";
   import {
     POINT_RADIUS,
@@ -37,7 +38,6 @@
   import {
     getCurvePoint,
     quadraticToCubic,
-    generateGhostPathPoints,
     generateOnionLayers,
     getRandomColor,
     loadRobotImage,
@@ -512,75 +512,49 @@
     return _shapes;
   })();
 
-  // Ghost Path
-  $: ghostPathElement = (() => {
-    let ghostPath: Path | null = null;
-    if (settings.showGhostPaths && lines.length > 0) {
-      const ghostPoints = generateGhostPathPoints(
-        startPoint,
-        lines,
-        settings.rLength,
-        settings.rWidth,
-        50,
-      );
-      if (ghostPoints.length >= 3) {
-        let vertices = [];
-        vertices.push(
-          new Two.Anchor(
-            x(ghostPoints[0].x),
-            y(ghostPoints[0].y),
-            0,
-            0,
-            0,
-            0,
-            Two.Commands.move,
-          ),
-        );
-        for (let i = 1; i < ghostPoints.length; i++) {
-          vertices.push(
-            new Two.Anchor(
-              x(ghostPoints[i].x),
-              y(ghostPoints[i].y),
-              0,
-              0,
-              0,
-              0,
-              Two.Commands.line,
-            ),
-          );
-        }
-        vertices.push(
-          new Two.Anchor(
-            x(ghostPoints[0].x),
-            y(ghostPoints[0].y),
-            0,
-            0,
-            0,
-            0,
-            Two.Commands.close,
-          ),
-        );
-        vertices.forEach((point) => (point.relative = false));
-        ghostPath = new Two.Path(vertices);
-        ghostPath.id = "ghost-path";
-        ghostPath.stroke = "#a78bfa";
-        ghostPath.fill = "#a78bfa";
-        ghostPath.opacity = 0.15;
-        ghostPath.linewidth = uiLength(0.5);
-        ghostPath.automatic = false;
-      }
-    }
-    return ghostPath;
-  })();
-
   // Onion Layers
   $: onionLayerElements = (() => {
     let onionLayers: Path[] = [];
     if (settings.showOnionLayers && lines.length > 0) {
       const spacing = settings.onionLayerSpacing || 6;
+
+      let targetLines = lines;
+      let targetStartPoint = startPoint;
+
+      // If "Current Path Only" is enabled, filter the lines based on animation time
+      if (settings.onionSkinCurrentPathOnly) {
+        if (timePrediction && timePrediction.timeline) {
+          const totalDuration =
+            timePrediction.timeline[timePrediction.timeline.length - 1]
+              ?.endTime || 0;
+          const currentSeconds = ($percentStore / 100) * totalDuration;
+          const activeEvent =
+            timePrediction.timeline.find(
+              (e: any) =>
+                currentSeconds >= e.startTime && currentSeconds <= e.endTime,
+            ) || timePrediction.timeline[timePrediction.timeline.length - 1];
+
+          if (
+            activeEvent &&
+            activeEvent.type === "travel" &&
+            typeof activeEvent.lineIndex === "number"
+          ) {
+            const idx = activeEvent.lineIndex;
+            if (lines[idx]) {
+              targetLines = [lines[idx]];
+              targetStartPoint =
+                idx === 0 ? startPoint : lines[idx - 1].endPoint;
+            }
+          } else {
+            // Not traveling (e.g. waiting), show nothing
+            targetLines = [];
+          }
+        }
+      }
+
       const layers = generateOnionLayers(
-        startPoint,
-        lines,
+        targetStartPoint,
+        targetLines,
         settings.rLength,
         settings.rWidth,
         spacing,
@@ -986,7 +960,6 @@
 
     if (Array.isArray(shapeElements))
       shapeElements.forEach((el) => shapeGroup.add(el));
-    if (ghostPathElement) shapeGroup.add(ghostPathElement);
     onionLayerElements.forEach((el) => shapeGroup.add(el));
 
     path.forEach((el) => lineGroup.add(el));

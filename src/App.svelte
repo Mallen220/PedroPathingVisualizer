@@ -84,6 +84,7 @@
     // Open a link in the system default browser
     openExternal?: (url: string) => Promise<boolean>;
     getPathForFile?: (file: File) => string;
+    getSavedDirectory?: () => Promise<string>;
   }
   const electronAPI = (window as any).electronAPI as ElectronAPI | undefined;
 
@@ -113,10 +114,13 @@
 
   onMount(() => {
     document.addEventListener("click", handleLinkClick);
+    window.addEventListener("beforeunload", handleBeforeUnload);
   });
 
   onDestroy(() => {
     document.removeEventListener("click", handleLinkClick);
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+    if (autosaveIntervalId) clearInterval(autosaveIntervalId);
   });
 
   // --- Drag and Drop Logic ---
@@ -264,6 +268,53 @@
         console.error("Error opening dropped file:", err);
         alert("Failed to open file: " + err);
       }
+  // --- Autosave Logic ---
+  let autosaveIntervalId: any = null;
+
+  function performAutosave() {
+    const path = get(currentFilePath);
+    if (path && get(isUnsaved)) {
+      saveProject(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        {
+          quiet: true,
+        },
+      );
+      console.log("Autosaved project (time-based)");
+    }
+  }
+
+  // Manage Time-based Autosave
+  $: {
+    if (autosaveIntervalId) {
+      clearInterval(autosaveIntervalId);
+      autosaveIntervalId = null;
+    }
+
+    if (settings?.autosaveMode === "time" && settings?.autosaveInterval) {
+      const intervalMs = settings.autosaveInterval * 60 * 1000;
+      autosaveIntervalId = setInterval(performAutosave, intervalMs);
+    }
+  }
+
+  // Handle On Close Autosave
+  function handleBeforeUnload(e: BeforeUnloadEvent) {
+    if (settings?.autosaveMode === "close") {
+      const path = get(currentFilePath);
+      if (path && get(isUnsaved)) {
+        saveProject();
+      }
+    }
+
+    // Always warn if unsaved, even if we tried to autosave (async save might not finish)
+    if (get(isUnsaved)) {
+      e.preventDefault();
+      e.returnValue = "";
     }
   }
 
@@ -271,6 +322,9 @@
   let showSidebar = true;
   // DEBUG: force open Whats New during development to validate feature loading
   let showWhatsNew = false;
+  let setupMode = false;
+  // Set this to true to force the setup dialog for testing
+  const TEST_SETUP_DIALOG = false;
   let activeControlTab: "path" | "field" | "table" = "path";
   let controlTabRef: any = null;
   // DOM container for the ControlTab; used to size/position the stats panel
@@ -404,6 +458,23 @@
     previewOptimizedLines = null;
     history.record(getAppState());
     if (isLoaded) isUnsaved.set(true);
+
+    // Autosave on change
+    if (isLoaded && settings?.autosaveMode === "change") {
+      const path = get(currentFilePath);
+      if (path) {
+        saveProject(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          false,
+          { quiet: true },
+        );
+        console.log("Autosaved project (on change)");
+      }
+    }
   }
 
   function handleSaveProject() {
@@ -485,7 +556,7 @@
     settingsStore.set({ ...savedSettings });
 
     // Stabilize
-    setTimeout(() => {
+    setTimeout(async () => {
       isLoaded = true;
       lastSavedState = getCurrentState(); // Assume fresh start is "saved" unless loaded
       recordChange();
@@ -496,13 +567,31 @@
         console.warn("ensureSequenceConsistency failed", err);
       }
 
-      // Check for What's New
-      const currentVersion = pkg.version;
-      const lastSeen = get(settingsStore).lastSeenVersion;
+      // Check for directory setup FIRST
+      let needsSetup = false;
+      if (electronAPI && electronAPI.getSavedDirectory) {
+        try {
+          const dir = await electronAPI.getSavedDirectory();
+          if (!dir || dir.trim() === "") {
+            needsSetup = true;
+          }
+        } catch (e) {
+          console.warn("Failed to check saved directory", e);
+        }
+      }
 
-      // If version mismatch or never seen, show dialog
-      if (lastSeen !== currentVersion) {
+      if (needsSetup || TEST_SETUP_DIALOG) {
+        setupMode = true;
         showWhatsNew = true;
+      } else {
+        // Check for What's New
+        const currentVersion = pkg.version;
+        const lastSeen = get(settingsStore).lastSeenVersion;
+
+        // If version mismatch or never seen, show dialog
+        if (lastSeen !== currentVersion) {
+          showWhatsNew = true;
+        }
       }
 
       // Remove loading screen
@@ -512,6 +601,12 @@
         setTimeout(() => loader.remove(), 500);
       }
     }, 500);
+
+    // Expose debug trigger for testing setup dialog
+    (window as any).triggerSetupDialog = () => {
+      setupMode = true;
+      showWhatsNew = true;
+    };
 
     // Electron Menu Action Listener
     if (electronAPI) {
@@ -576,14 +671,6 @@
         });
       }
     }
-  });
-
-  onMount(() => {
-    document.addEventListener("click", handleLinkClick);
-  });
-
-  onDestroy(() => {
-    document.removeEventListener("click", handleLinkClick);
   });
 
   // Settings Auto-Save
@@ -898,7 +985,7 @@
   />
 {/if}
 
-<WhatsNewDialog show={showWhatsNew} on:close={closeWhatsNew} />
+<WhatsNewDialog show={showWhatsNew} bind:setupMode on:close={closeWhatsNew} />
 <NotificationToast />
 
 <SaveNameDialog

@@ -5,6 +5,7 @@ import {
   linesStore,
   shapesStore,
   sequenceStore,
+  settingsStore,
 } from "../lib/projectStore";
 import {
   getDefaultStartPoint,
@@ -12,6 +13,7 @@ import {
   getDefaultShapes,
 } from "../config";
 import { isUnsaved, currentFilePath } from "../stores";
+import { saveProject } from "./fileHandlers";
 
 /**
  * Resets the project to the default state.
@@ -33,7 +35,27 @@ export function resetPath() {
  * Prompts the user to confirm resetting the project if there are unsaved changes.
  * @param recordChange Callback to record the change in history
  */
-export function handleResetPathWithConfirmation(recordChange?: () => void) {
+export async function handleResetPathWithConfirmation(
+  recordChange?: () => void,
+) {
+  // Autosave on Close Logic
+  const settings = get(settingsStore);
+  if (
+    settings.autosaveMode === "close" &&
+    get(isUnsaved) &&
+    get(currentFilePath)
+  ) {
+    await saveProject(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      { quiet: true },
+    );
+  }
+
   const lines = get(linesStore);
   const shapes = get(shapesStore);
   const unsaved = get(isUnsaved);

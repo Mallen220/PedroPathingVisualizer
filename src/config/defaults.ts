@@ -185,6 +185,27 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     action: "deselectAll",
     category: "Navigation",
   },
+  {
+    id: "toggle-heading-mode",
+    key: "shift+h",
+    description: "Toggle Heading Mode",
+    action: "toggleHeadingMode",
+    category: "Editing",
+  },
+  {
+    id: "toggle-reverse",
+    key: "shift+r",
+    description: "Toggle Reverse",
+    action: "toggleReverse",
+    category: "Editing",
+  },
+  {
+    id: "toggle-lock",
+    key: "shift+l",
+    description: "Toggle Locked State",
+    action: "toggleLock",
+    category: "Editing",
+  },
 
   // Playback
   {
@@ -475,7 +496,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "new-file",
-    key: "cmd+n, ctrl+n",
+    key: "cmd+n, ctrl+n, cmd+r, ctrl+r",
     description: "New Project / Reset Path",
     action: "newProject",
     category: "File",
@@ -533,9 +554,12 @@ export const DEFAULT_SETTINGS: Settings = {
   robotImage: "/robot.png",
   javaPackageName: "org.firstinspires.ftc.teamcode.Commands.AutoCommands",
   theme: "auto",
+  autosaveMode: "never",
+  autosaveInterval: 5,
   showVelocityHeatmap: false,
   showGhostPaths: false,
   showOnionLayers: false,
+  onionSkinCurrentPathOnly: false,
   onionLayerSpacing: 6, // inches between each robot body trace
   optimizationIterations: 300,
   optimizationPopulationSize: 100,

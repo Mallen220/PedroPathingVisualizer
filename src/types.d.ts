@@ -158,6 +158,8 @@ interface Settings {
   fieldRotation?: number; // degrees
   robotImage?: string;
   theme: "light" | "dark" | "auto";
+  autosaveMode?: "time" | "change" | "close" | "never";
+  autosaveInterval?: number; // minutes
   javaPackageName?: string;
   showVelocityHeatmap?: boolean;
   showGhostPaths?: boolean;
