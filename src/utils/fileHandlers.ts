@@ -24,7 +24,7 @@ interface ExtendedElectronAPI {
     base64Content: string,
   ) => Promise<boolean>;
   showSaveDialog?: (options: any) => Promise<string | null>;
-  getDirectory?: () => Promise<string>;
+  getDirectory?: () => Promise<string | null>;
   getSavedDirectory?: () => Promise<string>;
   fileExists?: (filePath: string) => Promise<boolean>;
   readFile?: (filePath: string) => Promise<string>;

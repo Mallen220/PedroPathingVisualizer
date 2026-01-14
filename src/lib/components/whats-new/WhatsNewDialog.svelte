@@ -16,8 +16,11 @@
   // @ts-ignore
   import pkg from "../../../../package.json";
   import { onMount, tick } from "svelte";
+  // @ts-ignore
+  import { saveAutoPathsDirectory } from "../../../utils/directorySettings";
 
   export let show = false;
+  export let setupMode = false;
 
   const dispatch = createEventDispatcher();
   const md = new MarkdownIt({
@@ -28,7 +31,7 @@
 
   // Navigation state
   let activeTab: "home" | "changelog" = "home";
-  let currentView: "grid" | "content" | "release-list" = "grid";
+  let currentView: "grid" | "content" | "release-list" | "setup" = "grid";
   let previousView: "grid" | "release-list" = "grid";
   let activePage: Page | null = null;
   let activeFeatureId: string | null = null;
@@ -172,6 +175,10 @@
     }
   });
 
+  $: if (show && setupMode) {
+    currentView = "setup";
+  }
+
   $: searchResults = (() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
@@ -225,8 +232,30 @@
     dispatch("close");
   }
 
+  async function selectDirectory() {
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI && electronAPI.setDirectory) {
+      try {
+        const selected = await electronAPI.setDirectory();
+        if (selected) {
+          // Directory selected successfully
+          await saveAutoPathsDirectory(selected);
+
+          // Close setup
+          setupMode = false;
+          dispatch("setupComplete");
+          close();
+        }
+      } catch (err) {
+        console.error("Failed to select directory", err);
+      }
+    }
+  }
+
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape" && show) {
+      if (setupMode) return; // Prevent closing setup with Escape
+
       if (searchQuery) {
         searchQuery = "";
         return;
@@ -385,14 +414,16 @@
     ? "Search Results"
     : activeTab === "changelog"
       ? "Full Changelog"
-      : currentView === "content" && activePage
-        ? activePage.title
-        : currentView === "content" && activeFeatureId
-          ? (displayedFeatures.find((f) => f.id === activeFeatureId)?.title ??
-            "Feature Highlight")
-          : currentView === "release-list"
-            ? "Release Notes"
-            : "What's New / Docs";
+      : currentView === "setup"
+        ? "Welcome!"
+        : currentView === "content" && activePage
+          ? activePage.title
+          : currentView === "content" && activeFeatureId
+            ? (displayedFeatures.find((f) => f.id === activeFeatureId)?.title ??
+              "Feature Highlight")
+            : currentView === "release-list"
+              ? "Release Notes"
+              : "What's New / Docs";
 
   // Header extraction for TOC
   let headers: { id: string; text: string; level: number }[] = [];
@@ -493,7 +524,7 @@
         class="flex-none p-4 md:p-6 border-b border-neutral-200 dark:border-neutral-700 flex flex-col md:flex-row justify-between items-start md:items-center bg-neutral-50 dark:bg-neutral-800 gap-4"
       >
         <div class="flex items-center gap-4 w-full md:w-auto">
-          {#if activeTab === "changelog" || (activeTab === "home" && currentView !== "grid" && !searchQuery) || (searchQuery && currentView === "content")}
+          {#if !setupMode && (activeTab === "changelog" || (activeTab === "home" && currentView !== "grid" && !searchQuery) || (searchQuery && currentView === "content"))}
             <button
               class="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
               on:click={() =>
@@ -530,7 +561,7 @@
         </div>
 
         <div class="flex items-center gap-3 w-full md:w-auto">
-          {#if activeTab === "home"}
+          {#if activeTab === "home" && !setupMode}
             <div class="relative w-full md:w-64">
               <input
                 type="text"
@@ -587,48 +618,52 @@
             </div>
           {/if}
 
-          <button
-            class="p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors hidden md:block"
-            on:click={close}
-            aria-label="Close"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          {#if !setupMode}
+            <button
+              class="p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors hidden md:block"
+              on:click={close}
+              aria-label="Close"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          {/if}
 
-          <!-- Mobile Close Button (Absolute position top right) -->
-          <button
-            class="md:hidden absolute top-4 right-4 p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
-            on:click={close}
-            aria-label="Close"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          {#if !setupMode}
+            <!-- Mobile Close Button (Absolute position top right) -->
+            <button
+              class="md:hidden absolute top-4 right-4 p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
+              on:click={close}
+              aria-label="Close"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          {/if}
         </div>
       </div>
 
@@ -770,6 +805,39 @@
                 {/each}
               {/if}
             </div>
+          </div>
+        {:else if activeTab === "home" && currentView === "setup"}
+          <!-- Setup View -->
+          <div
+            class="flex-1 overflow-y-auto p-8 max-w-2xl mx-auto animate-fade-in w-full flex flex-col items-center justify-center text-center"
+          >
+            <div
+              class="w-24 h-24 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-400 mb-8"
+            >
+              {@html icons["folder"]}
+            </div>
+
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
+              Select Your AutoPaths Directory
+            </h2>
+
+            <p class="text-neutral-600 dark:text-neutral-300 mb-8 text-lg leading-relaxed">
+              Before we get started, please select where your paths should be stored.
+              <br /><br />
+              For most FTC projects, the best place is:<br />
+              <code
+                class="bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded text-purple-700 dark:text-purple-300 font-mono text-sm"
+                >TeamCode/src/main/assets/AutoPaths/</code
+              >
+            </p>
+
+            <button
+              class="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center gap-3 text-lg"
+              on:click={selectDirectory}
+            >
+              {@html icons["folder"]}
+              Select Directory...
+            </button>
           </div>
         {:else}
           <!-- Content View -->

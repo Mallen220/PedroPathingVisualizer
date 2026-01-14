@@ -646,12 +646,6 @@ ipcMain.handle("file:get-directory", async () => {
   const defaultDir = path.join(
     process.env.HOME,
     "Documents",
-    "GitHub",
-    "BBots2025-26",
-    "TeamCode",
-    "src",
-    "main",
-    "assets",
     "AutoPaths",
   );
 
@@ -660,8 +654,9 @@ ipcMain.handle("file:get-directory", async () => {
     return defaultDir;
   } catch {
     // Create directory if it doesn't exist
-    await fs.mkdir(defaultDir, { recursive: true });
-    return defaultDir;
+    // await fs.mkdir(defaultDir, { recursive: true });
+    // return defaultDir;
+    return null;
   }
 });
 

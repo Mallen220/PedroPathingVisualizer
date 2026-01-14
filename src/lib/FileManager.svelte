@@ -3,7 +3,7 @@
   declare global {
     interface Window {
       electronAPI: {
-        getDirectory: () => Promise<string>;
+        getDirectory: () => Promise<string | null>;
         setDirectory: (path?: string) => Promise<string | null>;
         listFiles: (directory: string) => Promise<FileInfo[]>;
         readFile: (filePath: string) => Promise<string>;
@@ -228,7 +228,8 @@
       if (savedDir && savedDir.trim() !== "") {
         currentDirectory = savedDir;
       } else {
-        currentDirectory = await electronAPI.getDirectory();
+        const dir = await electronAPI.getDirectory();
+        currentDirectory = dir || "";
       }
       await refreshDirectory();
     } catch (error) {

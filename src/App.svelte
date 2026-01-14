@@ -82,6 +82,7 @@
     onOpenFilePath?: (callback: (path: string) => void) => void;
     // Open a link in the system default browser
     openExternal?: (url: string) => Promise<boolean>;
+    getSavedDirectory?: () => Promise<string>;
   }
   const electronAPI = (window as any).electronAPI as ElectronAPI | undefined;
 
@@ -166,6 +167,9 @@
   let showSidebar = true;
   // DEBUG: force open Whats New during development to validate feature loading
   let showWhatsNew = false;
+  let setupMode = false;
+  // Set this to true to force the setup dialog for testing
+  const TEST_SETUP_DIALOG = false;
   let activeControlTab: "path" | "field" | "table" = "path";
   let controlTabRef: any = null;
   // DOM container for the ControlTab; used to size/position the stats panel
@@ -397,7 +401,7 @@
     settingsStore.set({ ...savedSettings });
 
     // Stabilize
-    setTimeout(() => {
+    setTimeout(async () => {
       isLoaded = true;
       lastSavedState = getCurrentState(); // Assume fresh start is "saved" unless loaded
       recordChange();
@@ -408,13 +412,31 @@
         console.warn("ensureSequenceConsistency failed", err);
       }
 
-      // Check for What's New
-      const currentVersion = pkg.version;
-      const lastSeen = get(settingsStore).lastSeenVersion;
+      // Check for directory setup FIRST
+      let needsSetup = false;
+      if (electronAPI && electronAPI.getSavedDirectory) {
+        try {
+          const dir = await electronAPI.getSavedDirectory();
+          if (!dir || dir.trim() === "") {
+            needsSetup = true;
+          }
+        } catch (e) {
+          console.warn("Failed to check saved directory", e);
+        }
+      }
 
-      // If version mismatch or never seen, show dialog
-      if (lastSeen !== currentVersion) {
+      if (needsSetup || TEST_SETUP_DIALOG) {
+        setupMode = true;
         showWhatsNew = true;
+      } else {
+        // Check for What's New
+        const currentVersion = pkg.version;
+        const lastSeen = get(settingsStore).lastSeenVersion;
+
+        // If version mismatch or never seen, show dialog
+        if (lastSeen !== currentVersion) {
+          showWhatsNew = true;
+        }
       }
 
       // Remove loading screen
@@ -424,6 +446,12 @@
         setTimeout(() => loader.remove(), 500);
       }
     }, 500);
+
+    // Expose debug trigger for testing setup dialog
+    (window as any).triggerSetupDialog = () => {
+      setupMode = true;
+      showWhatsNew = true;
+    };
 
     // Electron Menu Action Listener
     if (electronAPI) {
@@ -798,7 +826,11 @@
   />
 {/if}
 
-<WhatsNewDialog show={showWhatsNew} on:close={closeWhatsNew} />
+<WhatsNewDialog
+  show={showWhatsNew}
+  bind:setupMode
+  on:close={closeWhatsNew}
+/>
 <NotificationToast />
 
 <!-- Main Container -->
