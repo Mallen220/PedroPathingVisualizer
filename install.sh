@@ -55,7 +55,8 @@ select_asset_by_pattern() {
         echo ""; return
     fi
     while IFS= read -r line; do
-        # skip empty lines
+        # skip empty lines and trim whitespace
+        line=$(echo "$line" | xargs)
         [ -z "$line" ] && continue
         urls+=("$line")
     done <<< "$url_output"
@@ -65,7 +66,8 @@ select_asset_by_pattern() {
     fi
 
     if [ ${#urls[@]} -eq 1 ]; then
-        echo "${urls[0]}"; return
+        echo "${urls[0]}" | xargs
+        return
     fi
 
     # Determine architecture preferences
@@ -138,7 +140,7 @@ select_asset_by_pattern() {
         if [[ "$sel" == "A" || "$sel" == "a" ]]; then
             if [ -n "$auto_match_url" ]; then
                 print_status "Auto-selected: $auto_match_name" >&2
-                echo "$auto_match_url"
+                echo "$auto_match_url" | xargs
                 return
             else
                 print_error "No suitable asset found for $arch_display" >&2
@@ -149,10 +151,10 @@ select_asset_by_pattern() {
         if printf "%s" "$sel" | grep -Eq "^[0-9]+$"; then
             if [ "$sel" -eq 0 ]; then
                 read -p "Enter full download URL: " manual < /dev/tty
-                echo "$manual"
+                echo "$manual" | xargs
                 return
             elif [ "$sel" -ge 1 ] && [ "$sel" -lt "$i" ]; then
-                echo "${urls[$((sel-1))]}"
+                echo "${urls[$((sel-1))]}" | xargs
                 return
             fi
         fi
@@ -202,6 +204,33 @@ install_icon() {
         print_status "Icon installed to $ICON_PATH"
     else
         print_warning "Failed to download icon. Desktop entry might be missing the icon."
+    fi
+}
+
+patch_deb_desktop_file() {
+    # Fix for Ubuntu 24.04 sandboxing crash: Append --no-sandbox to the installed desktop file
+    print_info "Patching installed desktop file for compatibility..."
+
+    # Look for the desktop file installed by the deb
+    # Usually in /usr/share/applications/pedro-pathing-visualizer.desktop (kebab case from package name)
+    # or sometimes with product name spaces depending on builder config.
+
+    # We try to find it by name or content match
+    DESKTOP_FILE=$(grep -l "Pedro Pathing Visualizer" /usr/share/applications/*.desktop 2>/dev/null | head -n 1)
+
+    if [ -f "$DESKTOP_FILE" ]; then
+        print_status "Found desktop file at $DESKTOP_FILE"
+        if ! grep -q "\-\-no-sandbox" "$DESKTOP_FILE"; then
+            print_info "Adding --no-sandbox flag to Exec line..."
+            # Use sed to append --no-sandbox to the end of the Exec line if it's not there
+            # Exec=/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer %U
+            sudo sed -i 's|^Exec=.*|& --no-sandbox|' "$DESKTOP_FILE"
+            print_status "Patched desktop file."
+        else
+            print_status "Desktop file already patched."
+        fi
+    else
+        print_warning "Could not find installed .desktop file to patch. You may need to launch with --no-sandbox manually."
     fi
 }
 
@@ -399,6 +428,9 @@ EOL
 
         # Ensure icon is installed for local user just in case
         install_icon
+
+        # Patch the installed .desktop file
+        patch_deb_desktop_file
 
         rm -f "$TMP_DEB"
         print_status "Installation Complete! Launch from your applications menu."

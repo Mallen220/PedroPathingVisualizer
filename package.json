@@ -139,6 +139,7 @@
       "category": "Development",
       "maintainer": "Matthew Allen <allenmc220@gmail.com>",
       "executableName": "pedro-pathing-visualizer",
+      "artifactName": "Pedro-Pathing-Visualizer-${version}-${arch}.${ext}",
       "desktop": {
         "StartupWMClass": "pedro-pathing-visualizer"
       }
