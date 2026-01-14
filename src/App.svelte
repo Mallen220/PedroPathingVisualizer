@@ -149,19 +149,22 @@
 
   async function handleDrop(e: DragEvent) {
     e.preventDefault();
+    e.stopPropagation();
     dragCounter = 0;
     isDraggingFile = false;
 
     if (e.dataTransfer && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
+      // Refresh electronAPI reference from window to ensure it's available
+      const api = (window as any).electronAPI;
       if (
         file.name.endsWith(".pp") &&
         (file as any).path &&
-        electronAPI /* Only if running in Electron */
+        api /* Only if running in Electron */
       ) {
         const path = (file as any).path;
 
-        if ($isUnsaved) {
+        if (get(isUnsaved)) {
           if (
             confirm(
               "You have unsaved changes. Press OK to save them before opening. Press Cancel to proceed without saving.",
@@ -180,7 +183,7 @@
           }
         }
 
-        handleExternalFileOpen(path);
+        await handleExternalFileOpen(path);
       }
     }
   }
