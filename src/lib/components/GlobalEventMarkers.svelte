@@ -361,40 +361,41 @@
             on:mouseleave={() => hoveredMarkerId.set(null)}
           >
             <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 flex-1">
-                <!-- Type Indicator / Selector -->
-                <div class="relative group shrink-0">
-                  <div
-                    class="w-3 h-3 rounded-full cursor-pointer transition-colors border border-black/10 dark:border-white/10"
-                    style="background-color: {EVENT_MARKER_COLORS[
-                      marker.ref.type || 'default'
-                    ]}"
-                    title="Change Type"
-                  ></div>
-                  <select
-                    class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    value={marker.ref.type || "default"}
-                    on:change={(e) =>
-                      handleTypeChange(marker, e.currentTarget.value)}
-                    aria-label="Marker type"
-                  >
-                    {#each MARKER_TYPE_OPTIONS as option}
-                      <option value={option.value}>{option.label}</option>
-                    {/each}
-                  </select>
-                </div>
+              <div class="flex items-center gap-2 flex-1 min-w-0">
+                <!-- Type Indicator -->
+                <div
+                  class="w-3 h-3 rounded-full shrink-0 border border-black/10 dark:border-white/10"
+                  style="background-color: {EVENT_MARKER_COLORS[
+                    marker.ref.type || 'default'
+                  ]}"
+                  title="Current Type Color"
+                ></div>
 
                 <input
                   type="text"
                   aria-label="Marker name"
                   bind:value={marker.ref.name}
-                  class="text-sm font-medium bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-purple-500 rounded px-2 py-0.5 w-full"
+                  class="text-sm font-medium bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-1 focus:ring-purple-500 rounded px-2 py-0.5 w-full min-w-0"
                   on:change={() => {
                     if (marker.parentType === "path") lines = [...lines];
                     else sequence = [...sequence];
                   }}
                 />
               </div>
+
+              <!-- Visible Type Selector -->
+              <select
+                class="text-xs bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[100px]"
+                value={marker.ref.type || "default"}
+                on:change={(e) =>
+                  handleTypeChange(marker, e.currentTarget.value)}
+                aria-label="Marker type"
+              >
+                {#each MARKER_TYPE_OPTIONS as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
+
               <button
                 class="text-neutral-400 hover:text-red-500 transition-colors"
                 on:click={() => removeMarker(marker)}
