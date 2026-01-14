@@ -530,3 +530,23 @@ export function generateOnionLayers(
 
   return layers;
 }
+
+/**
+ * Generate ghost path robot bodies at high frequency intervals along the path
+ * Returns an array of robot states (position, heading, and corner points) for drawing
+ * @param startPoint - The starting point of the path
+ * @param lines - The path lines to trace
+ * @param robotLength - Robot length in inches
+ * @param robotWidth - Robot width in inches
+ * @param spacing - Distance in inches between each robot trace (default 2)
+ * @returns Array of robot states with corner points for rendering
+ */
+export function generateGhostPaths(
+  startPoint: Point,
+  lines: Line[],
+  robotLength: number,
+  robotWidth: number,
+  spacing: number = 2,
+): Array<{ x: number; y: number; heading: number; corners: BasePoint[] }> {
+  return generateOnionLayers(startPoint, lines, robotLength, robotWidth, spacing);
+}

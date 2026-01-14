@@ -39,6 +39,7 @@
     getCurvePoint,
     quadraticToCubic,
     generateOnionLayers,
+    generateGhostPaths,
     getRandomColor,
     loadRobotImage,
     updateRobotImageDisplay,
@@ -512,6 +513,74 @@
     return _shapes;
   })();
 
+  // Ghost Paths
+  $: ghostPathElements = (() => {
+    let ghostPaths: Path[] = [];
+    if (settings.showGhostPaths && lines.length > 0) {
+      // Use a small spacing for dense coverage (e.g. 2 inches)
+      const spacing = 2;
+
+      // For ghost paths, we show the full path coverage
+      const layers = generateGhostPaths(
+        startPoint,
+        lines,
+        settings.rLength,
+        settings.rWidth,
+        spacing,
+      );
+
+      layers.forEach((layer, idx) => {
+        let vertices = [];
+        vertices.push(
+          new Two.Anchor(
+            x(layer.corners[0].x),
+            y(layer.corners[0].y),
+            0,
+            0,
+            0,
+            0,
+            Two.Commands.move,
+          ),
+        );
+        for (let i = 1; i < layer.corners.length; i++) {
+          vertices.push(
+            new Two.Anchor(
+              x(layer.corners[i].x),
+              y(layer.corners[i].y),
+              0,
+              0,
+              0,
+              0,
+              Two.Commands.line,
+            ),
+          );
+        }
+        vertices.push(
+          new Two.Anchor(
+            x(layer.corners[0].x),
+            y(layer.corners[0].y),
+            0,
+            0,
+            0,
+            0,
+            Two.Commands.close,
+          ),
+        );
+        vertices.forEach((point) => (point.relative = false));
+        let ghostRect = new Two.Path(vertices);
+        ghostRect.id = `ghost-path-${idx}`;
+        // Clean non-subtractive look: solid fill, no stroke, low opacity (but handled by group)
+        ghostRect.fill = "#a78bfa"; // A light purple
+        ghostRect.noStroke();
+        ghostRect.opacity = 1.0;
+        ghostRect.linewidth = 0;
+        ghostRect.automatic = false;
+        ghostPaths.push(ghostRect);
+      });
+    }
+    return ghostPaths;
+  })();
+
   // Onion Layers
   $: onionLayerElements = (() => {
     let onionLayers: Path[] = [];
@@ -947,6 +1016,9 @@
 
     const shapeGroup = new Two.Group();
     shapeGroup.id = "shape-group";
+    const ghostGroup = new Two.Group();
+    ghostGroup.id = "ghost-group";
+    ghostGroup.opacity = 0.25; // Apply opacity to the whole group for "clean" union look
     const lineGroup = new Two.Group();
     lineGroup.id = "line-group";
     const pointGroup = new Two.Group();
@@ -962,6 +1034,8 @@
       shapeElements.forEach((el) => shapeGroup.add(el));
     onionLayerElements.forEach((el) => shapeGroup.add(el));
 
+    ghostPathElements.forEach((el) => ghostGroup.add(el));
+
     path.forEach((el) => lineGroup.add(el));
     previewPathElements.forEach((el) => lineGroup.add(el));
 
@@ -972,6 +1046,7 @@
     collisionElements.forEach((el) => collisionGroup.add(el));
 
     two.add(shapeGroup);
+    two.add(ghostGroup);
     two.add(lineGroup);
     two.add(eventGroup);
     two.add(pointGroup);
