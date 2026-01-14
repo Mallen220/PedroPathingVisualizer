@@ -208,24 +208,61 @@ install_icon() {
 }
 
 patch_deb_desktop_file() {
-    # Fix for Ubuntu 24.04 sandboxing crash: Append --no-sandbox to the installed desktop file
+    # Fix for Ubuntu 24.04 sandboxing crash and path quoting:
+    # Rewrite the Exec line to be properly quoted and include --no-sandbox
     print_info "Patching installed desktop file for compatibility..."
 
     # Look for the desktop file installed by the deb
-    # Usually in /usr/share/applications/pedro-pathing-visualizer.desktop (kebab case from package name)
-    # or sometimes with product name spaces depending on builder config.
-
-    # We try to find it by name or content match
+    # usually in /usr/share/applications/pedro-pathing-visualizer.desktop
     DESKTOP_FILE=$(grep -l "Pedro Pathing Visualizer" /usr/share/applications/*.desktop 2>/dev/null | head -n 1)
 
     if [ -f "$DESKTOP_FILE" ]; then
         print_status "Found desktop file at $DESKTOP_FILE"
-        if ! grep -q "\-\-no-sandbox" "$DESKTOP_FILE"; then
-            print_info "Adding --no-sandbox flag to Exec line..."
-            # Use sed to append --no-sandbox to the end of the Exec line if it's not there
-            # Exec=/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer %U
-            sudo sed -i 's|^Exec=.*|& --no-sandbox|' "$DESKTOP_FILE"
-            print_status "Patched desktop file."
+
+        # Read the current Exec line
+        # e.g., Exec=/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer %U
+        current_exec=$(grep "^Exec=" "$DESKTOP_FILE" | cut -d= -f2-)
+
+        # Check if already patched with --no-sandbox
+        if [[ "$current_exec" != *"--no-sandbox"* ]]; then
+            print_info "Adding --no-sandbox flag and fixing quotes..."
+
+            # Extract the executable path.
+            # We assume the last part "%U" or similar arguments might exist.
+            # We want to identify the main executable path.
+            # A simple heuristic: everything before " %U" or just the whole line if no args.
+            # But the issue is specifically spaces in the path not being quoted.
+
+            # Since we know the install path is likely "/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer"
+            # We can try to construct a safe Exec string.
+
+            # Let's rely on finding the 'pedro-pathing-visualizer' binary path.
+            # If the current line is: /opt/Pedro Pathing Visualizer/pedro-pathing-visualizer %U
+            # We want: "/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer" --no-sandbox %U
+
+            # Strip existing arguments like %U
+            clean_path=$(echo "$current_exec" | sed 's/ %U//g' | sed 's/ --no-sandbox//g')
+
+            # Remove any existing quotes to start fresh
+            clean_path=$(echo "$clean_path" | tr -d '"')
+
+            # Construct new Exec line
+            new_exec="Exec=\"$clean_path\" --no-sandbox %U"
+
+            # Escape quotes for sed
+            escaped_new_exec=$(echo "$new_exec" | sed 's/"/\\"/g')
+
+            # Replace the entire Exec line using sudo sed
+            # We use a temporary file to avoid complex escaping issues with in-place sed
+            tmp_desktop=$(mktemp)
+            cp "$DESKTOP_FILE" "$tmp_desktop"
+            sed "s|^Exec=.*|$new_exec|" "$tmp_desktop" > "$tmp_desktop.new"
+
+            # Move it back with sudo
+            sudo mv "$tmp_desktop.new" "$DESKTOP_FILE"
+            rm "$tmp_desktop"
+
+            print_status "Patched desktop file Exec line."
         else
             print_status "Desktop file already patched."
         fi
