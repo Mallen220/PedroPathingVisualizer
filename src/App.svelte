@@ -111,11 +111,56 @@
 
   onMount(() => {
     document.addEventListener("click", handleLinkClick);
+    window.addEventListener("beforeunload", handleBeforeUnload);
   });
 
   onDestroy(() => {
     document.removeEventListener("click", handleLinkClick);
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+    if (autosaveIntervalId) clearInterval(autosaveIntervalId);
   });
+
+  // --- Autosave Logic ---
+  let autosaveIntervalId: any = null;
+
+  function performAutosave() {
+    const path = get(currentFilePath);
+    if (path && get(isUnsaved)) {
+      saveProject(undefined, undefined, undefined, undefined, undefined, false, {
+        quiet: true,
+      });
+      console.log("Autosaved project (time-based)");
+    }
+  }
+
+  // Manage Time-based Autosave
+  $: {
+    if (autosaveIntervalId) {
+      clearInterval(autosaveIntervalId);
+      autosaveIntervalId = null;
+    }
+
+    if (settings?.autosaveMode === "time" && settings?.autosaveInterval) {
+      const intervalMs = settings.autosaveInterval * 60 * 1000;
+      autosaveIntervalId = setInterval(performAutosave, intervalMs);
+    }
+  }
+
+  // Handle On Close Autosave
+  function handleBeforeUnload(e: BeforeUnloadEvent) {
+    if (settings?.autosaveMode === "close") {
+      const path = get(currentFilePath);
+      if (path && get(isUnsaved)) {
+        saveProject();
+      }
+    }
+
+    // Always warn if unsaved, even if we tried to autosave (async save might not finish)
+    if (get(isUnsaved)) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  }
 
   // --- Layout State ---
   let showSidebar = true;
@@ -254,6 +299,23 @@
     previewOptimizedLines = null;
     history.record(getAppState());
     if (isLoaded) isUnsaved.set(true);
+
+    // Autosave on change
+    if (isLoaded && settings?.autosaveMode === "change") {
+      const path = get(currentFilePath);
+      if (path) {
+        saveProject(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          false,
+          { quiet: true },
+        );
+        console.log("Autosaved project (on change)");
+      }
+    }
   }
 
   function handleSaveProject() {
@@ -426,14 +488,6 @@
         });
       }
     }
-  });
-
-  onMount(() => {
-    document.addEventListener("click", handleLinkClick);
-  });
-
-  onDestroy(() => {
-    document.removeEventListener("click", handleLinkClick);
   });
 
   // Settings Auto-Save

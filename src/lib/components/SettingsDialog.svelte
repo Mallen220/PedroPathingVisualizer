@@ -20,6 +20,7 @@
   let collapsedSections = {
     robot: true,
     motion: true,
+    file: true,
     advanced: true,
     theme: true,
     credits: true,
@@ -894,6 +895,99 @@
                   class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+            </div>
+          {/if}
+        </div>
+
+        <!-- File & Saving Settings Section -->
+        <div class="mb-4">
+          <button
+            on:click={() => (collapsedSections.file = !collapsedSections.file)}
+            class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            aria-expanded={!collapsedSections.file}
+          >
+            <div class="flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width={1.5}
+                stroke="currentColor"
+                class="size-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                />
+              </svg>
+              <span class="font-semibold">File & Saving</span>
+            </div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width={2}
+              stroke="currentColor"
+              class="size-5 transition-transform duration-200"
+              class:rotate-180={collapsedSections.file}
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m19.5 8.25-7.5 7.5-7.5-7.5"
+              />
+            </svg>
+          </button>
+
+          {#if !collapsedSections.file}
+            <div
+              class="mt-2 space-y-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
+            >
+              <div>
+                <label
+                  for="autosave-mode"
+                  class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                >
+                  Autosave Mode
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Choose when to automatically save the project
+                  </div>
+                </label>
+                <select
+                  id="autosave-mode"
+                  bind:value={settings.autosaveMode}
+                  class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="never">Never</option>
+                  <option value="time">Time Based</option>
+                  <option value="change">On Change</option>
+                  <option value="close">On Close</option>
+                </select>
+              </div>
+
+              {#if settings.autosaveMode === "time"}
+                <div transition:fade>
+                  <label
+                    for="autosave-interval"
+                    class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  >
+                    Autosave Interval
+                    <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                      Save every {settings.autosaveInterval} minutes
+                    </div>
+                  </label>
+                  <select
+                    id="autosave-interval"
+                    bind:value={settings.autosaveInterval}
+                    class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {#each [1, 5, 10, 15, 20, 40, 60] as interval}
+                      <option value={interval}>{interval} minutes</option>
+                    {/each}
+                  </select>
+                </div>
+              {/if}
             </div>
           {/if}
         </div>
