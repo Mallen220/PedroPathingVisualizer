@@ -26,18 +26,16 @@ type AnimationState = {
 };
 
 /**
- * Calculate the robot position and heading based on the Timeline
+ * Calculate the robot position and heading (in field coordinates) based on the Timeline
  */
-export function calculateRobotState(
+export function calculateRobotPose(
   percent: number,
   timeline: TimelineEvent[],
   lines: Line[],
   startPoint: Point,
-  xScale: ScaleLinear<number, number>,
-  yScale: ScaleLinear<number, number>,
 ): RobotState {
   if (!timeline || timeline.length === 0) {
-    return { x: xScale(startPoint.x), y: yScale(startPoint.y), heading: 0 };
+    return { x: startPoint.x, y: startPoint.y, heading: 0 };
   }
 
   // Calculate current time in seconds based on percent (0-100)
@@ -68,8 +66,8 @@ export function calculateRobotState(
 
     // Note: We use negative heading for visualizer (SVG/CSS rotation is CW, Math is usually CCW)
     return {
-      x: xScale(point.x),
-      y: yScale(point.y),
+      x: point.x,
+      y: point.y,
       heading: -currentHeading,
     };
   } else {
@@ -147,7 +145,6 @@ export function calculateRobotState(
       currentLine.endPoint,
     ]);
 
-    const robotXY = { x: xScale(robotInchesXY.x), y: yScale(robotInchesXY.y) };
     let robotHeading = 0;
 
     if (interpolatedHeading !== null && Number.isFinite(interpolatedHeading)) {
@@ -170,15 +167,11 @@ export function calculateRobotState(
             linePercent + (currentLine.endPoint.reverse ? -0.01 : 0.01),
             [prevPoint, ...currentLine.controlPoints, currentLine.endPoint],
           );
-          const nextPoint = {
-            x: xScale(nextPointInches.x),
-            y: yScale(nextPointInches.y),
-          };
-          const dx = nextPoint.x - robotXY.x;
-          const dy = nextPoint.y - robotXY.y;
+          const tdx = nextPointInches.x - robotInchesXY.x;
+          const tdy = nextPointInches.y - robotInchesXY.y;
 
-          if (dx !== 0 || dy !== 0) {
-            const angle = Math.atan2(dy, dx);
+          if (tdx !== 0 || tdy !== 0) {
+            const angle = Math.atan2(tdy, tdx);
             robotHeading = radiansToDegrees(angle);
           }
           break;
@@ -186,11 +179,31 @@ export function calculateRobotState(
     }
 
     return {
-      x: robotXY.x,
-      y: robotXY.y,
+      x: robotInchesXY.x,
+      y: robotInchesXY.y,
       heading: robotHeading,
     };
   }
+}
+
+/**
+ * Calculate the robot position and heading based on the Timeline
+ * (This version applies scaling for screen coordinates)
+ */
+export function calculateRobotState(
+  percent: number,
+  timeline: TimelineEvent[],
+  lines: Line[],
+  startPoint: Point,
+  xScale: ScaleLinear<number, number>,
+  yScale: ScaleLinear<number, number>,
+): RobotState {
+  const pose = calculateRobotPose(percent, timeline, lines, startPoint);
+  return {
+    x: xScale(pose.x),
+    y: yScale(pose.y),
+    heading: pose.heading,
+  };
 }
 
 /**
@@ -533,20 +546,124 @@ export function generateOnionLayers(
 
 /**
  * Generate ghost path robot bodies at high frequency intervals along the path
- * Returns an array of robot states (position, heading, and corner points) for drawing
- * @param startPoint - The starting point of the path
- * @param lines - The path lines to trace
+ * Uses time-stepping to capture all robot movements including stationary rotations.
+ *
+ * @param timeline - The timeline of events (travel, wait, etc.)
+ * @param lines - The path lines
+ * @param startPoint - The starting point
  * @param robotLength - Robot length in inches
  * @param robotWidth - Robot width in inches
- * @param spacing - Distance in inches between each robot trace (default 2)
+ * @param distSpacing - Distance in inches between traces
+ * @param angleSpacing - Angle in degrees between traces
  * @returns Array of robot states with corner points for rendering
  */
 export function generateGhostPaths(
-  startPoint: Point,
+  timeline: TimelineEvent[] | null | undefined,
   lines: Line[],
+  startPoint: Point,
   robotLength: number,
   robotWidth: number,
-  spacing: number = 2,
+  distSpacing: number = 2,
+  angleSpacing: number = 4,
 ): Array<{ x: number; y: number; heading: number; corners: BasePoint[] }> {
-  return generateOnionLayers(startPoint, lines, robotLength, robotWidth, spacing);
+  // Fallback if no timeline: use geometric onion skinning logic
+  if (!timeline || timeline.length === 0) {
+    return generateOnionLayers(
+      startPoint,
+      lines,
+      robotLength,
+      robotWidth,
+      distSpacing,
+    );
+  }
+
+  const layers: Array<{
+    x: number;
+    y: number;
+    heading: number;
+    corners: BasePoint[];
+  }> = [];
+
+  const totalDuration = timeline[timeline.length - 1].endTime;
+  const timeStep = 0.02; // 20ms step size for simulation
+
+  let lastX = -Infinity;
+  let lastY = -Infinity;
+  let lastHeading = -Infinity;
+
+  // Initial state
+  const startPose = calculateRobotPose(0, timeline, lines, startPoint);
+  layers.push({
+    x: startPose.x,
+    y: startPose.y,
+    heading: startPose.heading,
+    corners: getRobotCorners(
+      startPose.x,
+      startPose.y,
+      startPose.heading,
+      robotLength,
+      robotWidth,
+    ),
+  });
+  lastX = startPose.x;
+  lastY = startPose.y;
+  lastHeading = startPose.heading;
+
+  // Simulate through time
+  for (let t = timeStep; t <= totalDuration; t += timeStep) {
+    const percent = (t / totalDuration) * 100;
+    const pose = calculateRobotPose(percent, timeline, lines, startPoint);
+
+    const dx = pose.x - lastX;
+    const dy = pose.y - lastY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Calculate angular difference
+    let angleDiff = Math.abs(pose.heading - lastHeading);
+    // Normalize to 0-360 range for diff calculation logic, although simple abs diff works for small steps
+    if (angleDiff > 180) angleDiff = 360 - angleDiff;
+
+    if (dist >= distSpacing || angleDiff >= angleSpacing) {
+      layers.push({
+        x: pose.x,
+        y: pose.y,
+        heading: pose.heading,
+        corners: getRobotCorners(
+          pose.x,
+          pose.y,
+          pose.heading,
+          robotLength,
+          robotWidth,
+        ),
+      });
+      lastX = pose.x;
+      lastY = pose.y;
+      lastHeading = pose.heading;
+    }
+  }
+
+  // Ensure end state is captured
+  const endPose = calculateRobotPose(100, timeline, lines, startPoint);
+  const endDx = endPose.x - lastX;
+  const endDy = endPose.y - lastY;
+  const endDist = Math.sqrt(endDx * endDx + endDy * endDy);
+  let endAngleDiff = Math.abs(endPose.heading - lastHeading);
+  if (endAngleDiff > 180) endAngleDiff = 360 - endAngleDiff;
+
+  if (endDist > 0.1 || endAngleDiff > 0.5) {
+    layers.push({
+      x: endPose.x,
+      y: endPose.y,
+      heading: endPose.heading,
+      corners: getRobotCorners(
+        endPose.x,
+        endPose.y,
+        endPose.heading,
+        robotLength,
+        robotWidth,
+      ),
+    });
+  }
+
+  return layers;
 }

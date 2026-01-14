@@ -521,12 +521,15 @@
       const spacing = 2;
 
       // For ghost paths, we show the full path coverage
+      // Use timeline if available to capture stationary rotations and accurate timing
       const layers = generateGhostPaths(
-        startPoint,
+        timePrediction?.timeline,
         lines,
+        startPoint,
         settings.rLength,
         settings.rWidth,
-        spacing,
+        spacing, // distance spacing (inches)
+        4, // angle spacing (degrees)
       );
 
       layers.forEach((layer, idx) => {
