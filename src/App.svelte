@@ -30,6 +30,7 @@
     showFileManager,
     fileManagerNewFileMode,
     projectMetadataStore,
+    currentDirectoryStore,
   } from "./stores";
   import {
     startPointStore,
@@ -65,6 +66,7 @@
     exportAsPP,
     handleExternalFileOpen,
   } from "./utils/fileHandlers";
+  import { scanEventsInDirectory } from "./utils/eventScanner";
 
   // Types
   import type { Settings } from "./types";
@@ -353,6 +355,7 @@
         undefined,
         undefined,
         false,
+        undefined,
         {
           quiet: true,
         },
@@ -542,6 +545,7 @@
           undefined,
           undefined,
           false,
+          undefined,
           { quiet: true },
         );
         console.log("Autosaved project (on change)");
@@ -637,9 +641,11 @@
 
     // Stabilize
     setTimeout(async () => {
+      // Record initial state before marking as loaded to prevent unsaved flag
+      recordChange();
       isLoaded = true;
       lastSavedState = getCurrentState(); // Assume fresh start is "saved" unless loaded
-      recordChange();
+
       // Ensure sequence/line consistency once initial load is stabilized
       try {
         ensureSequenceConsistency();
@@ -654,6 +660,9 @@
           const dir = await electronAPI.getSavedDirectory();
           if (!dir || dir.trim() === "") {
             needsSetup = true;
+          } else {
+            currentDirectoryStore.set(dir);
+            scanEventsInDirectory(dir);
           }
         } catch (e) {
           console.warn("Failed to check saved directory", e);
