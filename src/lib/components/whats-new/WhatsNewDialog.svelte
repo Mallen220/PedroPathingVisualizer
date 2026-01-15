@@ -874,13 +874,15 @@
                 Install PedroPathingPlus
               </h3>
               <p class="text-neutral-600 dark:text-neutral-300 text-sm mb-3">
-                Install <strong>PedroPathingPlus</strong> to run <code>.pp</code> files
-                directly and enable advanced commands.
+                Install <strong>PedroPathingPlus</strong> to run
+                <code>.pp</code> files directly and enable advanced commands.
               </p>
               <button
                 class="text-purple-600 dark:text-purple-400 font-bold hover:underline text-sm flex items-center gap-1"
                 on:click={() => {
-                  const ppPage = pages.find((p) => p.id === "pedro-pathing-plus");
+                  const ppPage = pages.find(
+                    (p) => p.id === "pedro-pathing-plus",
+                  );
                   if (ppPage) handlePageClick(ppPage);
                 }}
               >
@@ -945,7 +947,9 @@
             <!-- Sidebar (TOC) -->
             {#if headers.length > 0 && !showToc}
               <!-- Collapsed TOC - Expand button -->
-              <div class="hidden md:block w-12 border-l border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 shrink-0">
+              <div
+                class="hidden md:block w-12 border-l border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 shrink-0"
+              >
                 <div class="sticky top-4 flex justify-center pt-4">
                   <button
                     class="p-2 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-all"
@@ -953,7 +957,16 @@
                     aria-label="Expand table of contents"
                     title="Show table of contents"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-5 w-5"
+                    >
                       <line x1="3" y1="6" x2="21" y2="6"></line>
                       <line x1="3" y1="12" x2="21" y2="12"></line>
                       <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -977,7 +990,16 @@
                     aria-label="Collapse table of contents"
                     title="Collapse table of contents"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-4 w-4"
+                    >
                       <polyline points="18 15 12 9 6 15"></polyline>
                     </svg>
                   </button>

@@ -180,7 +180,7 @@
             undefined,
             undefined,
             false,
-            fullPath
+            fullPath,
           );
         } else {
           // User cancelled name input
@@ -1075,7 +1075,11 @@
   />
 {/if}
 
-<WhatsNewDialog bind:show={showWhatsNew} bind:setupMode on:close={closeWhatsNew} />
+<WhatsNewDialog
+  bind:show={showWhatsNew}
+  bind:setupMode
+  on:close={closeWhatsNew}
+/>
 <NotificationToast />
 
 <SaveNameDialog

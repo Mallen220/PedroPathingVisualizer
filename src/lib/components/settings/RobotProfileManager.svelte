@@ -1,8 +1,11 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import type { RobotProfile, Settings } from "../../../types";
   import { notification } from "../../../stores";
+  import DeleteButtonWithConfirm from "../common/DeleteButtonWithConfirm.svelte";
+  import SaveIcon from "../icons/SaveIcon.svelte";
+  import { fade } from "svelte/transition";
 
   export let settings: Settings;
   // Callback to force update of settings in parent
@@ -13,10 +16,17 @@
   let newProfileName: string = "";
   let isCreating = false;
 
+  let updateConfirming = false;
+  let updateTimeout: ReturnType<typeof setTimeout>;
+
   const STORAGE_KEY = "pedro_robot_profiles";
 
   onMount(() => {
     loadProfiles();
+  });
+
+  onDestroy(() => {
+    clearTimeout(updateTimeout);
   });
 
   function loadProfiles() {
@@ -81,6 +91,8 @@
     const profile = profiles.find((p) => p.id === selectedProfileId);
     if (!profile) return;
 
+    // Keep confirm for Apply as it overwrites current settings and is a major action
+    // We could make this inline too, but it's the primary action button.
     if (
       !confirm(
         `Apply settings from "${profile.name}"? This will overwrite your current robot configuration.`,
@@ -113,12 +125,7 @@
     const profileIndex = profiles.findIndex((p) => p.id === selectedProfileId);
     if (profileIndex === -1) return;
 
-    if (
-      !confirm(`Update "${profiles[profileIndex].name}" with current settings?`)
-    ) {
-      return;
-    }
-
+    // No confirm() here, handled by inline logic
     profiles[profileIndex] = {
       ...profiles[profileIndex],
       rLength: settings.rLength,
@@ -141,13 +148,31 @@
     });
   }
 
+  function handleUpdateClick() {
+    if (updateConfirming) {
+      handleUpdateProfile();
+      updateConfirming = false;
+      clearTimeout(updateTimeout);
+    } else {
+      updateConfirming = true;
+      updateTimeout = setTimeout(() => {
+        updateConfirming = false;
+      }, 3000);
+    }
+  }
+
+  function handleUpdateBlur() {
+    setTimeout(() => {
+      updateConfirming = false;
+      clearTimeout(updateTimeout);
+    }, 200);
+  }
+
   function handleDeleteProfile() {
     const profile = profiles.find((p) => p.id === selectedProfileId);
     if (!profile) return;
 
-    if (!confirm(`Are you sure you want to delete "${profile.name}"?`)) {
-      return;
-    }
+    // No confirm() here, handled by DeleteButtonWithConfirm
 
     profiles = profiles.filter((p) => p.id !== selectedProfileId);
     saveProfiles();
@@ -175,6 +200,7 @@
       <button
         on:click={() => (isCreating = true)}
         class="text-xs px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+        aria-label="Create new profile"
       >
         + New Profile
       </button>
@@ -220,7 +246,9 @@
 
   <div class="flex flex-col gap-2">
     {#if profiles.length === 0}
-      <div class="text-xs text-neutral-400 text-center py-2 italic">
+      <div
+        class="text-xs text-neutral-400 text-center py-4 italic border border-dashed border-neutral-200 dark:border-neutral-700 rounded"
+      >
         No saved profiles yet.
       </div>
     {:else}
@@ -228,6 +256,7 @@
         <select
           bind:value={selectedProfileId}
           class="flex-1 px-2 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          aria-label="Select robot profile"
         >
           <option value="" disabled>Select a profile...</option>
           {#each profiles as profile}
@@ -238,7 +267,7 @@
         <button
           on:click={handleApplyProfile}
           disabled={!selectedProfileId}
-          class="px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           title="Load settings from selected profile"
         >
           Load
@@ -246,25 +275,42 @@
       </div>
 
       {#if selectedProfileId}
-        <div class="flex justify-between items-center mt-1 px-1">
+        <div class="flex justify-between items-center mt-1 px-1 h-8">
           <div class="text-xs text-neutral-400">
             Actions for selected profile:
           </div>
-          <div class="flex gap-2">
+          <div class="flex items-center gap-1">
+            <!-- Update Button with inline confirm -->
             <button
-              on:click={handleUpdateProfile}
-              class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              on:click={handleUpdateClick}
+              on:blur={handleUpdateBlur}
+              class={`ml-1 p-1.5 rounded-md transition-all duration-200 flex items-center justify-center ${
+                updateConfirming
+                  ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/50 w-20"
+                  : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-neutral-400 hover:text-blue-500 w-8"
+              }`}
               title="Overwrite profile with current settings"
             >
-              Update from Current
+              {#if updateConfirming}
+                <span
+                  class="text-xs font-bold whitespace-nowrap"
+                  in:fade={{ duration: 150 }}>Confirm</span
+                >
+              {:else}
+                <div
+                  in:fade={{ duration: 150 }}
+                  class="flex items-center justify-center"
+                >
+                  <SaveIcon className="size-4" strokeWidth={2} />
+                </div>
+              {/if}
             </button>
-            <span class="text-neutral-300 dark:text-neutral-600">|</span>
-            <button
+
+            <!-- Delete Button -->
+            <DeleteButtonWithConfirm
               on:click={handleDeleteProfile}
-              class="text-xs text-red-600 dark:text-red-400 hover:underline"
-            >
-              Delete
-            </button>
+              title="Delete Profile"
+            />
           </div>
         </div>
       {/if}

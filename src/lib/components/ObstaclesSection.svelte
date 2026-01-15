@@ -110,7 +110,9 @@
               <div class="flex flex-row gap-1">
                 <button
                   title={shape.locked ? "Unlock Obstacle" : "Lock Obstacle"}
-                  aria-label={shape.locked ? "Unlock Obstacle" : "Lock Obstacle"}
+                  aria-label={shape.locked
+                    ? "Unlock Obstacle"
+                    : "Lock Obstacle"}
                   aria-pressed={shape.locked ?? false}
                   on:click={() => {
                     shape.locked = !(shape.locked ?? false);

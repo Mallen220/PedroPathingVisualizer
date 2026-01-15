@@ -44,7 +44,7 @@
   export let exportGif: () => any;
   export let undoAction: () => any;
   export let redoAction: () => any;
-   export const recordChange: () => any = () => {};
+  export const recordChange: () => any = () => {};
   export let canUndo: boolean;
   export let canRedo: boolean;
 
