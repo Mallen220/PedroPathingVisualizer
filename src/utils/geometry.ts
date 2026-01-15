@@ -134,25 +134,42 @@ export function getRobotCorners(
   // - width extends perpendicular to heading direction (left/right) -> X local
   // - length extends along heading direction (forward/backward) -> Y local
 
-  // Previously: dx: -hw (Old Length/2), dy: -hh (Old Width/2)
-  // New: hl = Length/2, hw = Width/2
-  // We want to preserve alignment:
-  // dx corresponds to Length (hl).
-  // dy corresponds to Width (hw).
+  // Manually compute rotated corners to avoid intermediate array allocation
+  // and map callback overhead.
 
-  const corners = [
-    { dx: -hl, dy: -hw }, // front-left
-    { dx: hl, dy: -hw }, // front-right
-    { dx: hl, dy: hw }, // back-right
-    { dx: -hl, dy: hw }, // back-left
-  ];
+  // Front-Left (-hl, -hw)
+  // x: x + (-hl * cos - -hw * sin) = x - hl * cos + hw * sin
+  // y: y + (-hl * sin + -hw * cos) = y - hl * sin - hw * cos
+  const fl = {
+    x: x - hl * cos + hw * sin,
+    y: y - hl * sin - hw * cos,
+  };
 
-  // Rotate and translate corners
-  // Using standard 2D rotation matrix for screen coordinates
-  return corners.map((corner) => ({
-    x: x + corner.dx * cos - corner.dy * sin,
-    y: y + corner.dx * sin + corner.dy * cos,
-  }));
+  // Front-Right (hl, -hw)
+  // x: x + (hl * cos - -hw * sin) = x + hl * cos + hw * sin
+  // y: y + (hl * sin + -hw * cos) = y + hl * sin - hw * cos
+  const fr = {
+    x: x + hl * cos + hw * sin,
+    y: y + hl * sin - hw * cos,
+  };
+
+  // Back-Right (hl, hw)
+  // x: x + (hl * cos - hw * sin) = x + hl * cos - hw * sin
+  // y: y + (hl * sin + hw * cos) = y + hl * sin + hw * cos
+  const br = {
+    x: x + hl * cos - hw * sin,
+    y: y + hl * sin + hw * cos,
+  };
+
+  // Back-Left (-hl, hw)
+  // x: x + (-hl * cos - hw * sin) = x - hl * cos - hw * sin
+  // y: y + (-hl * sin + hw * cos) = y - hl * sin + hw * cos
+  const bl = {
+    x: x - hl * cos - hw * sin,
+    y: y - hl * sin + hw * cos,
+  };
+
+  return [fl, fr, br, bl];
 }
 
 /**
