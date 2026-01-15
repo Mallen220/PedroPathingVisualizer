@@ -335,6 +335,13 @@
   }
 
   function goBack() {
+    if (setupMode) {
+      currentView = "setup";
+      activePage = null;
+      activeFeatureId = null;
+      return;
+    }
+
     // If searching, we just clear the content view (if any) but keep search query active
     // This effectively returns to the search results list
     if (searchQuery && currentView === "content") {
@@ -524,7 +531,7 @@
         class="flex-none p-4 md:p-6 border-b border-neutral-200 dark:border-neutral-700 flex flex-col md:flex-row justify-between items-start md:items-center bg-neutral-50 dark:bg-neutral-800 gap-4"
       >
         <div class="flex items-center gap-4 w-full md:w-auto">
-          {#if !setupMode && (activeTab === "changelog" || (activeTab === "home" && currentView !== "grid" && !searchQuery) || (searchQuery && currentView === "content"))}
+          {#if (!setupMode || currentView === "content") && (activeTab === "changelog" || (activeTab === "home" && currentView !== "grid" && !searchQuery) || (searchQuery && currentView === "content"))}
             <button
               class="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
               on:click={() =>
@@ -835,6 +842,44 @@
                 >TeamCode/src/main/assets/AutoPaths/</code
               >
             </p>
+
+            <div
+              class="bg-purple-100 dark:bg-purple-900/20 p-4 rounded-xl mb-8 w-full max-w-lg text-left border border-purple-200 dark:border-purple-800"
+            >
+              <h3
+                class="text-lg font-bold text-neutral-900 dark:text-white mb-2 flex items-center gap-2"
+              >
+                {@html icons["sparkles"]}
+                Install PedroPathingPlus
+              </h3>
+              <p class="text-neutral-600 dark:text-neutral-300 text-sm mb-3">
+                To use the visualizer effectively, you should install <strong>PedroPathingPlus</strong>.
+                It allows running <code>.pp</code> files directly and more.
+              </p>
+              <button
+                class="text-purple-600 dark:text-purple-400 font-bold hover:underline text-sm flex items-center gap-1"
+                on:click={() => {
+                  const ppPage = pages.find((p) => p.id === "pedro-pathing-plus");
+                  if (ppPage) handlePageClick(ppPage);
+                }}
+              >
+                Learn More
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </button>
+            </div>
 
             <button
               class="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center gap-3 text-lg"
