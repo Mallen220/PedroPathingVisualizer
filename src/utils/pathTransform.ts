@@ -1,16 +1,24 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
-import type { Point, ControlPoint, Line, Shape, SequenceItem } from "../types";
+import type {
+  Point,
+  ControlPoint,
+  Line,
+  Shape,
+  SequenceItem,
+  BasePoint,
+} from "../types";
+import { transformAngle } from "./math";
 
-// Helper to mirror a single point's heading
+// Helper to mirror a single point's heading (X-axis flip / Mirror across Vertical Line)
 export function mirrorPointHeading(point: Point): Point {
   if (point.heading === "linear")
     return {
       ...point,
-      startDeg: 180 - point.startDeg,
-      endDeg: 180 - point.endDeg,
+      startDeg: transformAngle(180 - point.startDeg),
+      endDeg: transformAngle(180 - point.endDeg),
     };
   if (point.heading === "constant")
-    return { ...point, degrees: 180 - point.degrees };
+    return { ...point, degrees: transformAngle(180 - point.degrees) };
   // Tangential reverse flag stays same
   return point;
 }
@@ -122,4 +130,153 @@ export function reversePathData(data: {
   }
 
   return r;
+}
+
+// --- New Transformation Utils ---
+
+// Helper to rotate a heading
+export function rotatePointHeading(point: Point, angle: number): Point {
+  if (point.heading === "linear")
+    return {
+      ...point,
+      startDeg: transformAngle(point.startDeg + angle),
+      endDeg: transformAngle(point.endDeg + angle),
+    };
+  if (point.heading === "constant")
+    return { ...point, degrees: transformAngle(point.degrees + angle) };
+  return point;
+}
+
+export function translatePathData(
+  data: { startPoint: Point; lines: Line[]; shapes: Shape[] },
+  dx: number,
+  dy: number,
+) {
+  const t = JSON.parse(JSON.stringify(data));
+
+  const translate = (p: BasePoint) => {
+    p.x += dx;
+    p.y += dy;
+  };
+
+  if (t.startPoint) translate(t.startPoint);
+
+  if (t.lines) {
+    t.lines.forEach((line: Line) => {
+      if (line.endPoint) translate(line.endPoint);
+      if (line.controlPoints) {
+        line.controlPoints.forEach((cp: ControlPoint) => translate(cp));
+      }
+    });
+  }
+
+  if (t.shapes) {
+    t.shapes.forEach((s: Shape) =>
+      s.vertices?.forEach((v: any) => translate(v)),
+    );
+  }
+
+  return t;
+}
+
+export function rotatePathData(
+  data: { startPoint: Point; lines: Line[]; shapes: Shape[] },
+  angleDeg: number,
+  cx: number,
+  cy: number,
+) {
+  const t = JSON.parse(JSON.stringify(data));
+  const rad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  const rotate = (p: BasePoint) => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    p.x = cx + dx * cos - dy * sin;
+    p.y = cy + dx * sin + dy * cos;
+  };
+
+  if (t.startPoint) {
+    rotate(t.startPoint);
+    t.startPoint = rotatePointHeading(t.startPoint, angleDeg);
+  }
+
+  if (t.lines) {
+    t.lines.forEach((line: Line) => {
+      if (line.endPoint) {
+        rotate(line.endPoint);
+        line.endPoint = rotatePointHeading(line.endPoint, angleDeg);
+      }
+      if (line.controlPoints) {
+        line.controlPoints.forEach((cp: ControlPoint) => rotate(cp));
+      }
+    });
+  }
+
+  if (t.shapes) {
+    t.shapes.forEach((s: Shape) => s.vertices?.forEach((v: any) => rotate(v)));
+  }
+
+  return t;
+}
+
+export function flipPathData(
+  data: { startPoint: Point; lines: Line[]; shapes: Shape[] },
+  axis: "x" | "y",
+  center: number,
+) {
+  const t = JSON.parse(JSON.stringify(data));
+
+  const flip = (p: BasePoint) => {
+    if (axis === "x") {
+      p.x = center + (center - p.x);
+    } else {
+      p.y = center + (center - p.y);
+    }
+  };
+
+  const flipHeading = (p: Point) => {
+    if (axis === "x") {
+      // Mirror across vertical line: 180 - angle
+      if (p.heading === "linear") {
+        p.startDeg = transformAngle(180 - p.startDeg);
+        p.endDeg = transformAngle(180 - p.endDeg);
+      } else if (p.heading === "constant") {
+        p.degrees = transformAngle(180 - p.degrees);
+      }
+    } else {
+      // Mirror across horizontal line: -angle
+      if (p.heading === "linear") {
+        p.startDeg = transformAngle(-p.startDeg);
+        p.endDeg = transformAngle(-p.endDeg);
+      } else if (p.heading === "constant") {
+        p.degrees = transformAngle(-p.degrees);
+      }
+    }
+    return p;
+  };
+
+  if (t.startPoint) {
+    flip(t.startPoint);
+    flipHeading(t.startPoint);
+  }
+
+  if (t.lines) {
+    t.lines.forEach((line: Line) => {
+      if (line.endPoint) {
+        flip(line.endPoint);
+        flipHeading(line.endPoint);
+      }
+      if (line.controlPoints) {
+        line.controlPoints.forEach((cp: ControlPoint) => flip(cp));
+      }
+    });
+  }
+
+  if (t.shapes) {
+    t.shapes.forEach((s: Shape) => s.vertices?.forEach((v: any) => flip(v)));
+  }
+
+  return t;
 }

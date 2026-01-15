@@ -15,6 +15,7 @@
   } from "../../stores";
   import { slide } from "svelte/transition";
   import OptimizationDialog from "./OptimizationDialog.svelte";
+  import TransformDialog from "./TransformDialog.svelte";
   import { tick } from "svelte";
   import { tooltipPortal } from "../actions/portal";
   import ObstaclesSection from "./ObstaclesSection.svelte";
@@ -76,6 +77,20 @@
   let optIsRunning: boolean = false;
   let optOptimizedLines: Line[] | null = null;
   let optFailed: boolean = false;
+
+  let transformOpen = false;
+
+  function handleTransformApply(
+    newStartPoint: Point,
+    newLines: Line[],
+    newShapes: import("../../types").Shape[],
+  ) {
+    startPoint = newStartPoint;
+    lines = newLines;
+    shapes = newShapes;
+    recordChange();
+    transformOpen = false;
+  }
 
   export async function openAndStartOptimization() {
     optimizationOpen = true;
@@ -1029,8 +1044,45 @@
           />
         </svg>
       </button>
+      <button
+        title="Transform Path"
+        aria-label="Transform Path"
+        on:click={() => (transformOpen = !transformOpen)}
+        class="flex flex-row items-center gap-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+      >
+        <span>Transform</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="size-6"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"
+          />
+        </svg>
+      </button>
     </div>
   </div>
+
+  {#if transformOpen}
+    <div
+      class="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-100 dark:bg-neutral-800 p-4"
+      transition:slide
+    >
+      <TransformDialog
+        {startPoint}
+        {lines}
+        {shapes}
+        onApply={handleTransformApply}
+        onClose={() => (transformOpen = false)}
+      />
+    </div>
+  {/if}
 
   {#if showDebug}
     <div class="p-2 text-xs text-neutral-500">

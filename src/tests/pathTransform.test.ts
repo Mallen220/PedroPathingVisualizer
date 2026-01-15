@@ -4,6 +4,9 @@ import {
   mirrorPointHeading,
   mirrorPathData,
   reversePathData,
+  translatePathData,
+  rotatePathData,
+  flipPathData,
 } from "../utils/pathTransform";
 import type { Point, Line, Shape, SequenceItem } from "../types";
 
@@ -84,7 +87,7 @@ describe("pathTransform", () => {
 
       expect(line.endPoint.x).toBe(124); // 144 - 20
       expect(line.endPoint.y).toBe(30);
-      expect(line.endPoint.startDeg).toBe(180); // 180 - 0
+      expect(line.endPoint.startDeg).toBe(-180); // 180 - 0 -> normalized to -180
       expect(line.endPoint.endDeg).toBe(90); // 180 - 90
 
       expect(line.controlPoints[0].x).toBe(139); // 144 - 5
@@ -324,6 +327,87 @@ describe("pathTransform", () => {
       expect((reversed.sequence[0] as any).lineId).toBe("L2");
       expect((reversed.sequence[1] as any).id).toBe("W1");
       expect((reversed.sequence[2] as any).lineId).toBe("L1");
+    });
+  });
+
+  describe("translatePathData", () => {
+    it("should translate points by dx, dy", () => {
+      const data = {
+        startPoint: { x: 10, y: 20 } as Point,
+        lines: [
+          {
+            endPoint: { x: 30, y: 40 } as Point,
+            controlPoints: [{ x: 15, y: 25 }],
+          } as Line,
+        ],
+        shapes: [],
+      };
+      const translated = translatePathData(data, 10, -5);
+      expect(translated.startPoint.x).toBe(20);
+      expect(translated.startPoint.y).toBe(15);
+      expect(translated.lines[0].endPoint.x).toBe(40);
+      expect(translated.lines[0].endPoint.y).toBe(35);
+      expect(translated.lines[0].controlPoints[0].x).toBe(25);
+      expect(translated.lines[0].controlPoints[0].y).toBe(20);
+    });
+  });
+
+  describe("rotatePathData", () => {
+    it("should rotate points around origin", () => {
+      // 90 degrees around (0,0)
+      // (10, 0) -> (0, 10)
+      const data = {
+        startPoint: { x: 10, y: 0, heading: "constant", degrees: 0 } as Point,
+        lines: [],
+        shapes: [],
+      };
+      const rotated = rotatePathData(data, 90, 0, 0);
+      expect(rotated.startPoint.x).toBeCloseTo(0);
+      expect(rotated.startPoint.y).toBeCloseTo(10);
+      expect(rotated.startPoint.degrees).toBe(90);
+    });
+
+    it("should rotate points around center", () => {
+      // 180 degrees around (10, 10)
+      // (20, 10) -> (0, 10)
+      const data = {
+        startPoint: { x: 20, y: 10 } as Point,
+        lines: [],
+        shapes: [],
+      };
+      const rotated = rotatePathData(data, 180, 10, 10);
+      expect(rotated.startPoint.x).toBeCloseTo(0);
+      expect(rotated.startPoint.y).toBeCloseTo(10);
+    });
+  });
+
+  describe("flipPathData", () => {
+    it("should flip across X axis (vertical line)", () => {
+      // Center X=50. Point X=10 -> X=90
+      const data = {
+        startPoint: { x: 10, y: 20, heading: "constant", degrees: 10 } as Point,
+        lines: [],
+        shapes: [],
+      };
+      const flipped = flipPathData(data, "x", 50);
+      expect(flipped.startPoint.x).toBe(90);
+      expect(flipped.startPoint.y).toBe(20);
+      // Heading should mirror across 180 (180 - 10 = 170)
+      expect(flipped.startPoint.degrees).toBe(170);
+    });
+
+    it("should flip across Y axis (horizontal line)", () => {
+      // Center Y=50. Point Y=10 -> Y=90
+      const data = {
+        startPoint: { x: 20, y: 10, heading: "constant", degrees: 10 } as Point,
+        lines: [],
+        shapes: [],
+      };
+      const flipped = flipPathData(data, "y", 50);
+      expect(flipped.startPoint.x).toBe(20);
+      expect(flipped.startPoint.y).toBe(90);
+      // Heading should mirror (-10)
+      expect(flipped.startPoint.degrees).toBe(-10);
     });
   });
 });
