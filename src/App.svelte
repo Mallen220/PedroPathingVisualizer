@@ -1046,6 +1046,7 @@
   toggleStats={() => (statsOpen = !statsOpen)}
   openWhatsNew={() => (showWhatsNew = true)}
   toggleSidebar={() => (showSidebar = !showSidebar)}
+  {fieldRenderer}
 />
 
 {#if $showExportGif && fieldRenderer}

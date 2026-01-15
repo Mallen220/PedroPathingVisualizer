@@ -1,6 +1,7 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { get } from "svelte/store";
   import Two from "two.js";
   import * as d3 from "d3";
   import { computeZoomStep, computePanForZoom } from "../zoomHelpers";
@@ -1412,6 +1413,21 @@
   // Public accessor for exportGif
   export function getTwoInstance() {
     return two;
+  }
+
+  // Public method to pan the view to center on specific field coordinates (inches)
+  export function panToField(fx: number, fy: number) {
+    const factor = get(fieldZoom);
+    // Calculate required pan to center the point
+    // x(v) = center - halfW + pan + (v/SIZE)*W
+    // target x(v) = center => pan = halfW - (v/SIZE)*W = W * (0.5 - v/SIZE)
+    const px = width * factor * (0.5 - fx / FIELD_SIZE);
+
+    // y(v) = center + halfH + pan - (v/SIZE)*H
+    // target y(v) = center => pan = (v/SIZE)*H - halfH = H * (v/SIZE - 0.5)
+    const py = height * factor * (fy / FIELD_SIZE - 0.5);
+
+    fieldPan.set({ x: px, y: py });
   }
 
   onDestroy(() => {
