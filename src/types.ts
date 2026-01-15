@@ -47,6 +47,15 @@ export interface EventMarker {
   parameters?: Record<string, any>;
 }
 
+export interface Note {
+  id: string;
+  x: number; // Field x coordinate (inches)
+  y: number; // Field y coordinate (inches)
+  text: string;
+  color?: string;
+  visible?: boolean;
+}
+
 export interface WaitSegment {
   name?: string;
   durationMs: number;

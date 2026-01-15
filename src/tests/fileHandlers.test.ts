@@ -25,6 +25,7 @@ vi.mock("../stores", async () => {
     isUnsaved: writable(false),
     notification: writable(null),
     projectMetadataStore: writable({}),
+    currentDirectoryStore: writable(""),
     // settingsStore removed from here as it should be in projectStore
   };
 });
@@ -37,6 +38,7 @@ vi.mock("../lib/projectStore", async () => {
     sequenceStore: writable([]),
     shapesStore: writable([]),
     settingsStore: writable({}), // Re-export if needed, but usually main stores handles it
+    notesStore: writable([]),
   };
 });
 

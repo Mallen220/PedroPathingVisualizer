@@ -1,5 +1,5 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
-import type { Point, Line, Shape, SequenceItem, Settings } from "../types";
+import type { Point, Line, Shape, SequenceItem, Settings, Note } from "../types";
 import { writable } from "svelte/store";
 
 export type AppState = {
@@ -8,6 +8,7 @@ export type AppState = {
   shapes: Shape[];
   sequence: SequenceItem[];
   settings: Settings;
+  notes: Note[];
 };
 
 function deepClone<T>(obj: T): T {

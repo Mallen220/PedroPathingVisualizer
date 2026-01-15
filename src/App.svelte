@@ -38,6 +38,7 @@
     shapesStore,
     sequenceStore,
     settingsStore,
+    notesStore,
     robotXYStore,
     robotHeadingStore,
     percentStore,
@@ -518,6 +519,7 @@
       shapes: get(shapesStore),
       sequence: get(sequenceStore),
       settings: get(settingsStore),
+      notes: get(notesStore),
     };
   }
 
@@ -578,6 +580,7 @@
       linesStore.set(prev.lines);
       shapesStore.set(prev.shapes);
       sequenceStore.set(prev.sequence);
+      notesStore.set(prev.notes || []);
 
       // Preserve the current onion layer visibility when undoing so that
       // toggling onion layers isn't overwritten by history operations.
@@ -604,6 +607,7 @@
       linesStore.set(next.lines);
       shapesStore.set(next.shapes);
       sequenceStore.set(next.sequence);
+      notesStore.set(next.notes || []);
 
       // Preserve onion layer visibility when redoing as well.
       const currentShowOnion = get(settingsStore).showOnionLayers;

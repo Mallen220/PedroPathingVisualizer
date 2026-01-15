@@ -14,9 +14,10 @@ import {
   shapesStore,
   sequenceStore,
   settingsStore,
+  notesStore,
 } from "../lib/projectStore";
 import { loadTrajectoryFromFile, downloadTrajectory } from "./index";
-import type { Line, Point, SequenceItem, Settings, Shape } from "../types";
+import type { Line, Point, SequenceItem, Settings, Shape, Note } from "../types";
 import { makeId } from "./nameGenerator";
 
 interface ExtendedElectronAPI {
@@ -94,6 +95,7 @@ export function loadProjectData(data: any) {
     sequenceStore.set(seq);
   }
   if (data.shapes) shapesStore.set(data.shapes);
+  if (data.notes) notesStore.set(data.notes);
 }
 
 function addToRecentFiles(path: string, settings?: Settings) {
@@ -167,6 +169,7 @@ async function performSave(
   settings: Settings,
   sequence: SequenceItem[],
   shapes: Shape[],
+  notes: Note[],
   targetPath: string | undefined,
   options: { quiet?: boolean } = {},
 ) {
@@ -230,6 +233,7 @@ async function performSave(
       settings,
       sequence: sequenceToSave,
       shapes,
+      notes,
     };
 
     const jsonString = JSON.stringify(projectData, null, 2);
@@ -337,6 +341,7 @@ export async function saveProject(
   const st = settings || get(settingsStore);
   const seq = sequence || get(sequenceStore);
   const sh = shapes || get(shapesStore);
+  const nt = get(notesStore);
 
   let targetPath = specificPath || get(currentFilePath) || undefined;
   if (saveAs) {
@@ -348,7 +353,7 @@ export async function saveProject(
     return true;
   }
 
-  return await performSave(sp, ln, st, seq, sh, targetPath, options);
+  return await performSave(sp, ln, st, seq, sh, nt, targetPath, options);
 }
 
 export function saveFileAs() {
@@ -365,6 +370,7 @@ export function saveFileAs() {
     get(linesStore),
     get(shapesStore),
     get(sequenceStore),
+    get(notesStore),
     `${filename}.pp`,
   );
 }
@@ -386,6 +392,7 @@ export async function exportAsPP() {
       lines: get(linesStore),
       shapes: get(shapesStore),
       sequence: get(sequenceStore),
+      notes: get(notesStore),
     },
     null,
     2,
@@ -426,6 +433,7 @@ export async function exportAsPP() {
     get(linesStore),
     get(shapesStore),
     get(sequenceStore),
+    get(notesStore),
     defaultName,
   );
 }

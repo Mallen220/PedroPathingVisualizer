@@ -27,6 +27,7 @@
     robotHeadingStore,
     sequenceStore, // Imported for potential use, though main logic uses lines
     percentStore,
+    notesStore,
   } from "../projectStore";
   import {
     POINT_RADIUS,
@@ -54,6 +55,9 @@
   } from "../../types";
   import MathTools from "../MathTools.svelte";
   import FieldCoordinates from "./FieldCoordinates.svelte";
+  import FieldNote from "./FieldNote.svelte";
+  import ContextMenu from "./ContextMenu.svelte";
+  import { makeId } from "../../utils/nameGenerator";
   import type { Path } from "two.js/src/path";
   import type { Line as PathLine } from "two.js/src/shapes/line";
 
@@ -74,6 +78,56 @@
   let two: Two;
   let twoElement: HTMLDivElement;
   let wrapperDiv: HTMLDivElement;
+
+  // Context Menu State
+  let showContextMenu = false;
+  let contextMenuX = 0;
+  let contextMenuY = 0;
+  let contextMenuFieldX = 0;
+  let contextMenuFieldY = 0;
+
+  function handleContextMenu(e: MouseEvent) {
+      e.preventDefault();
+
+      const rect = wrapperDiv.getBoundingClientRect();
+      const transformed = getTransformedCoordinates(
+        e.clientX,
+        e.clientY,
+        rect,
+        settings.fieldRotation || 0,
+      );
+
+      contextMenuFieldX = x.invert(transformed.x);
+      contextMenuFieldY = y.invert(transformed.y);
+
+      contextMenuX = e.clientX;
+      contextMenuY = e.clientY;
+      showContextMenu = true;
+  }
+
+  function addNote() {
+      const newNote = {
+          id: makeId(),
+          x: contextMenuFieldX,
+          y: contextMenuFieldY,
+          text: "",
+          visible: true
+      };
+      notesStore.update(n => [...n, newNote]);
+      onRecordChange();
+  }
+
+  function updateNote(e: CustomEvent) {
+      const updated = e.detail;
+      notesStore.update(notes => notes.map(n => n.id === updated.id ? updated : n));
+      onRecordChange();
+  }
+
+  function deleteNote(e: CustomEvent) {
+      const id = e.detail;
+      notesStore.update(notes => notes.filter(n => n.id !== id));
+      onRecordChange();
+  }
   // Optimization: Cache bounding rects to avoid reflows during drag
   let cachedRect: DOMRect | null = null;
   let cachedWrapperRect: DOMRect | null = null;
@@ -1438,11 +1492,23 @@
       user-drag: none;
       -webkit-user-drag: none;
     "
-    on:contextmenu={(e) => e.preventDefault()}
+    on:contextmenu={handleContextMenu}
     on:dragstart={(e) => e.preventDefault()}
     style:transform={`rotate(${settings.fieldRotation || 0}deg)`}
     style:transition="transform 0.3s ease-in-out"
   >
+    <!-- Notes Layer (Above field image, below UI tools) -->
+    <div class="absolute inset-0 z-30 pointer-events-none">
+        {#each $notesStore as note (note.id)}
+             <FieldNote
+                 {note} {x} {y}
+                 rotation={settings.fieldRotation || 0}
+                 on:update={updateNote}
+                 on:delete={deleteNote}
+             />
+        {/each}
+    </div>
+
     <img
       src={settings.fieldMap
         ? `/fields/${settings.fieldMap}`
@@ -1558,6 +1624,17 @@ left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}
     </button>
   </div>
 </div>
+
+{#if showContextMenu}
+    <ContextMenu
+        x={contextMenuX}
+        y={contextMenuY}
+        items={[
+            { label: "Add Note", onClick: addNote, icon: "📝" },
+        ]}
+        on:close={() => showContextMenu = false}
+    />
+{/if}
 
 <style>
   /* Ensure collision markers do not block pointer events so users can click through them */
