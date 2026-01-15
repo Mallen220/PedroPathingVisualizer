@@ -1,6 +1,6 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import { describe, it, expect } from "vitest";
-import { calculatePathTime } from "../utils/timeCalculator";
+import { calculatePathTime, analyzePathSegment } from "../utils/timeCalculator";
 import type { Point, Line, Settings } from "../types";
 
 describe("Settings Influence on Path Time", () => {
@@ -139,5 +139,67 @@ describe("Settings Influence on Path Time", () => {
     const slowSettings = { ...noProfileSettings, xVelocity: 5, yVelocity: 5 };
     const slowTime = calculatePathTime(startPoint, lines, slowSettings).totalTime;
     expect(slowTime).toBeGreaterThan(baseTime);
+  });
+
+  describe("In-Place Rotation", () => {
+    // Scenario: Start Heading 0. Line requires Start Heading 180.
+    const startPointHeading0: Point = {
+        x: 0,
+        y: 0,
+        heading: "constant",
+        degrees: 0,
+    };
+
+    // A line that goes straight up, requiring 180 degree heading (turn around)
+    const lineTurnAround: Line[] = [
+        {
+            id: "lineTurn",
+            endPoint: { x: 0, y: -10, heading: "constant", degrees: 180 },
+            controlPoints: [],
+            color: "#fff",
+        }
+    ];
+
+    // Use settings that ensure we are velocity limited
+    const rotationSettings = {
+        ...defaultSettings,
+        maxAcceleration: 100, // Very high accel
+        maxDeceleration: 100,
+        aVelocity: 1.0, // Low velocity limit (1 rad/s)
+    };
+
+    it("changing aVelocity affects rotation time", () => {
+        const baseTime = calculatePathTime(startPointHeading0, lineTurnAround, rotationSettings).totalTime;
+        // Total Time should be dominated by rotation.
+        // Rotation is 3.14 rad. Vel = 1.0. Time approx 3.14s. (plus accel/decel)
+
+        // Increase aVelocity -> Faster rotation
+        const fastSettings = { ...rotationSettings, aVelocity: 2.0 };
+        const fastTime = calculatePathTime(startPointHeading0, lineTurnAround, fastSettings).totalTime;
+        expect(fastTime).toBeLessThan(baseTime);
+
+        // Decrease aVelocity -> Slower rotation
+        const slowSettings = { ...rotationSettings, aVelocity: 0.5 };
+        const slowTime = calculatePathTime(startPointHeading0, lineTurnAround, slowSettings).totalTime;
+        expect(slowTime).toBeGreaterThan(baseTime);
+    });
+
+    it("changing maxAcceleration affects rotation time", () => {
+        const baseTime = calculatePathTime(startPointHeading0, lineTurnAround, defaultSettings).totalTime;
+
+        // Decrease maxAcceleration -> Slower rotation (takes longer to spin up)
+        const slowSettings = { ...defaultSettings, maxAcceleration: 2 };
+        const slowTime = calculatePathTime(startPointHeading0, lineTurnAround, slowSettings).totalTime;
+        expect(slowTime).toBeGreaterThan(baseTime);
+    });
+
+    it("changing maxDeceleration affects rotation time", () => {
+        const baseTime = calculatePathTime(startPointHeading0, lineTurnAround, defaultSettings).totalTime;
+
+        // Decrease maxDeceleration -> Slower rotation (takes longer to spin down)
+        const slowSettings = { ...defaultSettings, maxDeceleration: 2 };
+        const slowTime = calculatePathTime(startPointHeading0, lineTurnAround, slowSettings).totalTime;
+        expect(slowTime).toBeGreaterThan(baseTime);
+    });
   });
 });

@@ -687,8 +687,6 @@ export function calculatePathTime(
     if (!Number.isFinite(requiredStartHeading))
       requiredStartHeading = currentHeading;
 
-    if (idx === 0) currentHeading = requiredStartHeading;
-
     const diff = Math.abs(currentHeading - requiredStartHeading);
 
     // Use a small epsilon
