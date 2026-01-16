@@ -4,6 +4,11 @@
 
   $: result = $diffResult;
 
+  // Derived lists from the flat eventDiff array
+  $: addedEvents = result ? result.eventDiff.filter(e => e.changeType === 'added') : [];
+  $: removedEvents = result ? result.eventDiff.filter(e => e.changeType === 'removed') : [];
+  $: changedEvents = result ? result.eventDiff.filter(e => e.changeType === 'changed') : [];
+
   function formatNum(n: number) {
     return n.toFixed(2);
   }
@@ -82,7 +87,7 @@
       </div>
 
       <div class="p-4">
-        {#if result.eventDiff.added.length === 0 && result.eventDiff.removed.length === 0 && result.eventDiff.changed.length === 0}
+        {#if addedEvents.length === 0 && removedEvents.length === 0 && changedEvents.length === 0}
           <div class="flex flex-col items-center justify-center py-6 text-neutral-400 dark:text-neutral-500 gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-8 opacity-50">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -91,7 +96,7 @@
           </div>
         {:else}
           <div class="space-y-3">
-            {#each result.eventDiff.added as item}
+            {#each addedEvents as item}
               <div class="flex items-start gap-3 p-2 rounded-md bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/30">
                 <div class="flex-none mt-0.5">
                   <div class="w-5 h-5 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center text-green-600 dark:text-green-200">
@@ -102,12 +107,12 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">Added</p>
-                  <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{item}</p>
+                  <p class="text-xs text-neutral-500 dark:text-neutral-400 break-words">{item.description}</p>
                 </div>
               </div>
             {/each}
 
-            {#each result.eventDiff.removed as item}
+            {#each removedEvents as item}
               <div class="flex items-start gap-3 p-2 rounded-md bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30">
                 <div class="flex-none mt-0.5">
                   <div class="w-5 h-5 rounded-full bg-red-100 dark:bg-red-800 flex items-center justify-center text-red-600 dark:text-red-200">
@@ -118,12 +123,12 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">Removed</p>
-                  <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{item}</p>
+                  <p class="text-xs text-neutral-500 dark:text-neutral-400 break-words">{item.description}</p>
                 </div>
               </div>
             {/each}
 
-            {#each result.eventDiff.changed as item}
+            {#each changedEvents as item}
               <div class="flex items-start gap-3 p-2 rounded-md bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">
                 <div class="flex-none mt-0.5">
                   <div class="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-200">
@@ -134,7 +139,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">Changed</p>
-                  <p class="text-xs text-neutral-500 dark:text-neutral-400 break-words">{item}</p>
+                  <p class="text-xs text-neutral-500 dark:text-neutral-400 break-words">{item.description}</p>
                 </div>
               </div>
             {/each}

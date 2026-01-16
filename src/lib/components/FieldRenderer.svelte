@@ -75,6 +75,7 @@
   export let width = 0;
   export let height = 0;
   export let timePrediction: any = null;
+  export let committedRobotState: { x: number; y: number; heading: number } | null = null;
   export let previewOptimizedLines: Line[] | null = null;
   export let isMouseOverField = false;
   export let currentMouseX = 0;
@@ -1631,18 +1632,32 @@
       />
     {/if}
     <MathTools {x} {y} {twoElement} {robotXY} />
-    <img
-      src={settings.robotImage || "/robot.png"}
-      alt="Robot"
-      class="max-w-none"
-      style={`position: absolute; top: ${y(robotXY.y)}px;
+    {#if !isDiffMode}
+      <img
+        src={settings.robotImage || "/robot.png"}
+        alt="Robot"
+        class="max-w-none"
+        style={`position: absolute; top: ${y(robotXY.y)}px;
 left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}deg); z-index: 20; width: ${Math.abs(x(settings.rLength || DEFAULT_ROBOT_LENGTH) - x(0))}px; height: ${Math.abs(x(settings.rWidth || DEFAULT_ROBOT_WIDTH) - x(0))}px; pointer-events: none;`}
-      draggable="false"
-      on:error={(e) => {
-        // @ts-ignore
-        e.target.src = "/robot.png";
-      }}
-    />
+        draggable="false"
+        on:error={(e) => {
+          // @ts-ignore
+          e.target.src = "/robot.png";
+        }}
+      />
+    {:else}
+      <!-- Current (Green) -->
+      <div
+        style={`position: absolute; top: ${y(robotXY.y)}px; left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}deg); z-index: 20; width: ${Math.abs(x(settings.rLength || DEFAULT_ROBOT_LENGTH) - x(0))}px; height: ${Math.abs(x(settings.rWidth || DEFAULT_ROBOT_WIDTH) - x(0))}px; pointer-events: none; background-color: rgba(34, 197, 94, 0.5); border: 2px solid #16a34a;`}
+      ></div>
+
+      <!-- Committed (Red) -->
+      {#if committedRobotState}
+        <div
+          style={`position: absolute; top: ${y(committedRobotState.y)}px; left: ${x(committedRobotState.x)}px; transform: translate(-50%, -50%) rotate(${committedRobotState.heading}deg); z-index: 20; width: ${Math.abs(x(settings.rLength || DEFAULT_ROBOT_LENGTH) - x(0))}px; height: ${Math.abs(x(settings.rWidth || DEFAULT_ROBOT_WIDTH) - x(0))}px; pointer-events: none; background-color: rgba(239, 68, 68, 0.5); border: 2px solid #dc2626;`}
+        ></div>
+      {/if}
+    {/if}
   </div>
   {#if !$isPresentationMode}
     <FieldCoordinates

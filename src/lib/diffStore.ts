@@ -9,7 +9,7 @@ import {
   settingsStore,
   normalizeLines,
 } from "./projectStore";
-import type { Line, Point, SequenceItem, Shape, Settings } from "../types";
+import type { Line, Point, SequenceItem, Shape, Settings, EventMarker } from "../types";
 import { calculatePathTime } from "../utils";
 import _ from "lodash";
 
@@ -19,6 +19,13 @@ export interface ProjectData {
   sequence: SequenceItem[];
   shapes: Shape[];
   settings: Settings;
+}
+
+export interface EventChange {
+  id: string;
+  name: string;
+  changeType: "added" | "removed" | "changed";
+  description: string;
 }
 
 export interface DiffResult {
@@ -32,11 +39,7 @@ export interface DiffResult {
     distance: { old: number; new: number; diff: number };
   };
 
-  eventDiff: {
-    added: string[];
-    removed: string[];
-    changed: string[];
-  };
+  eventDiff: EventChange[];
 }
 
 export const diffMode = writable(false);
@@ -84,7 +87,7 @@ export async function toggleDiff() {
         lines: normalizeLines(parsed.lines || []),
         sequence: parsed.sequence || [],
         shapes: parsed.shapes || [],
-        settings: { ...get(settingsStore), ...parsed.settings }, // Merge with current settings as fallback? Or use parsed
+        settings: { ...get(settingsStore), ...parsed.settings }, // Merge with current settings as fallback
       };
 
       committedData.set(normalizedCommitted);
@@ -110,6 +113,47 @@ export async function toggleDiff() {
   }
 }
 
+interface MarkerInfo {
+  id: string;
+  name: string;
+  parentName: string;
+  position: number;
+}
+
+function extractMarkers(data: ProjectData): Map<string, MarkerInfo> {
+  const markers = new Map<string, MarkerInfo>();
+
+  // Helper to add marker
+  const add = (m: EventMarker, parentName: string) => {
+    // If id is missing, generate one based on parent and index?
+    // Ideally markers have IDs. If not, we might have trouble matching.
+    // Assuming they have IDs or we fallback to name.
+    const id = m.id || `${parentName}-${m.name}-${m.position}`;
+    markers.set(id, {
+      id,
+      name: m.name,
+      parentName,
+      position: m.position
+    });
+  };
+
+  // Line markers
+  data.lines.forEach((l, idx) => {
+    const parentName = l.name || `Path ${idx + 1}`;
+    l.eventMarkers?.forEach(m => add(m, parentName));
+  });
+
+  // Sequence markers
+  data.sequence.forEach((s) => {
+    if (s.kind === 'wait' || s.kind === 'rotate') {
+      const parentName = s.name || (s.kind === 'wait' ? 'Wait' : 'Rotate');
+      s.eventMarkers?.forEach(m => add(m, parentName));
+    }
+  });
+
+  return markers;
+}
+
 function computeDiff(current: ProjectData, old: ProjectData): DiffResult {
   const result: DiffResult = {
     addedLines: [],
@@ -120,11 +164,7 @@ function computeDiff(current: ProjectData, old: ProjectData): DiffResult {
       time: { old: 0, new: 0, diff: 0 },
       distance: { old: 0, new: 0, diff: 0 },
     },
-    eventDiff: {
-      added: [],
-      removed: [],
-      changed: [],
-    },
+    eventDiff: [],
   };
 
   // 1. Compare Lines
@@ -170,58 +210,49 @@ function computeDiff(current: ProjectData, old: ProjectData): DiffResult {
   };
 
   // 3. Event Diff
-  // This is complex because events can be on lines or in sequence (wait/rotate)
-  // We can collect all event markers and sequence wait/rotates and compare them.
-  // For simplicity, let's compare the timeline event names or similar.
-  // But user wants "event changes".
-  // Let's list events by ID or Name.
+  const currentMarkers = extractMarkers(current);
+  const oldMarkers = extractMarkers(old);
 
-  const getEventSignatures = (data: ProjectData) => {
-    const sigs = new Map<string, string>(); // ID -> Description
-
-    // Line markers
-    data.lines.forEach((l, lIdx) => {
-      l.eventMarkers?.forEach((m, mIdx) => {
-        sigs.set(m.id || `line-${l.id}-m-${mIdx}`, `Marker "${m.name}" on ${l.name || 'Path ' + (lIdx+1)}`);
+  // Added & Changed
+  currentMarkers.forEach((m, id) => {
+    const oldM = oldMarkers.get(id);
+    if (!oldM) {
+      result.eventDiff.push({
+        id,
+        name: m.name,
+        changeType: "added",
+        description: `Added "${m.name}" to ${m.parentName} at ${(m.position * 100).toFixed(0)}%`
       });
-    });
+    } else {
+      const changes: string[] = [];
+      if (m.name !== oldM.name) changes.push(`renamed to "${m.name}"`);
+      if (m.parentName !== oldM.parentName) changes.push(`moved to ${m.parentName}`);
 
-    // Sequence events (wait/rotate and their markers)
-    data.sequence.forEach(s => {
-      if (s.kind === 'wait' || s.kind === 'rotate') {
-        const desc = s.kind === 'wait' ? `Wait "${s.name}"` : `Rotate "${s.name}"`;
-        // We track the item itself as an event-like thing? Or just markers ON it?
-        // The prompt says "event changes". Usually implies markers.
-        // But let's track the sequence items too as they affect timeline.
-        sigs.set(s.id, desc);
+      const posDiff = m.position - oldM.position;
+      if (Math.abs(posDiff) > 0.005) { // 0.5% tolerance
+        changes.push(`position changed ${(oldM.position * 100).toFixed(0)}% -> ${(m.position * 100).toFixed(0)}%`);
+      }
 
-        s.eventMarkers?.forEach((m, mIdx) => {
-          sigs.set(m.id || `seq-${s.id}-m-${mIdx}`, `Marker "${m.name}" on ${s.name}`);
+      if (changes.length > 0) {
+        result.eventDiff.push({
+          id,
+          name: m.name,
+          changeType: "changed",
+          description: `Changed "${oldM.name}": ${changes.join(", ")}`
         });
       }
-    });
-    return sigs;
-  };
-
-  const currentEvents = getEventSignatures(current);
-  const oldEvents = getEventSignatures(old);
-
-  currentEvents.forEach((desc, id) => {
-    if (!oldEvents.has(id)) {
-      result.eventDiff.added.push(desc);
-    } else {
-      // Check if description changed? (e.g. name changed)
-      const oldDesc = oldEvents.get(id);
-      if (oldDesc !== desc) {
-        result.eventDiff.changed.push(`${oldDesc} -> ${desc}`);
-      }
-      // Ideally we check properties like position, but keeping it simple for now.
     }
   });
 
-  oldEvents.forEach((desc, id) => {
-    if (!currentEvents.has(id)) {
-      result.eventDiff.removed.push(desc);
+  // Removed
+  oldMarkers.forEach((m, id) => {
+    if (!currentMarkers.has(id)) {
+      result.eventDiff.push({
+        id,
+        name: m.name,
+        changeType: "removed",
+        description: `Removed "${m.name}" from ${m.parentName}`
+      });
     }
   });
 
@@ -229,27 +260,6 @@ function computeDiff(current: ProjectData, old: ProjectData): DiffResult {
 }
 
 function areLinesEqual(l1: Line, l2: Line): boolean {
-  // Deep compare relevant fields for path geometry and major properties
-  // Exclude things that don't affect the path visually or functionally significantly if we want "Same" to be strict
-  // Let's use strict deep equality on relevant fields.
-
-  const clean = (l: Line) => ({
-    endPoint: l.endPoint,
-    controlPoints: l.controlPoints,
-    // waitBefore/After affect timing but not path geometry.
-    // If we want "Same" (Blue) to mean "Identical Path Geometry", we ignore waits.
-    // If we want "Identical Object", we include them.
-    // Given "Old = red, new = green" usually refers to geometry in CAD/path tools,
-    // maybe we focus on geometry.
-    // BUT, the prompt says "event changes" separately.
-    // Let's stick to geometry + basic props for the "Blue" line check.
-
-    // Actually, if I just compare the whole object (minus dynamic props if any), it's safer.
-    // Using lodash isEqual.
-  });
-
-  // We should probably exclude 'selected', 'id' (we know match), etc if they were dynamic.
-  // But store data should be clean.
   return _.isEqual(l1.endPoint, l2.endPoint) &&
          _.isEqual(l1.controlPoints, l2.controlPoints) &&
          l1.name === l2.name;
