@@ -17,12 +17,8 @@ import {
   hookRegistry,
 } from "./registries";
 
-const {
-  startPointStore,
-  linesStore,
-  shapesStore,
-  sequenceStore,
-} = projectStore;
+const { startPointStore, linesStore, shapesStore, sequenceStore } =
+  projectStore;
 
 export class PluginManager {
   private static allExporters: CustomExporter[] = [];

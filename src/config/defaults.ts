@@ -543,6 +543,56 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     action: "exportPP",
     category: "Export",
   },
+  // New Keybindings
+  {
+    id: "move-item-up",
+    key: "alt+up",
+    description: "Move Sequence Item Up",
+    action: "moveItemUp",
+    category: "Editing",
+  },
+  {
+    id: "move-item-down",
+    key: "alt+down",
+    description: "Move Sequence Item Down",
+    action: "moveItemDown",
+    category: "Editing",
+  },
+  {
+    id: "add-path-start",
+    key: "",
+    description: "Add Path at Start",
+    action: "addPathAtStart",
+    category: "Editing",
+  },
+  {
+    id: "add-wait-start",
+    key: "",
+    description: "Add Wait at Start",
+    action: "addWaitAtStart",
+    category: "Editing",
+  },
+  {
+    id: "add-rotate-start",
+    key: "",
+    description: "Add Rotate at Start",
+    action: "addRotateAtStart",
+    category: "Editing",
+  },
+  {
+    id: "validate-path",
+    key: "shift+v",
+    description: "Validate Path",
+    action: "validatePath",
+    category: "Tools",
+  },
+  {
+    id: "clear-obstacles",
+    key: "",
+    description: "Clear All Obstacles",
+    action: "clearObstacles",
+    category: "Editing",
+  },
   // Extended Commands
   {
     id: "set-file-manager-directory",

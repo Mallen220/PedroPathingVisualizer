@@ -6,7 +6,7 @@
     SequenceItem,
     SequenceWaitItem,
     SequenceRotateItem,
-    Settings
+    Settings,
   } from "../../types";
   import _ from "lodash";
   import {
@@ -16,12 +16,19 @@
     type DragPosition,
   } from "../../../utils/dragDrop";
   import { getRandomColor } from "../../../utils";
-  import { makeId, renumberDefaultPathNames } from "../../../utils/nameGenerator";
+  import {
+    makeId,
+    renumberDefaultPathNames,
+  } from "../../../utils/nameGenerator";
   import StartingPointSection from "../StartingPointSection.svelte";
   import PathLineSection from "../PathLineSection.svelte";
   import WaitSection from "../WaitSection.svelte";
   import RotateSection from "../RotateSection.svelte";
-  import { selectedLineId, selectedPointId, toggleCollapseAllTrigger } from "../../../stores";
+  import {
+    selectedLineId,
+    selectedPointId,
+    toggleCollapseAllTrigger,
+  } from "../../../stores";
 
   export let startPoint: Point;
   export let lines: Line[];
@@ -418,7 +425,7 @@
     recordChange();
   }
 
-  function addWaitAtStart() {
+  export function addWaitAtStart() {
     const wait = {
       kind: "wait",
       id: makeId(),
@@ -432,7 +439,7 @@
     recordChange();
   }
 
-  function addRotateAtStart() {
+  export function addRotateAtStart() {
     const rotate = {
       kind: "rotate",
       id: makeId(),
@@ -446,7 +453,7 @@
     recordChange();
   }
 
-  function addPathAtStart() {
+  export function addPathAtStart() {
     const newLine: Line = {
       id: makeId(),
       name: "",
@@ -578,7 +585,7 @@
     collapsedEventMarkers = reordered.map((entry) => entry.markers ?? false);
   }
 
-  function moveSequenceItem(seqIndex: number, delta: number) {
+  export function moveSequenceItem(seqIndex: number, delta: number) {
     const targetIndex = seqIndex + delta;
     if (targetIndex < 0 || targetIndex >= sequence.length) return;
 
@@ -636,7 +643,9 @@
   {#if showDebug}
     <div class="p-2 text-xs text-neutral-500">
       <div>
-        <strong>DEBUG (PathTab)</strong> — lines: {lines.length}, sequence: {(sequence || []).length}
+        <strong>DEBUG (PathTab)</strong> — lines: {lines.length}, sequence: {(
+          sequence || []
+        ).length}
       </div>
       <div>
         Missing: {JSON.stringify(debugMissing)}
@@ -671,8 +680,14 @@
             bind:line={ln}
             idx={lines.findIndex((l) => l.id === ln.id)}
             bind:lines
-            bind:collapsed={collapsedSections.lines[lines.findIndex((l) => l.id === ln.id)]}
-            bind:collapsedControlPoints={collapsedSections.controlPoints[lines.findIndex((l) => l.id === ln.id)]}
+            bind:collapsed={
+              collapsedSections.lines[lines.findIndex((l) => l.id === ln.id)]
+            }
+            bind:collapsedControlPoints={
+              collapsedSections.controlPoints[
+                lines.findIndex((l) => l.id === ln.id)
+              ]
+            }
             onRemove={() => removeLine(lines.findIndex((l) => l.id === ln.id))}
             onInsertAfter={() => insertLineAfter(sIdx)}
             onAddWaitAfter={() => insertWaitAfter(sIdx)}
@@ -776,11 +791,7 @@
         class="size-4"
       >
         <circle cx="12" cy="12" r="9" />
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M12 7v5l3 2"
-        />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2" />
       </svg>
       Add Wait
     </button>

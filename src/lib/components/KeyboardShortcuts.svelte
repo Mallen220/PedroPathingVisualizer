@@ -37,6 +37,7 @@
     updateLinkedRotations,
   } from "../../utils/pointLinking";
   import { loadFile, loadRecentFile } from "../../utils/fileHandlers";
+  import { validatePath } from "../../utils/validation";
   import type { Line, SequenceItem } from "../../types";
   import { createTriangle } from "../../utils";
   import {
@@ -1366,6 +1367,37 @@
       exportDialogState.set({ isOpen: true, format: "sequential" }),
     exportPP: () => exportDialogState.set({ isOpen: true, format: "json" }),
     // New Actions
+    moveItemUp: () => {
+      const idx = getSelectedSequenceIndex();
+      if (idx !== null && controlTabRef && controlTabRef.moveSequenceItem) {
+        controlTabRef.moveSequenceItem(idx, -1);
+      }
+    },
+    moveItemDown: () => {
+      const idx = getSelectedSequenceIndex();
+      if (idx !== null && controlTabRef && controlTabRef.moveSequenceItem) {
+        controlTabRef.moveSequenceItem(idx, 1);
+      }
+    },
+    addPathAtStart: () => {
+      if (controlTabRef && controlTabRef.addPathAtStart)
+        controlTabRef.addPathAtStart();
+    },
+    addWaitAtStart: () => {
+      if (controlTabRef && controlTabRef.addWaitAtStart)
+        controlTabRef.addWaitAtStart();
+    },
+    addRotateAtStart: () => {
+      if (controlTabRef && controlTabRef.addRotateAtStart)
+        controlTabRef.addRotateAtStart();
+    },
+    validatePath: () => {
+      validatePath(startPoint, lines, settings, sequence, shapes);
+    },
+    clearObstacles: () => {
+      shapesStore.set([]);
+      recordChange();
+    },
     snapSelection: () => snapSelection(),
     resetStartPoint: () => resetStartPoint(),
     panToStart: () => panToStart(),

@@ -990,7 +990,9 @@
   })();
 
   $: fieldRenderWidth = $isPresentationMode ? mainContentWidth : fieldDrawSize;
-  $: fieldRenderHeight = $isPresentationMode ? mainContentHeight : fieldDrawSize;
+  $: fieldRenderHeight = $isPresentationMode
+    ? mainContentHeight
+    : fieldDrawSize;
 
   // Compute a target height for the field container so it can animate smoothly
   // when the sidebar (control tab) opens/closes in vertical mode

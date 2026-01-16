@@ -411,13 +411,13 @@
                         : file.gitStatus === 'staged'
                           ? 'bg-green-100 border-green-200 text-green-700 dark:bg-green-900/50 dark:border-green-700 dark:text-green-300'
                           : 'bg-neutral-100 border-neutral-200 text-neutral-600 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300'}"
-                      title={file.gitStatus === 'modified'
-                        ? 'Git: Modified (Unstaged Changes)'
-                        : file.gitStatus === 'staged'
-                          ? 'Git: Staged (Ready to Commit)'
-                          : 'Git: Untracked (New File)'}
+                      title={file.gitStatus === "modified"
+                        ? "Git: Modified (Unstaged Changes)"
+                        : file.gitStatus === "staged"
+                          ? "Git: Staged (Ready to Commit)"
+                          : "Git: Untracked (New File)"}
                     >
-                      {#if file.gitStatus === 'modified'}
+                      {#if file.gitStatus === "modified"}
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
@@ -433,7 +433,7 @@
                           />
                         </svg>
                         <span>Modified</span>
-                      {:else if file.gitStatus === 'staged'}
+                      {:else if file.gitStatus === "staged"}
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"

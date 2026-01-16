@@ -1,6 +1,13 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
-  import type { Point, Line, SequenceItem, Shape, Settings, BasePoint } from "../../types";
+  import type {
+    Point,
+    Line,
+    SequenceItem,
+    Shape,
+    Settings,
+    BasePoint,
+  } from "../../types";
   import { tick } from "svelte";
   import { slide } from "svelte/transition";
   import RobotPositionDisplay from "../RobotPositionDisplay.svelte";
@@ -88,7 +95,7 @@
   }
 
   export function applyOptimization() {
-     if (optDialogRef && optDialogRef.handleApply) {
+    if (optDialogRef && optDialogRef.handleApply) {
       try {
         optDialogRef.handleApply();
       } catch (e) {
@@ -108,7 +115,7 @@
   }
 
   export function retryOptimization() {
-     if (optDialogRef && optDialogRef.startOptimization) {
+    if (optDialogRef && optDialogRef.startOptimization) {
       try {
         optDialogRef.startOptimization();
       } catch (e) {
@@ -118,14 +125,13 @@
   }
 
   export function getOptimizationStatus() {
-     return {
-        isOpen: optimizationOpen,
-        isRunning: optIsRunning,
-        optimizedLines: optOptimizedLines,
-        optimizationFailed: optFailed,
-      };
+    return {
+      isOpen: optimizationOpen,
+      isRunning: optIsRunning,
+      optimizedLines: optOptimizedLines,
+      optimizationFailed: optFailed,
+    };
   }
-
 </script>
 
 <div class="p-4 w-full flex flex-col gap-6">

@@ -69,7 +69,9 @@ describe("PluginManager", () => {
   });
 
   it("should register themes", async () => {
-    const mockListPlugins = vi.fn().mockResolvedValue(["Example-pink-theme.js"]);
+    const mockListPlugins = vi
+      .fn()
+      .mockResolvedValue(["Example-pink-theme.js"]);
     const mockReadPlugin = vi.fn().mockResolvedValue(`
       pedro.registerTheme("Pink Plugin Theme", ".bg-blue { color: pink; }");
     `);

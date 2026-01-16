@@ -12,8 +12,8 @@
   import type { Settings } from "../../types";
   import KeyboardShortcutsDialog from "./KeyboardShortcutsDialog.svelte";
   import RobotProfileManager from "./settings/RobotProfileManager.svelte";
-import { PluginManager } from "../pluginManager";
-import { pluginsStore, themesStore } from "../pluginsStore";
+  import { PluginManager } from "../pluginManager";
+  import { pluginsStore, themesStore } from "../pluginsStore";
 
   export let isOpen = false;
   export let settings: Settings = { ...DEFAULT_SETTINGS };
@@ -1027,8 +1027,7 @@ import { pluginsStore, themesStore } from "../pluginsStore";
             <div
               class="mt-2 space-y-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
             >
-
-            <!-- Git Integration Toggle -->
+              <!-- Git Integration Toggle -->
               <div
                 class="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
               >

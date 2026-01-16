@@ -21,21 +21,21 @@
     label: "Paths",
     component: PathTab,
     order: 0,
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-4" aria-hidden="true"><path d="M4 15c3-6 9-6 14-3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="15" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="9" r="1.8" fill="currentColor" stroke="none"/><circle cx="20" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>`
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-4" aria-hidden="true"><path d="M4 15c3-6 9-6 14-3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="15" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="9" r="1.8" fill="currentColor" stroke="none"/><circle cx="20" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>`,
   });
   tabRegistry.register({
     id: "field",
     label: "Field",
     component: FieldTab,
     order: 1,
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-4" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" stroke-width="2"/><path d="M3 4 L21 4 L12 12 Z" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 4 L12 12 M21 4 L12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-4" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" stroke-width="2"/><path d="M3 4 L21 4 L12 12 Z" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 4 L12 12 M21 4 L12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   });
   tabRegistry.register({
     id: "table",
     label: "Table",
     component: TableTab,
     order: 2,
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-4" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" stroke-width="2"/><rect x="3" y="4" width="18" height="5" rx="1.5" fill="currentColor" opacity="0.06" stroke="none"/><line x1="3" y1="10" x2="21" y2="10" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="10" x2="9" y2="20" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="10" x2="15" y2="20" stroke-width="1.5" stroke-linecap="round"/></svg>`
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-4" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" stroke-width="2"/><rect x="3" y="4" width="18" height="5" rx="1.5" fill="currentColor" opacity="0.06" stroke="none"/><line x1="3" y1="10" x2="21" y2="10" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="10" x2="9" y2="20" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="10" x2="15" y2="20" stroke-width="1.5" stroke-linecap="round"/></svg>`,
   });
 
   export let percent: number;
@@ -111,6 +111,31 @@
     };
   }
 
+  // --- Methods delegating to PathTab ---
+  export function addPathAtStart() {
+    if (tabInstances["path"] && tabInstances["path"].addPathAtStart) {
+      tabInstances["path"].addPathAtStart();
+    }
+  }
+
+  export function addWaitAtStart() {
+    if (tabInstances["path"] && tabInstances["path"].addWaitAtStart) {
+      tabInstances["path"].addWaitAtStart();
+    }
+  }
+
+  export function addRotateAtStart() {
+    if (tabInstances["path"] && tabInstances["path"].addRotateAtStart) {
+      tabInstances["path"].addRotateAtStart();
+    }
+  }
+
+  export function moveSequenceItem(seqIndex: number, delta: number) {
+    if (tabInstances["path"] && tabInstances["path"].moveSequenceItem) {
+      tabInstances["path"].moveSequenceItem(seqIndex, delta);
+    }
+  }
+
   // Compute timeline markers for the UI (passed to PlaybackControls)
   $: timePrediction = calculatePathTime(startPoint, lines, settings, sequence);
 
@@ -144,8 +169,7 @@
         const color = line?.color || "#ffffff";
         const name = line?.name || `Path ${lineIndex + 1}`;
         items.push({ type: "dot", percent: startPct, color, name });
-      }
-      else if (ev.type === "wait") {
+      } else if (ev.type === "wait") {
         const startPct = toPct(ev.startTime);
         const durPct = toPct(ev.duration);
         let isRotate = false;
@@ -233,8 +257,8 @@
   })();
 
   // Use the registry for tabs
-  $: currentTab = $tabRegistry.find(t => t.id === activeTab) || $tabRegistry[0];
-
+  $: currentTab =
+    $tabRegistry.find((t) => t.id === activeTab) || $tabRegistry[0];
 </script>
 
 <div

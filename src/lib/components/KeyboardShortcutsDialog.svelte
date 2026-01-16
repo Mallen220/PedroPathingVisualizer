@@ -98,9 +98,9 @@
       !settings.keyBindings ||
       settings.keyBindings === DEFAULT_KEY_BINDINGS
     ) {
-      settings.keyBindings = (
-        settings.keyBindings || DEFAULT_KEY_BINDINGS
-      ).map((b) => ({ ...b }));
+      settings.keyBindings = (settings.keyBindings || DEFAULT_KEY_BINDINGS).map(
+        (b) => ({ ...b }),
+      );
     }
 
     const bindingIndex = settings.keyBindings.findIndex(
@@ -230,7 +230,6 @@
     );
     return defaultBinding && binding.key !== defaultBinding.key;
   }
-
 </script>
 
 <svelte:window on:keydown|capture={handleKeyDown} />
@@ -449,8 +448,8 @@
                         class:ring-2={recordingKeyFor === binding.id}
                         class:ring-indigo-500={recordingKeyFor === binding.id}
                         class:bg-white={recordingKeyFor !== binding.id}
-                        class:text-neutral-700={recordingKeyFor !== binding.id &&
-                          binding.key}
+                        class:text-neutral-700={recordingKeyFor !==
+                          binding.id && binding.key}
                         class:text-neutral-400={recordingKeyFor !==
                           binding.id && !binding.key}
                         class:italic={!binding.key &&
