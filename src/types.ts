@@ -142,6 +142,7 @@ export interface Settings {
   recentFiles?: string[];
   fileManagerSortMode?: "name" | "date"; // File manager sort preference
   lastSeenVersion?: string; // Version of the app the user last saw (for What's New dialog)
+  gitIntegration?: boolean; // Enable/Disable Git integration
 }
 
 export interface RobotProfile {
@@ -208,6 +209,7 @@ export interface FileInfo {
   size: number;
   modified: Date;
   error?: string;
+  gitStatus?: "modified" | "staged" | "untracked" | "ignored" | "clean";
 }
 
 export interface CollisionMarker {

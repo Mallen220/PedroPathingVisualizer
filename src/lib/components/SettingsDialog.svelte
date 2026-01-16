@@ -1027,6 +1027,30 @@ import { pluginsStore, themesStore } from "../pluginsStore";
             <div
               class="mt-2 space-y-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
             >
+
+            <!-- Git Integration Toggle -->
+              <div
+                class="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
+              >
+                <div>
+                  <div
+                    class="text-sm font-medium text-neutral-700 dark:text-neutral-300 block mb-1"
+                  >
+                    Git Integration
+                  </div>
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Show git status indicators for files
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  bind:checked={settings.gitIntegration}
+                  class="w-5 h-5 rounded border-neutral-300 dark:border-neutral-600 text-blue-500 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  title="Toggle Git integration"
+                />
+              </div>
+
+              <!-- Autosave -->
               <div>
                 <label
                   for="autosave-mode"

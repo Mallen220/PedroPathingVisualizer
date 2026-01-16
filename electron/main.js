@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import fs from "fs/promises";
 import AppUpdater from "./updater.js";
 import rateLimit from "express-rate-limit";
+import simpleGit from "simple-git";
 
 // Handle __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -1015,15 +1016,47 @@ ipcMain.handle("file:list", async (event, directory) => {
     const files = await fs.readdir(directory);
     const ppFiles = files.filter((file) => file.endsWith(".pp"));
 
+    // Check git status
+    let gitStatuses = {};
+    try {
+      const git = simpleGit(directory);
+      if (await git.checkIsRepo()) {
+        const status = await git.status();
+        const rootDir = await git.revparse(["--show-toplevel"]);
+
+        status.files.forEach((fileStatus) => {
+          const absPath = path.resolve(rootDir.trim(), fileStatus.path);
+          let statusStr = "clean";
+
+          if (fileStatus.working_dir === "?" || fileStatus.working_dir === "U")
+            statusStr = "untracked";
+          else if (
+            fileStatus.working_dir !== " " &&
+            fileStatus.working_dir !== "?"
+          )
+            statusStr = "modified";
+          else if (fileStatus.index !== " " && fileStatus.index !== "?")
+            statusStr = "staged";
+
+          gitStatuses[absPath] = statusStr;
+        });
+      }
+    } catch (e) {
+      console.warn("Error checking git status:", e);
+    }
+
     const fileDetails = await Promise.all(
       ppFiles.map(async (file) => {
         const filePath = path.join(directory, file);
         const stats = await fs.stat(filePath);
+        // On Windows, paths might differ in normalization, so we resolve to be safe
+        const resolvedPath = path.resolve(filePath);
         return {
           name: file,
           path: filePath,
           size: stats.size,
           modified: stats.mtime,
+          gitStatus: gitStatuses[resolvedPath] || "clean",
         };
       }),
     );

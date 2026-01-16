@@ -73,3 +73,6 @@ export const currentDirectoryStore = writable<string | null>(null);
 
 // Store for event names found in .pp files on disk
 export const diskEventNamesStore = writable<string[]>([]);
+
+// Git status map for files (filepath -> status)
+export const gitStatusStore = writable<Record<string, string>>({});

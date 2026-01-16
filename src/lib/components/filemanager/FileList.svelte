@@ -13,6 +13,7 @@
   export let selectedFilePath: string | null = null;
   export let sortMode: "name" | "date" = "name";
   export let renamingFile: FileInfo | null = null;
+  export let showGitStatus = true;
 
   const dispatch = createEventDispatcher<{
     select: FileInfo;
@@ -401,9 +402,76 @@
                 >
                   {file.name.replace(/\.pp$/, "")}
                 </span>
-                {#if file.error}
-                  <span class="text-xs text-red-500">⚠</span>
-                {/if}
+                <div class="flex items-center gap-1">
+                  {#if showGitStatus && file.gitStatus && file.gitStatus !== "clean"}
+                    <div
+                      class="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border
+                      {file.gitStatus === 'modified'
+                        ? 'bg-amber-100 border-amber-200 text-amber-700 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-300'
+                        : file.gitStatus === 'staged'
+                          ? 'bg-green-100 border-green-200 text-green-700 dark:bg-green-900/50 dark:border-green-700 dark:text-green-300'
+                          : 'bg-neutral-100 border-neutral-200 text-neutral-600 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300'}"
+                      title={file.gitStatus === 'modified'
+                        ? 'Git: Modified (Unstaged Changes)'
+                        : file.gitStatus === 'staged'
+                          ? 'Git: Staged (Ready to Commit)'
+                          : 'Git: Untracked (New File)'}
+                    >
+                      {#if file.gitStatus === 'modified'}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke-width="2"
+                          stroke="currentColor"
+                          class="size-3"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                          />
+                        </svg>
+                        <span>Modified</span>
+                      {:else if file.gitStatus === 'staged'}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke-width="2.5"
+                          stroke="currentColor"
+                          class="size-3"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m4.5 12.75 6 6 9-13.5"
+                          />
+                        </svg>
+                        <span>Staged</span>
+                      {:else}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke-width="2"
+                          stroke="currentColor"
+                          class="size-3"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"
+                          />
+                        </svg>
+                        <span>Untracked</span>
+                      {/if}
+                    </div>
+                  {/if}
+                  {#if file.error}
+                    <span class="text-xs text-red-500">⚠</span>
+                  {/if}
+                </div>
               </div>
               <div
                 class="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400"
