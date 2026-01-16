@@ -907,6 +907,10 @@
     previewOptimizedLines = newLines;
   }
 
+  function handleNavbarPreviewChange(e: CustomEvent) {
+    previewOptimizedLines = e.detail;
+  }
+
   function stepForward() {
     const p = Math.min(100, percent + 1);
     percentStore.set(p);
@@ -1057,7 +1061,7 @@
 
   // --- Export GIF ---
   // Need reference to Two instance from FieldRenderer
-  let fieldRenderer: FieldRenderer;
+  let fieldRenderer: any;
   function exportGif() {
     showExportGif.set(true);
   }
@@ -1244,7 +1248,7 @@
         {recordChange}
         {canUndo}
         {canRedo}
-        on:previewOptimizedLines={(e) => (previewOptimizedLines = e.detail)}
+        on:previewOptimizedLines={handleNavbarPreviewChange}
       />
     </div>
   {/if}

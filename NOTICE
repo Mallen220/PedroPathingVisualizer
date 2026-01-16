@@ -153,5 +153,6 @@ vite_log.txt
 src/lib/components/tabs/FieldTab.svelte
 src/lib/components/tabs/PathTab.svelte
 src/lib/components/whats-new/features/v1.6.2.md
+src/lib/components/tabs/TableTab.svelte
 src/lib/registries.ts
 src/tests/expandedPluginAPI.test.ts

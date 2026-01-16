@@ -5,7 +5,7 @@ import type { SvelteComponent } from "svelte";
 // --- Component Registry ---
 // Maps a string key (e.g., "Navbar", "FieldRenderer") to a Svelte component class.
 export interface ComponentRegistryState {
-  [key: string]: typeof SvelteComponent;
+  [key: string]: any;
 }
 
 const createComponentRegistry = () => {
@@ -13,11 +13,11 @@ const createComponentRegistry = () => {
 
   return {
     subscribe,
-    register: (name: string, component: typeof SvelteComponent) => {
+    register: (name: string, component: any) => {
       update((state) => ({ ...state, [name]: component }));
     },
     get: (name: string) => {
-      let component: typeof SvelteComponent | undefined;
+      let component: any | undefined;
       subscribe((state) => {
         component = state[name];
       })();
@@ -34,7 +34,7 @@ export const componentRegistry = createComponentRegistry();
 export interface TabDefinition {
   id: string;
   label: string;
-  component: typeof SvelteComponent;
+  component: any;
   icon?: string; // SVG string or image URL
   order?: number;
 }

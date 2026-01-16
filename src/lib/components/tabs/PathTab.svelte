@@ -6,8 +6,8 @@
     SequenceItem,
     SequenceWaitItem,
     SequenceRotateItem,
-    Settings,
-  } from "../../types";
+    Settings
+  } from "../../../types";
   import _ from "lodash";
   import {
     calculateDragPosition,
