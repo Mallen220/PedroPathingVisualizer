@@ -108,6 +108,14 @@ export interface KeyBinding {
   category?: string;
 }
 
+export interface CustomFieldConfig {
+  imageData: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface Settings {
   xVelocity: number;
   yVelocity: number;
@@ -138,6 +146,7 @@ export interface Settings {
   optimizationMutationStrength?: number; // Mutation strength for optimizer
   validateFieldBoundaries?: boolean; // Check if robot goes out of bounds
   restrictDraggingToField?: boolean; // Restrict dragging to field bounds
+  customFieldConfig?: CustomFieldConfig;
   keyBindings?: KeyBinding[];
   recentFiles?: string[];
   fileManagerSortMode?: "name" | "date"; // File manager sort preference

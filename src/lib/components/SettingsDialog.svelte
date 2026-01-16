@@ -9,9 +9,10 @@
     DEFAULT_SETTINGS,
     DEFAULT_KEY_BINDINGS,
   } from "../../config/defaults";
-  import type { Settings } from "../../types";
+  import type { Settings, CustomFieldConfig } from "../../types";
   import KeyboardShortcutsDialog from "./KeyboardShortcutsDialog.svelte";
   import RobotProfileManager from "./settings/RobotProfileManager.svelte";
+  import CustomFieldWizard from "./settings/CustomFieldWizard.svelte";
 import { PluginManager } from "../pluginManager";
 import { pluginsStore, themesStore } from "../pluginsStore";
 
@@ -30,6 +31,7 @@ import { pluginsStore, themesStore } from "../pluginsStore";
   };
 
   let isShortcutsDialogOpen = false;
+  let isCustomFieldWizardOpen = false;
 
   // Get version from package. json
   import packageJson from "../../../package.json";
@@ -285,12 +287,17 @@ import { pluginsStore, themesStore } from "../pluginsStore";
       }
     }
   }
+
+  function handleCustomFieldSave(e: CustomEvent<CustomFieldConfig>) {
+    settings.customFieldConfig = e.detail;
+    settings = { ...settings };
+  }
 </script>
 
-{#if isOpen}
+{#if isOpen && !isCustomFieldWizardOpen}
   <div
     transition:fade={{ duration: 500, easing: cubicInOut }}
-    class="bg-black bg-opacity-25 flex flex-col justify-center items-center absolute top-0 left-0 w-full h-full z-[1005]"
+    class="bg-black bg-opacity-25 flex flex-col justify-center items-center fixed top-0 left-0 w-full h-full z-[1005]"
     role="dialog"
     aria-modal="true"
     aria-labelledby="settings-title"
@@ -1203,6 +1210,20 @@ import { pluginsStore, themesStore } from "../pluginsStore";
                     <option value={field.value}>{field.label}</option>
                   {/each}
                 </select>
+
+                {#if settings.fieldMap === "custom"}
+                  <button
+                    class="mt-2 w-full px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                    on:click={() => (isCustomFieldWizardOpen = true)}
+                  >
+                    Configure Custom Map
+                  </button>
+                  {#if !settings.customFieldConfig}
+                    <p class="text-xs text-red-500 mt-1">
+                      Configuration required
+                    </p>
+                  {/if}
+                {/if}
               </div>
 
               <!-- Field Rotation -->
@@ -1862,9 +1883,15 @@ import { pluginsStore, themesStore } from "../pluginsStore";
       </div>
     </div>
   </div>
-
-  <KeyboardShortcutsDialog bind:isOpen={isShortcutsDialogOpen} bind:settings />
 {/if}
+
+<KeyboardShortcutsDialog bind:isOpen={isShortcutsDialogOpen} bind:settings />
+<CustomFieldWizard
+  bind:isOpen={isCustomFieldWizardOpen}
+  currentConfig={settings.customFieldConfig}
+  on:save={handleCustomFieldSave}
+  on:close={() => (isCustomFieldWizardOpen = false)}
+/>
 
 <style>
   .potato-tooltip {
