@@ -40,17 +40,32 @@
     const target = e.target as HTMLInputElement;
     const file = target.files?.[0];
     if (file) {
+      console.log("File selected:", file.name, file.size, file.type);
       const reader = new FileReader();
-      reader.onload = (e) => {
-        if (typeof e.target?.result === "string") {
-          imageData = e.target.result;
+      reader.onload = (evt) => {
+        const result = reader.result; // Use reader.result directly
+        if (typeof result === "string") {
+          console.log("File read successfully. Length:", result.length);
+          imageData = result;
           step = 2; // Move to next step automatically
           p1 = null;
           p2 = null;
+        } else {
+          console.error("File read failed: result is not a string", result);
+          alert("Failed to read image file. Please try again.");
         }
+      };
+      reader.onerror = () => {
+        console.error("FileReader error:", reader.error);
+        alert("Error reading file: " + (reader.error?.message || "Unknown error"));
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  function handleImageLoadError(e: Event) {
+    console.error("Image element failed to load source");
+    alert("The image failed to load in the browser. It may be corrupted or an unsupported format.");
   }
 
   function handleImageClick(e: MouseEvent) {
@@ -205,6 +220,7 @@
                             alt="Field Calibration"
                             class={`max-w-full max-h-[60vh] object-contain ${step === 2 || step === 3 ? 'cursor-crosshair' : ''}`}
                             on:click={handleImageClick}
+                            on:error={handleImageLoadError}
                         />
 
                         {#if p1}
