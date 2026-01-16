@@ -67,14 +67,6 @@ export const pages: Page[] = [
     icon: "sparkles",
   },
   {
-    id: "plugins",
-    title: "Plugins",
-    description: "Extend the visualizer with custom exporters, themes, and more.",
-    type: "page",
-    content: pluginsContent,
-    icon: "sparkles",
-  },
-  {
     id: "getting-started",
     title: "Getting Started",
     description: "New here? Learn the basics of using the visualizer.",
@@ -137,6 +129,15 @@ export const pages: Page[] = [
     type: "page",
     content: exportingContent,
     icon: "code",
+  },
+  {
+    id: "plugins",
+    title: "Plugins",
+    description:
+      "Extend the visualizer with custom exporters, themes, and more.",
+    type: "page",
+    content: pluginsContent,
+    icon: "sparkles",
   },
   {
     id: "settings",

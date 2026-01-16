@@ -26,12 +26,15 @@ pedro.registerExporter("My Custom Format", (data) => {
 });
 
 // Register a custom theme
-pedro.registerTheme("Midnight Blue", `
+pedro.registerTheme(
+  "Midnight Blue",
+  `
   :root {
     --bg-color: #0f172a;
     --text-color: #f8fafc;
   }
-`);
+`,
+);
 ```
 
 ### The `pedro` API
@@ -40,29 +43,29 @@ The `pedro` object provides several methods and properties to interact with the 
 
 #### Core Methods
 
-*   **`registerExporter(name, handler)`**: Adds a new option to the Export menu.
-    *   `name`: Display name for the exporter.
-    *   `handler`: Function receiving project `data` and returning a string.
-*   **`registerTheme(name, css)`**: Adds a new theme to the Settings > Interface menu.
-    *   `name`: Display name for the theme.
-    *   `css`: CSS string defining the theme variables.
-*   **`getData()`**: Returns the current project state (read-only).
-    *   Returns: `{ startPoint, lines, shapes, sequence }`
+- **`registerExporter(name, handler)`**: Adds a new option to the Export menu.
+  - `name`: Display name for the exporter.
+  - `handler`: Function receiving project `data` and returning a string.
+- **`registerTheme(name, css)`**: Adds a new theme to the Settings > Interface menu.
+  - `name`: Display name for the theme.
+  - `css`: CSS string defining the theme variables.
+- **`getData()`**: Returns the current project state (read-only).
+  - Returns: `{ startPoint, lines, shapes, sequence }`
 
 #### Advanced Features
 
 For more complex plugins, you can access internal registries and stores:
 
-*   **`pedro.registries`**:
-    *   `components`: Register custom Svelte components.
-    *   `tabs`: Add new tabs to the side control panel.
-    *   `navbarActions`: Add buttons to the top navigation bar.
-    *   `hooks`: Listen for events like `onSave`, `onLoad`, etc.
+- **`pedro.registries`**:
+  - `components`: Register custom Svelte components.
+  - `tabs`: Add new tabs to the side control panel.
+  - `navbarActions`: Add buttons to the top navigation bar.
+  - `hooks`: Listen for events like `onSave`, `onLoad`, etc.
 
-*   **`pedro.stores`**:
-    *   `project`: Access reactive stores for path data (`startPointStore`, `linesStore`, etc.).
-    *   `app`: Access application-level state.
-    *   `get`: The Svelte `get` function to read current store values.
+- **`pedro.stores`**:
+  - `project`: Access reactive stores for path data (`startPointStore`, `linesStore`, etc.).
+  - `app`: Access application-level state.
+  - `get`: The Svelte `get` function to read current store values.
 
 ### Example: Adding a Button
 
@@ -75,6 +78,6 @@ pedro.registries.navbarActions.register({
   title: "Say Hello",
   onClick: () => {
     alert("Hello from Pedro Pathing Plugin!");
-  }
+  },
 });
 ```
