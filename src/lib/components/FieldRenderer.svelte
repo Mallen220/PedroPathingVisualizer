@@ -335,11 +335,13 @@
           // Re-sample geometry to match profile (100 samples)
           const samples = 100;
           let cps = [_startPoint, ...line.controlPoints, line.endPoint];
-          let prevPt = getCurvePoint(0, cps);
+          let prevPt = { x: 0, y: 0 };
+          getCurvePoint(0, cps, prevPt);
+          let currPt = { x: 0, y: 0 };
 
           for (let i = 1; i <= samples; i++) {
             const t = i / samples;
-            const currPt = getCurvePoint(t, cps);
+            getCurvePoint(t, cps, currPt);
 
             // Calculate the proportional index in the velocity profile
             const profileIndex = Math.floor(t * (vProfile.length - 1));
@@ -374,7 +376,8 @@
             }
             heatmapSegments.push(seg);
 
-            prevPt = currPt;
+            prevPt.x = currPt.x;
+            prevPt.y = currPt.y;
           }
         }
       }
@@ -401,8 +404,9 @@
             Two.Commands.move,
           ),
         ];
+        const point = { x: 0, y: 0 };
         for (let i = 1; i <= samples; ++i) {
-          const point = getCurvePoint(i / samples, cps);
+          getCurvePoint(i / samples, cps, point);
           points.push(
             new Two.Anchor(
               x(point.x),
@@ -657,8 +661,9 @@
               Two.Commands.move,
             ),
           ];
+          const point = { x: 0, y: 0 };
           for (let i = 1; i <= samples; ++i) {
-            const point = getCurvePoint(i / samples, cps);
+            getCurvePoint(i / samples, cps, point);
             points.push(
               new Two.Anchor(
                 x(point.x),
@@ -753,9 +758,7 @@
         let pos = { x: 0, y: 0 };
         if (line.controlPoints.length > 0) {
           const cps = [_startPoint, ...line.controlPoints, line.endPoint];
-          const pt = getCurvePoint(t, cps);
-          pos.x = pt.x;
-          pos.y = pt.y;
+          getCurvePoint(t, cps, pos);
         } else {
           pos.x = _startPoint.x + (line.endPoint.x - _startPoint.x) * t;
           pos.y = _startPoint.y + (line.endPoint.y - _startPoint.y) * t;

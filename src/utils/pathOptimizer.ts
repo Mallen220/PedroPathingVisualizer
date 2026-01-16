@@ -280,7 +280,8 @@ export class PathOptimizer {
           ...currentLine.controlPoints,
           currentLine.endPoint,
         ];
-        const robotInchesXY = getCurvePoint(linePercent, curvePoints);
+        const robotInchesXY = { x: 0, y: 0 };
+        getCurvePoint(linePercent, curvePoints, robotInchesXY);
         x = robotInchesXY.x;
         y = robotInchesXY.y;
 
@@ -297,9 +298,11 @@ export class PathOptimizer {
             heading = -currentLine.endPoint.degrees;
             break;
           case "tangential":
-            const nextPointInches = getCurvePoint(
+            const nextPointInches = { x: 0, y: 0 };
+            getCurvePoint(
               linePercent + (currentLine.endPoint.reverse ? -0.01 : 0.01),
               curvePoints,
+              nextPointInches,
             );
             const dx = nextPointInches.x - x;
             const dy = nextPointInches.y - y;

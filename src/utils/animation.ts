@@ -141,11 +141,12 @@ export function calculateRobotState(
     linePercent = Math.max(0, Math.min(1, linePercent));
 
     // Calculate Position
-    const robotInchesXY = getCurvePoint(linePercent, [
-      prevPoint,
-      ...currentLine.controlPoints,
-      currentLine.endPoint,
-    ]);
+    const robotInchesXY = { x: 0, y: 0 };
+    getCurvePoint(
+      linePercent,
+      [prevPoint, ...currentLine.controlPoints, currentLine.endPoint],
+      robotInchesXY,
+    );
 
     const robotXY = { x: xScale(robotInchesXY.x), y: yScale(robotInchesXY.y) };
     let robotHeading = 0;
@@ -166,9 +167,11 @@ export function calculateRobotState(
           robotHeading = -currentLine.endPoint.degrees;
           break;
         case "tangential":
-          const nextPointInches = getCurvePoint(
+          const nextPointInches = { x: 0, y: 0 };
+          getCurvePoint(
             linePercent + (currentLine.endPoint.reverse ? -0.01 : 0.01),
             [prevPoint, ...currentLine.controlPoints, currentLine.endPoint],
+            nextPointInches,
           );
           const nextPoint = {
             x: xScale(nextPointInches.x),
@@ -425,15 +428,18 @@ export function generateOnionLayers(
     // Approximate line length by sampling
     const samples = 100;
     let lineLength = 0;
-    let prevPos = curvePoints[0];
+    let prevPos = { x: curvePoints[0].x, y: curvePoints[0].y }; // Copy coordinates
+    const pos = { x: 0, y: 0 }; // Reusable object
 
     for (let i = 1; i <= samples; i++) {
       const t = i / samples;
-      const pos = getCurvePoint(t, curvePoints);
+      getCurvePoint(t, curvePoints, pos);
       const dx = pos.x - prevPos.x;
       const dy = pos.y - prevPos.y;
       lineLength += Math.sqrt(dx * dx + dy * dy);
-      prevPos = pos;
+
+      prevPos.x = pos.x;
+      prevPos.y = pos.y;
     }
 
     totalLength += lineLength;
@@ -455,12 +461,13 @@ export function generateOnionLayers(
       line.endPoint,
     ];
     const samples = 100;
-    let prevPos = curvePoints[0];
+    let prevPos = { x: curvePoints[0].x, y: curvePoints[0].y };
+    const pos = { x: 0, y: 0 };
     let prevT = 0;
 
     for (let i = 1; i <= samples; i++) {
       const t = i / samples;
-      const pos = getCurvePoint(t, curvePoints);
+      getCurvePoint(t, curvePoints, pos);
       const dx = pos.x - prevPos.x;
       const dy = pos.y - prevPos.y;
       const segmentLength = Math.sqrt(dx * dx + dy * dy);
@@ -476,7 +483,8 @@ export function generateOnionLayers(
         const overshoot = accumulatedLength - nextLayerDistance;
         const interpolationT = 1 - overshoot / segmentLength;
         const layerT = prevT + (t - prevT) * interpolationT;
-        const robotPosInches = getCurvePoint(layerT, curvePoints);
+        const robotPosInches = { x: 0, y: 0 };
+        getCurvePoint(layerT, curvePoints, robotPosInches);
 
         // Calculate heading for this position
         let heading = 0;
@@ -494,7 +502,8 @@ export function generateOnionLayers(
             layerT + (line.endPoint.reverse ? -0.01 : 0.01),
             1,
           );
-          const nextPos = getCurvePoint(nextT, curvePoints);
+          const nextPos = { x: 0, y: 0 };
+          getCurvePoint(nextT, curvePoints, nextPos);
           const tdx = nextPos.x - robotPosInches.x;
           const tdy = nextPos.y - robotPosInches.y;
           if (tdx !== 0 || tdy !== 0) {
@@ -521,7 +530,8 @@ export function generateOnionLayers(
         nextLayerDistance += spacing;
       }
 
-      prevPos = pos;
+      prevPos.x = pos.x;
+      prevPos.y = pos.y;
       prevT = t;
     }
 

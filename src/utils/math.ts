@@ -97,17 +97,20 @@ export function lerp2d(
 export function getCurvePoint(
   t: number,
   points: { x: number; y: number }[],
+  out?: { x: number; y: number },
 ): { x: number; y: number } {
   const len = points.length;
+  // If 'out' is provided, we use it to avoid allocation.
+  // Otherwise, we'll allocate a new object or rely on returns from blocks below.
+  const result = out || { x: 0, y: 0 };
 
   if (len === 2) {
     // Linear: P = (1-t)P0 + tP1
     const p0 = points[0];
     const p1 = points[1];
-    return {
-      x: p0.x + (p1.x - p0.x) * t,
-      y: p0.y + (p1.y - p0.y) * t,
-    };
+    result.x = p0.x + (p1.x - p0.x) * t;
+    result.y = p0.y + (p1.y - p0.y) * t;
+    return result;
   } else if (len === 3) {
     // Quadratic: P = (1-t)^2 P0 + 2(1-t)t P1 + t^2 P2
     const p0 = points[0];
@@ -118,10 +121,9 @@ export function getCurvePoint(
     const b = 2 * mt * t;
     const c = t * t;
 
-    return {
-      x: a * p0.x + b * p1.x + c * p2.x,
-      y: a * p0.y + b * p1.y + c * p2.y,
-    };
+    result.x = a * p0.x + b * p1.x + c * p2.x;
+    result.y = a * p0.y + b * p1.y + c * p2.y;
+    return result;
   } else if (len === 4) {
     // Cubic: P = (1-t)^3 P0 + 3(1-t)^2 t P1 + 3(1-t)t^2 P2 + t^3 P3
     const p0 = points[0];
@@ -137,14 +139,20 @@ export function getCurvePoint(
     const c = 3 * mt * t2;
     const d = t2 * t;
 
-    return {
-      x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-      y: a * p0.y + b * p1.y + c * p2.y + d * p3.y,
-    };
+    result.x = a * p0.x + b * p1.x + c * p2.x + d * p3.x;
+    result.y = a * p0.y + b * p1.y + c * p2.y + d * p3.y;
+    return result;
   }
 
   // Fallback for N > 4 (or N=1)
-  if (len === 1) return points[0];
+  if (len === 1) {
+    // Preserve behavior: return reference to input point if out is not provided
+    if (!out) return points[0];
+    // If out is provided, copy coordinates
+    result.x = points[0].x;
+    result.y = points[0].y;
+    return result;
+  }
 
   // Iterative De Casteljau to avoid recursion overhead and excessive allocation
   // Work on a copy of the points to avoid mutating input
@@ -169,7 +177,15 @@ export function getCurvePoint(
     }
     n--;
   }
-  return work[0];
+
+  // Copy result to 'out' or return the calculated point
+  const final = work[0];
+  if (out) {
+    out.x = final.x;
+    out.y = final.y;
+    return out;
+  }
+  return final;
 }
 
 // Helpers for Heading Calculation
