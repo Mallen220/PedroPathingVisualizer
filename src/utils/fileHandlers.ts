@@ -14,6 +14,7 @@ import {
   shapesStore,
   sequenceStore,
   settingsStore,
+  diffHeadStore,
 } from "../lib/projectStore";
 import { loadTrajectoryFromFile, downloadTrajectory } from "./index";
 import type { Line, Point, SequenceItem, Settings, Shape } from "../types";
@@ -36,6 +37,7 @@ interface ExtendedElectronAPI {
     content: string,
     path?: string,
   ) => Promise<{ success: boolean; filepath: string; error?: string }>;
+  gitShow?: (filePath: string) => Promise<string | null>;
 }
 
 // Access electronAPI dynamically to allow mocking/runtime changes
@@ -96,6 +98,25 @@ export function loadProjectData(data: any) {
   if (data.shapes) shapesStore.set(data.shapes);
 }
 
+// Helper to update diff state
+async function updateDiffState(path: string | null) {
+  diffHeadStore.set(null); // Reset first
+  if (!path) return;
+
+  const electronAPI = getElectronAPI();
+  if (electronAPI && electronAPI.gitShow) {
+    try {
+      const headContent = await electronAPI.gitShow(path);
+      if (headContent) {
+        const parsed = JSON.parse(headContent);
+        diffHeadStore.set(parsed);
+      }
+    } catch (e) {
+      console.warn("Failed to load git diff for", path, e);
+    }
+  }
+}
+
 function addToRecentFiles(path: string, settings?: Settings) {
   const currentSettings = settings || get(settingsStore);
   let recent = currentSettings.recentFiles || [];
@@ -154,6 +175,7 @@ export async function loadRecentFile(path: string) {
     currentFilePath.set(path);
     projectMetadataStore.set({ filepath: path, lastSaved: new Date() });
     addToRecentFiles(path);
+    await updateDiffState(path);
   } catch (err) {
     console.error("Error loading recent file:", err);
     alert("Failed to load file: " + (err as Error).message);
@@ -254,6 +276,11 @@ async function performSave(
         }
         const dir = get(currentDirectoryStore);
         if (dir) scanEventsInDirectory(dir);
+        // Refresh diff state after save (committed state doesn't change, but local does)
+        // Actually gitShow gets HEAD. HEAD hasn't changed.
+        // But if we want to support diffing against HEAD, we should ensure the store is populated.
+        // If we just saved, we might have introduced differences vs HEAD (if HEAD was old).
+        await updateDiffState(result.filepath);
         return true;
       } else {
         if (result.error !== "canceled") {
@@ -296,6 +323,7 @@ async function performSave(
       }
       const dir = get(currentDirectoryStore);
       if (dir) scanEventsInDirectory(dir);
+      await updateDiffState(targetPath);
       return true;
     }
 
@@ -467,6 +495,7 @@ export async function handleExternalFileOpen(filePath: string) {
       loadProjectData(data);
       currentFilePath.set(filePath);
       addToRecentFiles(filePath);
+      await updateDiffState(filePath);
       return;
     }
 
@@ -480,6 +509,7 @@ export async function handleExternalFileOpen(filePath: string) {
       loadProjectData(data);
       currentFilePath.set(filePath);
       addToRecentFiles(filePath);
+      await updateDiffState(filePath);
     } else {
       // Not in directory. Prompt copy.
       if (
@@ -507,6 +537,7 @@ export async function handleExternalFileOpen(filePath: string) {
             loadProjectData(data);
             currentFilePath.set(filePath);
             addToRecentFiles(filePath);
+            await updateDiffState(filePath);
             return;
           }
         }
@@ -518,18 +549,21 @@ export async function handleExternalFileOpen(filePath: string) {
           loadProjectData(data); // data is same
           currentFilePath.set(destPath);
           addToRecentFiles(destPath);
+          await updateDiffState(destPath);
         } else {
           // Fallback if copyFile not available (should be)
           await electronAPI.writeFile(destPath, content);
           loadProjectData(data);
           currentFilePath.set(destPath);
           addToRecentFiles(destPath);
+          await updateDiffState(destPath);
         }
       } else {
         // User said no to copy
         loadProjectData(data);
         currentFilePath.set(filePath);
         addToRecentFiles(filePath);
+        await updateDiffState(filePath);
       }
     }
   } catch (err) {
@@ -596,6 +630,7 @@ export async function loadFile(evt: Event) {
         loadProjectData(data);
         currentFilePath.set(destPath);
         addToRecentFiles(destPath);
+        await updateDiffState(destPath);
       };
       reader.readAsText(file);
     } catch (error) {

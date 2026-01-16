@@ -100,6 +100,10 @@ export const loopAnimationStore = writable(true);
 export const robotXYStore = writable({ x: 0, y: 0 });
 export const robotHeadingStore = writable(0);
 
+// Diff State Stores
+export const diffHeadStore = writable<any>(null); // Stores parsed JSON content of HEAD version
+export const showDiffStore = writable(false); // Controls visibility of diff overlay
+
 export function resetProject() {
   startPointStore.set(getDefaultStartPoint());
   const newLines = normalizeLines(getDefaultLines());

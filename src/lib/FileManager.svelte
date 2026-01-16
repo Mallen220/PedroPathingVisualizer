@@ -43,7 +43,7 @@
     currentDirectoryStore,
     gitStatusStore,
   } from "../stores";
-  import { settingsStore } from "./projectStore";
+  import { settingsStore, diffHeadStore } from "./projectStore";
   import { saveProject } from "../utils/fileHandlers";
   import { saveAutoPathsDirectory } from "../utils/directorySettings";
   import { mirrorPathData, reversePathData } from "../utils/pathTransform";
@@ -53,7 +53,6 @@
   import FileManagerBreadcrumbs from "./components/filemanager/FileManagerBreadcrumbs.svelte";
   import FileList from "./components/filemanager/FileList.svelte";
   import FileGrid from "./components/filemanager/FileGrid.svelte";
-  import DiffView from "./components/filemanager/DiffView.svelte";
 
   export let isOpen = false;
   export let startPoint: Point;
@@ -84,12 +83,6 @@
   // New file state
   let creatingNewFile = false;
   let newFileName = "";
-
-  // Diff View State
-  let showDiff = false;
-  let diffFile = "";
-  let diffOriginal = "";
-  let diffNew = "";
 
   const supportedFileTypes = [".pp"];
   const electronAPI = window.electronAPI;
@@ -571,6 +564,20 @@
       selectedFile = file;
       showToast(`Loaded: ${file.name}`, "success");
 
+      // Update diff state using gitShow from electronAPI
+      diffHeadStore.set(null);
+      if (electronAPI.gitShow) {
+        try {
+          const headContent = await electronAPI.gitShow(file.path);
+          if (headContent) {
+            const parsed = JSON.parse(headContent);
+            diffHeadStore.set(parsed);
+          }
+        } catch (e) {
+          console.warn("Failed to load diff state in FileManager", e);
+        }
+      }
+
       // Refresh the file preview so the latest content is reflected
       if (fileGrid && file && file.path) fileGrid.refreshPreview(file.path);
     } catch (error) {
@@ -758,25 +765,6 @@
     }, 3000);
   }
 
-  async function handleDiff(file: FileInfo) {
-    if (!file.path) return;
-    try {
-      const headContent = await electronAPI.gitShow(file.path);
-      if (headContent === null) {
-        showToast("Could not retrieve original file content.", "error");
-        return;
-      }
-      const currentContent = await electronAPI.readFile(file.path);
-
-      diffFile = file.name;
-      diffOriginal = headContent;
-      diffNew = currentContent;
-      showDiff = true;
-    } catch (e) {
-      showToast("Error loading diff: " + getErrorMessage(e), "error");
-    }
-  }
-
   // Event handlers for child components
   function handleMenuAction(e: any) {
     // If called from template with detail extracted or raw event
@@ -784,9 +772,6 @@
     switch (action) {
       case "open":
         loadFile(file);
-        break;
-      case "diff":
-        handleDiff(file);
         break;
       case "rename-start":
         renamingFile = file;
@@ -1060,12 +1045,3 @@
     </div>
   </div>
 </div>
-
-<DiffView
-  isOpen={showDiff}
-  fileName={diffFile}
-  originalContentStr={diffOriginal}
-  newContentStr={diffNew}
-  fieldImage={settings.fieldMap}
-  on:close={() => (showDiff = false)}
-/>

@@ -29,6 +29,8 @@
     robotHeadingStore,
     sequenceStore, // Imported for potential use, though main logic uses lines
     percentStore,
+    diffHeadStore,
+    showDiffStore,
   } from "../projectStore";
   import {
     POINT_RADIUS,
@@ -56,8 +58,6 @@
   } from "../../types";
   import MathTools from "../MathTools.svelte";
   import FieldCoordinates from "./FieldCoordinates.svelte";
-  import type { Path } from "two.js/src/path";
-  import type { Line as PathLine } from "two.js/src/shapes/line";
 
   // State from props
   export let width = 0;
@@ -179,6 +179,8 @@
   $: robotHeading = $robotHeadingStore;
   $: sequence = $sequenceStore; // Needed for wait markers
   $: markers = $collisionMarkers;
+  $: diffHead = $diffHeadStore;
+  $: showDiff = $showDiffStore;
 
   function updateRects() {
     if (two?.renderer?.domElement) {
@@ -386,7 +388,7 @@
       }
 
       // Fallback: Standard Line Rendering
-      let lineElem: Path | PathLine;
+      let lineElem: Two.Path | Two.Line;
       if (line.controlPoints.length > 2) {
         const samples = 100;
         const cps = [_startPoint, ...line.controlPoints, line.endPoint];
@@ -642,7 +644,7 @@
             : previewOptimizedLines[idx - 1]?.endPoint || null;
         if (!_startPoint) return;
 
-        let lineElem: Path | PathLine;
+        let lineElem: Two.Path | Two.Line;
         if (line.controlPoints.length > 2) {
           const samples = 100;
           const cps = [_startPoint, ...line.controlPoints, line.endPoint];
@@ -969,6 +971,8 @@
 
     const shapeGroup = new Two.Group();
     shapeGroup.id = "shape-group";
+    const diffGroup = new Two.Group(); // Group for diff path
+    diffGroup.id = "diff-group";
     const lineGroup = new Two.Group();
     lineGroup.id = "line-group";
     const pointGroup = new Two.Group();
@@ -979,6 +983,90 @@
     collisionGroup.id = "collision-group";
 
     two.clear();
+
+    // Render Diff Path if enabled
+    if (showDiff && diffHead && diffHead.lines) {
+      const startP = diffHead.startPoint;
+      diffHead.lines.forEach((line: any, idx: number) => {
+        if (!line || !line.endPoint) return;
+        // Determine start point for this segment
+        let _start = idx === 0 ? startP : diffHead.lines[idx - 1]?.endPoint;
+        if (!_start) return;
+
+        let lineElem: Two.Path | Two.Line;
+        const controlPoints = line.controlPoints || [];
+
+        if (controlPoints.length > 2) {
+          const samples = 60; // Lower resolution for ghost
+          const cps = [_start, ...controlPoints, line.endPoint];
+          let points = [
+            new Two.Anchor(x(_start.x), y(_start.y), 0, 0, 0, 0, Two.Commands.move),
+          ];
+          for (let i = 1; i <= samples; ++i) {
+            const point = getCurvePoint(i / samples, cps);
+            points.push(new Two.Anchor(x(point.x), y(point.y), 0, 0, 0, 0, Two.Commands.line));
+          }
+          points.forEach((point) => (point.relative = false));
+          lineElem = new Two.Path(points);
+          lineElem.automatic = false;
+        } else if (controlPoints.length > 0) {
+          let cp1 = controlPoints[1]
+            ? controlPoints[0]
+            : quadraticToCubic(_start, controlPoints[0], line.endPoint).Q1;
+          let cp2 =
+            controlPoints[1] ??
+            quadraticToCubic(_start, controlPoints[0], line.endPoint).Q2;
+          let points = [
+            new Two.Anchor(x(_start.x), y(_start.y), x(_start.x), y(_start.y), x(cp1.x), y(cp1.y), Two.Commands.move),
+            new Two.Anchor(
+              x(line.endPoint.x),
+              y(line.endPoint.y),
+              x(cp2.x),
+              y(cp2.y),
+              x(line.endPoint.x),
+              y(line.endPoint.y),
+              Two.Commands.curve,
+            ),
+          ];
+          points.forEach((point) => (point.relative = false));
+          lineElem = new Two.Path(points);
+          lineElem.automatic = false;
+        } else {
+          lineElem = new Two.Line(x(_start.x), y(_start.y), x(line.endPoint.x), y(line.endPoint.y));
+        }
+        lineElem.stroke = "#ef4444"; // Red
+        lineElem.linewidth = uiLength(LINE_WIDTH);
+        lineElem.noFill();
+        lineElem.dashes = [uiLength(3), uiLength(3)]; // Dashed
+        lineElem.opacity = 0.5; // Ghosted
+        diffGroup.add(lineElem);
+
+        // Render Diff Event Markers
+        if (line.eventMarkers && line.eventMarkers.length > 0) {
+          line.eventMarkers.forEach((ev: any) => {
+            const t = Math.max(0, Math.min(1, ev.position ?? 0.5));
+            let pos = { x: 0, y: 0 };
+            if (controlPoints.length > 0) {
+              const cps = [_start, ...controlPoints, line.endPoint];
+              const pt = getCurvePoint(t, cps);
+              pos.x = pt.x;
+              pos.y = pt.y;
+            } else {
+              pos.x = _start.x + (line.endPoint.x - _start.x) * t;
+              pos.y = _start.y + (line.endPoint.y - _start.y) * t;
+            }
+            const px = x(pos.x);
+            const py = y(pos.y);
+
+            let circle = new Two.Circle(px, py, uiLength(0.9));
+            circle.fill = "#ef4444"; // Red
+            circle.noStroke();
+            circle.opacity = 0.5;
+            diffGroup.add(circle);
+          });
+        }
+      });
+    }
 
     if (Array.isArray(shapeElements))
       shapeElements.forEach((el) => shapeGroup.add(el));
@@ -995,6 +1083,7 @@
     }
 
     two.add(shapeGroup);
+    two.add(diffGroup); // Add diff group under lines
     two.add(lineGroup);
     two.add(eventGroup);
     two.add(pointGroup);
@@ -1574,6 +1663,34 @@ left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}
     <div
       class="absolute bottom-2 right-2 flex flex-col gap-1 z-30 bg-white/80 dark:bg-neutral-800/80 p-1 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm"
     >
+      {#if diffHead}
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors
+          {showDiff ? 'text-red-500' : 'text-neutral-700 dark:text-neutral-200'}"
+          on:click={() => showDiffStore.update((v) => !v)}
+          aria-label="Toggle Diff"
+          title="Toggle Git Diff (HEAD Overlay)"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="w-4 h-4"
+          >
+            <path
+              d="M16.05 12a7.5 7.5 0 0 0-3.3-6.4 10.9 10.9 0 0 0-2.6-1.1"
+            />
+            <path
+              d="M7.95 12a7.5 7.5 0 0 1 3.3-6.4 10.9 10.9 0 0 1 2.6-1.1"
+            />
+            <line x1="12" y1="20" x2="12" y2="4" />
+          </svg>
+        </button>
+      {/if}
       <button
         class="w-7 h-7 flex items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 transition-colors"
         on:click={() => {
