@@ -12,8 +12,8 @@
   import type { Settings } from "../../types";
   import KeyboardShortcutsDialog from "./KeyboardShortcutsDialog.svelte";
   import RobotProfileManager from "./settings/RobotProfileManager.svelte";
-import { PluginManager } from "../pluginManager";
-import { pluginsStore, themesStore } from "../pluginsStore";
+  import { PluginManager } from "../pluginManager";
+  import { pluginsStore, themesStore } from "../pluginsStore";
 
   export let isOpen = false;
   export let settings: Settings = { ...DEFAULT_SETTINGS };

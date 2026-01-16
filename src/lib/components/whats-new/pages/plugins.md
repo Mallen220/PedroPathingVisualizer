@@ -30,7 +30,7 @@ Registers a custom code exporter.
 ```javascript
 pedro.registerExporter("My Custom Format", (data) => {
   let code = "// My Custom Path\n";
-  data.lines.forEach(line => {
+  data.lines.forEach((line) => {
     code += `move(${line.end.x}, ${line.end.y});\n`;
   });
   return code;
@@ -47,12 +47,15 @@ Registers a custom UI theme.
 **Example:**
 
 ```javascript
-pedro.registerTheme("Midnight Blue", `
+pedro.registerTheme(
+  "Midnight Blue",
+  `
   :root {
     --bg-primary: #1e3a8a;
     --text-primary: #ffffff;
   }
-`);
+`,
+);
 ```
 
 #### `pedro.getData()`
@@ -60,10 +63,10 @@ pedro.registerTheme("Midnight Blue", `
 Returns the current project state. This is useful for exporters.
 
 - **Returns**: An object containing:
-    - `startPoint`: The robot's starting position.
-    - `lines`: Array of path segments.
-    - `shapes`: Array of obstacles/shapes.
-    - `sequence`: The timeline sequence.
+  - `startPoint`: The robot's starting position.
+  - `lines`: Array of path segments.
+  - `shapes`: Array of obstacles/shapes.
+  - `sequence`: The timeline sequence.
 
 ## Example Plugin
 

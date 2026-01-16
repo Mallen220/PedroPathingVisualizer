@@ -1,6 +1,6 @@
 ## 1.6.2 (2026-01-15)
 
-- Fixed faulty Linux support. Add setting to show onion skins only on current path. Add drag-and-drop support for .pp files. Fix linked points rotation logic. Implement initial directory setup dialog. Added Autosave functionality. Remove ghost path feature entirely; it will not be implemented in future versions. Disable Chromium keyboard shortcuts for a safer experience. Always more keybinds. Improve new project reset logic. Replace event text input with searchable dropdown. Added PedroPathingPlus documentation. Improve Robot Profile Manager UX. Angular Velocity settings correctly affect path time. Add Angular Acceleration setting and Deg/s unit toggle. Better Close/Save Checking and UI dialog. 
+- Fixed faulty Linux support. Add setting to show onion skins only on current path. Add drag-and-drop support for .pp files. Fix linked points rotation logic. Implement initial directory setup dialog. Added Autosave functionality. Remove ghost path feature entirely; it will not be implemented in future versions. Disable Chromium keyboard shortcuts for a safer experience. Always more keybinds. Improve new project reset logic. Replace event text input with searchable dropdown. Added PedroPathingPlus documentation. Improve Robot Profile Manager UX. Angular Velocity settings correctly affect path time. Add Angular Acceleration setting and Deg/s unit toggle. Better Close/Save Checking and UI dialog.
 
 ## 1.6.1 (2026-01-13)
 

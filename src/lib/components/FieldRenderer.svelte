@@ -135,11 +135,13 @@
     // fx = width/2 + (fieldX/FIELD_SIZE - 0.5) * baseSize * newZoom + newPanX
     // newPanX = fx - width/2 - (fieldX/FIELD_SIZE - 0.5) * baseSize * newZoom
 
-    const newPanX = fx - width/2 - (fieldX/FIELD_SIZE - 0.5) * baseSize * newZoom;
-    const newPanY = fy - height/2 - (0.5 - fieldY/FIELD_SIZE) * baseSize * newZoom;
+    const newPanX =
+      fx - width / 2 - (fieldX / FIELD_SIZE - 0.5) * baseSize * newZoom;
+    const newPanY =
+      fy - height / 2 - (0.5 - fieldY / FIELD_SIZE) * baseSize * newZoom;
 
     fieldZoom.set(Number(newZoom.toFixed(2)));
-    fieldPan.set({x: newPanX, y: newPanY});
+    fieldPan.set({ x: newPanX, y: newPanY });
   }
 
   function handleWheel(e: WheelEvent) {

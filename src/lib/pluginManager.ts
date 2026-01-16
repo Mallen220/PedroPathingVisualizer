@@ -36,7 +36,7 @@ export class PluginManager {
           const code = await electronAPI.readPlugin(file);
           this.executePlugin(file, code);
 
-          const enabled = this.getEnabledState(file);
+          const enabled = await this.getEnabledState(file);
           plugins.push({ name: file, loaded: true, enabled });
         } catch (error) {
           console.error(`Failed to load plugin ${file}:`, error);
@@ -55,20 +55,54 @@ export class PluginManager {
     }
   }
 
-  private static getEnabledState(name: string): boolean {
+  private static async getEnabledState(name: string): Promise<boolean> {
     try {
+      const electronAPI = (window as any).electronAPI;
+      if (electronAPI && electronAPI.getDirectorySettings) {
+        const settings = await electronAPI.getDirectorySettings();
+        if (
+          settings &&
+          settings.plugins &&
+          Object.prototype.hasOwnProperty.call(settings.plugins, name)
+        ) {
+          return Boolean(settings.plugins[name]);
+        }
+      }
+
+      // Fallback to localStorage for older installs
       const key = `plugin_enabled_${name}`;
       const val = localStorage.getItem(key);
-      return val === null ? true : val === "true";
+      // If neither is present, default to DISABLED for safer UX
+      return val === null ? false : val === "true";
     } catch {
-      return true;
+      return false;
     }
   }
 
-  static togglePlugin(name: string, enabled: boolean) {
+  static async togglePlugin(name: string, enabled: boolean) {
     try {
-      localStorage.setItem(`plugin_enabled_${name}`, String(enabled));
-    } catch {}
+      // Try to persist in directory settings (preferred)
+      const electronAPI = (window as any).electronAPI;
+      if (
+        electronAPI &&
+        electronAPI.getDirectorySettings &&
+        electronAPI.saveDirectorySettings
+      ) {
+        const settings = (await electronAPI.getDirectorySettings()) || {
+          plugins: {},
+        };
+        settings.plugins = settings.plugins || {};
+        settings.plugins[name] = enabled;
+        await electronAPI.saveDirectorySettings(settings);
+      }
+
+      // Keep a fallback in localStorage for backwards compatibility
+      try {
+        localStorage.setItem(`plugin_enabled_${name}`, String(enabled));
+      } catch {}
+    } catch (err) {
+      console.warn("Failed to persist plugin enabled state:", err);
+    }
 
     pluginsStore.update((plugins) =>
       plugins.map((p) => (p.name === name ? { ...p, enabled } : p)),

@@ -629,6 +629,7 @@ const loadDirectorySettings = async () => {
       plugins: {
         "Example-csv-exporter.js": false,
         "Example-pink-theme.js": false,
+        "Example-ts-exporter.ts": false,
       },
     };
   }
@@ -781,6 +782,7 @@ html.dark .dark\\\\:text-neutral-500 {
 
     const csvPath = path.join(pluginsDir, "Example-csv-exporter.js");
     const pinkPath = path.join(pluginsDir, "Example-pink-theme.js");
+    const tsPath = path.join(pluginsDir, "Example-ts-exporter.ts");
 
     try {
       await fs.access(csvPath);
@@ -790,6 +792,28 @@ html.dark .dark\\\\:text-neutral-500 {
 
     // Always update Pink theme to ensure users get the latest styles
     await fs.writeFile(pinkPath, pinkPlugin, "utf-8");
+
+    // Create an example .ts plugin (contains JS-compatible code so it can be executed at runtime)
+    const tsPlugin = `pedro.registerExporter("Example TS Exporter", (data) => {
+  let csv = "Type,X,Y,Heading\\n";
+  if (data.startPoint) {
+    const h = data.startPoint.heading === 'constant' ? data.startPoint.degrees : 'Tangential';
+    csv += 'Start,' + data.startPoint.x + ',' + data.startPoint.y + ',' + h + '\\n';
+  }
+  if (data.lines) {
+    data.lines.forEach(line => {
+      const h = line.endPoint.heading === 'constant' ? line.endPoint.degrees : 'Tangential';
+      csv += 'Point,' + line.endPoint.x + ',' + line.endPoint.y + ',' + h + '\\n';
+    });
+  }
+  return csv;
+});`;
+
+    try {
+      await fs.access(tsPath);
+    } catch {
+      await fs.writeFile(tsPath, tsPlugin, "utf-8");
+    }
   } catch (err) {
     console.error("Failed to ensure default plugins", err);
   }
@@ -1133,7 +1157,8 @@ ipcMain.handle("plugins:list", async () => {
   try {
     await fs.mkdir(pluginsDir, { recursive: true });
     const files = await fs.readdir(pluginsDir);
-    return files.filter((f) => f.endsWith(".js"));
+    // Accept both JavaScript and TypeScript plugin files
+    return files.filter((f) => /\.(js|ts)$/i.test(f));
   } catch (error) {
     console.error("Error listing plugins:", error);
     return [];
@@ -1146,6 +1171,13 @@ ipcMain.handle("plugins:read", async (event, filename) => {
   if (filename.includes("/") || filename.includes("\\")) {
     throw new Error("Invalid plugin filename");
   }
+
+  // Validate extension - only allow .js and .ts
+  const ext = path.extname(filename).toLowerCase();
+  if (![".js", ".ts"].includes(ext)) {
+    throw new Error("Invalid plugin filename extension");
+  }
+
   const filePath = path.join(pluginsDir, filename);
   try {
     return await fs.readFile(filePath, "utf-8");
