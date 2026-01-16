@@ -24,6 +24,8 @@ import eventMarkersContent from "./event-markers.md?raw";
 import optimizationContent from "./optimization.md?raw";
 // @ts-ignore
 import pedroPathingPlusContent from "./pedro-pathing-plus.md?raw";
+// @ts-ignore
+import pluginsContent from "./plugins.md?raw";
 
 export interface Page {
   id: string;
@@ -127,6 +129,15 @@ export const pages: Page[] = [
     type: "page",
     content: exportingContent,
     icon: "code",
+  },
+  {
+    id: "plugins",
+    title: "Plugins",
+    description:
+      "Extend the visualizer with custom exporters, themes, and more.",
+    type: "page",
+    content: pluginsContent,
+    icon: "sparkles",
   },
   {
     id: "settings",
