@@ -19,7 +19,10 @@
   }
 
   function addObstacle() {
-    shapes = [...shapes, createTriangle(shapes.length)];
+    const newShape = createTriangle(shapes.length);
+    newShape.type = "obstacle";
+    newShape.visible = true;
+    shapes = [...shapes, newShape];
     // Add a new collapsed state for the new obstacle (default to expanded for better UX)
     collapsedObstacles = [...collapsedObstacles, false];
     // Expand the section if it was collapsed
@@ -105,9 +108,70 @@
                     disabled={shape.locked ?? false}
                   />
                 </div>
+
+                <select
+                  bind:value={shape.type}
+                  on:change={() => {
+                    if (shape.type === "keep-in") {
+                      shape.color = "#4f46e5"; // Indigo-600
+                    } else {
+                      shape.color = "#ef4444"; // Red-500
+                    }
+                    shapes = [...shapes];
+                  }}
+                  class="h-7 text-xs rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-1 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  disabled={shape.locked ?? false}
+                >
+                  <option value="obstacle">Obstacle</option>
+                  <option value="keep-in">Keep-In</option>
+                </select>
               </div>
 
               <div class="flex flex-row gap-1">
+                <button
+                  title={shape.visible === false ? "Show Shape" : "Hide Shape"}
+                  on:click={() => {
+                    shape.visible = !(shape.visible ?? true);
+                    shapes = [...shapes];
+                  }}
+                  class="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
+                  disabled={shape.locked ?? false}
+                >
+                  {#if shape.visible === false}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      class="size-4"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z"
+                        clip-rule="evenodd"
+                      />
+                      <path
+                        d="M10.748 13.93 2.523 5.705a9.968 9.968 0 0 0-1.852 2.293 1.651 1.651 0 0 0 0 1.185A10.004 10.004 0 0 0 9.999 15c1.345 0 2.634-.265 3.816-.745l-1.635-1.635a3.984 3.984 0 0 1-1.432.298Z"
+                      />
+                    </svg>
+                  {:else}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      class="size-4"
+                    >
+                      <path
+                        d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+                      />
+                      <path
+                        fill-rule="evenodd"
+                        d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  {/if}
+                </button>
+
                 <button
                   title={shape.locked ? "Unlock Obstacle" : "Lock Obstacle"}
                   aria-label={shape.locked

@@ -481,6 +481,7 @@
   $: shapeElements = (() => {
     let _shapes: Path[] = [];
     shapes.forEach((shape, idx) => {
+      if (shape.visible === false) return;
       if (shape.vertices.length >= 3) {
         let vertices = [];
         vertices.push(
@@ -904,17 +905,26 @@
         const group = new Two.Group();
         const isBoundary = marker.type === "boundary";
         const isZeroLength = marker.type === "zero-length";
+        const isKeepIn = marker.type === "keep-in";
 
-        const circle = new Two.Circle(x(marker.x), y(marker.y), uiLength(2));
-        if (isBoundary) {
-          circle.fill = "rgba(249, 115, 22, 0.5)"; // Orange-500
-          circle.stroke = "#f97316";
-        } else if (isZeroLength) {
-          circle.fill = "rgba(217, 70, 239, 0.5)"; // Fuchsia-500 (Magenta-ish)
-          circle.stroke = "#d946ef";
+        let circle: any;
+        if (isKeepIn) {
+          const size = uiLength(3.5);
+          circle = new Two.Rectangle(x(marker.x), y(marker.y), size, size);
+          circle.fill = "rgba(79, 70, 229, 0.5)"; // Indigo-600
+          circle.stroke = "#4f46e5";
         } else {
-          circle.fill = "rgba(239, 68, 68, 0.5)"; // Red-500
-          circle.stroke = "#ef4444";
+          circle = new Two.Circle(x(marker.x), y(marker.y), uiLength(2));
+          if (isBoundary) {
+            circle.fill = "rgba(249, 115, 22, 0.5)"; // Orange-500
+            circle.stroke = "#f97316";
+          } else if (isZeroLength) {
+            circle.fill = "rgba(217, 70, 239, 0.5)"; // Fuchsia-500
+            circle.stroke = "#d946ef";
+          } else {
+            circle.fill = "rgba(239, 68, 68, 0.5)"; // Red-500
+            circle.stroke = "#ef4444";
+          }
         }
         circle.linewidth = uiLength(0.5);
 
@@ -937,17 +947,25 @@
         l2.stroke = "#ffffff";
         l2.linewidth = uiLength(0.5);
 
-        // Add a larger transparent circle for visibility/glow
-        const glow = new Two.Circle(x(marker.x), y(marker.y), uiLength(6));
-        if (isBoundary) {
-          glow.fill = "rgba(249, 115, 22, 0.3)";
-          glow.stroke = "rgba(249, 115, 22, 0.5)";
-        } else if (isZeroLength) {
-          glow.fill = "rgba(217, 70, 239, 0.3)";
-          glow.stroke = "rgba(217, 70, 239, 0.5)";
+        // Add a larger transparent circle/rect for visibility/glow
+        let glow: any;
+        if (isKeepIn) {
+          const glowSize = uiLength(9);
+          glow = new Two.Rectangle(x(marker.x), y(marker.y), glowSize, glowSize);
+          glow.fill = "rgba(79, 70, 229, 0.3)";
+          glow.stroke = "rgba(79, 70, 229, 0.5)";
         } else {
-          glow.fill = "rgba(239, 68, 68, 0.3)";
-          glow.stroke = "rgba(239, 68, 68, 0.5)";
+          glow = new Two.Circle(x(marker.x), y(marker.y), uiLength(6));
+          if (isBoundary) {
+            glow.fill = "rgba(249, 115, 22, 0.3)";
+            glow.stroke = "rgba(249, 115, 22, 0.5)";
+          } else if (isZeroLength) {
+            glow.fill = "rgba(217, 70, 239, 0.3)";
+            glow.stroke = "rgba(217, 70, 239, 0.5)";
+          } else {
+            glow.fill = "rgba(239, 68, 68, 0.3)";
+            glow.stroke = "rgba(239, 68, 68, 0.5)";
+          }
         }
         glow.linewidth = uiLength(0.5);
 

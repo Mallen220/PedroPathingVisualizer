@@ -167,6 +167,8 @@ export interface Shape {
   color: string;
   fillColor: string;
   locked?: boolean;
+  type?: "obstacle" | "keep-in";
+  visible?: boolean;
 }
 
 export type TimelineEventType = "travel" | "wait";
@@ -217,7 +219,7 @@ export interface CollisionMarker {
   y: number;
   time: number;
   segmentIndex?: number;
-  type?: "obstacle" | "boundary" | "zero-length";
+  type?: "obstacle" | "boundary" | "zero-length" | "keep-in";
 }
 
 export interface Notification {
