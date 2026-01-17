@@ -890,9 +890,8 @@
   }
 
   // Sync controller updates to Robot State
-  let committedRobotState:
-    | { x: number; y: number; heading: number }
-    | null = null;
+  let committedRobotState: { x: number; y: number; heading: number } | null =
+    null;
 
   $: {
     if (timePrediction && timePrediction.timeline && lines.length > 0) {

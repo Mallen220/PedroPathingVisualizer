@@ -681,7 +681,9 @@ ipcMain.handle("git:show", async (event, filePath) => {
 
     const root = await git.revparse(["--show-toplevel"]);
     // normalize paths for git
-    const relativePath = path.relative(root.trim(), filePath).replace(/\\/g, "/");
+    const relativePath = path
+      .relative(root.trim(), filePath)
+      .replace(/\\/g, "/");
     const content = await git.show([`HEAD:${relativePath}`]);
     return content;
   } catch (error) {

@@ -37,11 +37,7 @@
     diffResult,
     isLoadingDiff,
   } from "../diffStore";
-  import {
-    currentFilePath,
-    gitStatusStore,
-    isUnsaved,
-  } from "../../stores";
+  import { currentFilePath, gitStatusStore, isUnsaved } from "../../stores";
   import {
     POINT_RADIUS,
     LINE_WIDTH,
@@ -75,7 +71,11 @@
   export let width = 0;
   export let height = 0;
   export let timePrediction: any = null;
-  export let committedRobotState: { x: number; y: number; heading: number } | null = null;
+  export let committedRobotState: {
+    x: number;
+    y: number;
+    heading: number;
+  } | null = null;
   export let previewOptimizedLines: Line[] | null = null;
   export let isMouseOverField = false;
   export let currentMouseX = 0;
@@ -203,7 +203,12 @@
   $: gitStatus = $gitStatusStore;
   // Show diff toggle if file is modified/staged in git OR has unsaved in-memory changes
   // Exclude untracked files since they have no committed version to compare against
-  $: isDirty = (currentFile && gitStatus[currentFile] && gitStatus[currentFile] !== "clean" && gitStatus[currentFile] !== "untracked") || (currentFile && $isUnsaved);
+  $: isDirty =
+    (currentFile &&
+      gitStatus[currentFile] &&
+      gitStatus[currentFile] !== "clean" &&
+      gitStatus[currentFile] !== "untracked") ||
+    (currentFile && $isUnsaved);
 
   function updateRects() {
     if (two?.renderer?.domElement) {
@@ -328,7 +333,14 @@
   })();
 
   // Reusable path generation function
-  function generatePathElements(targetLines: Line[], targetStartPoint: Point, getColor: (line: Line) => string, getWidth: (line: Line) => number, idPrefix: string, isHeatmapEnabled: boolean = false) {
+  function generatePathElements(
+    targetLines: Line[],
+    targetStartPoint: Point,
+    getColor: (line: Line) => string,
+    getWidth: (line: Line) => number,
+    idPrefix: string,
+    isHeatmapEnabled: boolean = false,
+  ) {
     let _path: (Path | PathLine)[] = [];
     targetLines.forEach((line, idx) => {
       if (!line || !line.endPoint) return;
@@ -337,7 +349,8 @@
       if (!_startPoint) return;
 
       // Check for Velocity Heatmap Mode (only for main path)
-      const showHeatmap = isHeatmapEnabled && settings.showVelocityHeatmap && timePrediction;
+      const showHeatmap =
+        isHeatmapEnabled && settings.showVelocityHeatmap && timePrediction;
       let heatmapSegments: PathLine[] = [];
 
       if (showHeatmap) {
@@ -502,9 +515,12 @@
       lines,
       startPoint,
       (l) => l.color,
-      (l) => l.id === currentSelectedId ? uiLength(LINE_WIDTH * 2.5) : uiLength(LINE_WIDTH),
+      (l) =>
+        l.id === currentSelectedId
+          ? uiLength(LINE_WIDTH * 2.5)
+          : uiLength(LINE_WIDTH),
       "",
-      true
+      true,
     );
   })();
 
@@ -513,14 +529,16 @@
     if (!isDiffMode) return [];
 
     // 1. Committed Path (Old) - Red
-    const committedPaths = oldData ? generatePathElements(
-      oldData.lines,
-      oldData.startPoint,
-      () => "#ef4444", // Red
-      () => uiLength(LINE_WIDTH),
-      "diff-old",
-      false
-    ) : [];
+    const committedPaths = oldData
+      ? generatePathElements(
+          oldData.lines,
+          oldData.startPoint,
+          () => "#ef4444", // Red
+          () => uiLength(LINE_WIDTH),
+          "diff-old",
+          false,
+        )
+      : [];
 
     // 2. Current Path (New/Same)
     const currentPaths = generatePathElements(
@@ -528,13 +546,13 @@
       startPoint,
       (l) => {
         // Check if same
-        const isSame = diffData?.sameLines.some(sl => sl.id === l.id);
+        const isSame = diffData?.sameLines.some((sl) => sl.id === l.id);
         if (isSame) return "#3b82f6"; // Blue
         return "#22c55e"; // Green
       },
       (l) => uiLength(LINE_WIDTH), // No selection highlight in diff mode? Or maybe yes.
       "diff-new",
-      false
+      false,
     );
 
     return [...committedPaths, ...currentPaths];
@@ -1714,7 +1732,9 @@ left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}
               stroke-linejoin="round"
               class="w-4 h-4"
             >
-              <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path
+                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           {/if}
         </button>

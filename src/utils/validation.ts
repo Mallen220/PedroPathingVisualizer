@@ -1,5 +1,5 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
-import { PathOptimizer } from "./pathOptimizer";
+import { inspectPath } from "./inspector";
 import { collisionMarkers, notification } from "../stores";
 import type {
   Line,
@@ -17,56 +17,58 @@ export function validatePath(
   sequence: SequenceItem[],
   shapes: Shape[],
 ) {
-  const optimizer = new PathOptimizer(
-    startPoint,
-    lines,
-    settings,
-    sequence,
-    shapes,
-  );
-  const markers: CollisionMarker[] = optimizer.getCollisions();
+  // Use the inspector logic to find issues
+  const issues = inspectPath(startPoint, lines, settings, sequence, shapes);
 
-  // Zero-length path validation
-  let currentStart = startPoint;
-  lines.forEach((line, index) => {
-    const dx = line.endPoint.x - currentStart.x;
-    const dy = line.endPoint.y - currentStart.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // If distance is effectively zero (epsilon check), add a boundary marker
-    if (dist < 0.001) {
+  // Convert issues back to collision markers for visualization
+  const markers: CollisionMarker[] = [];
+  issues.forEach((i) => {
+    if (
+      (i.type === "collision" ||
+        i.type === "boundary" ||
+        i.type === "zero-length") &&
+      i.point
+    ) {
       markers.push({
-        x: currentStart.x,
-        y: currentStart.y,
-        time: 0, // Not really applicable, but needed for type
-        segmentIndex: index,
-        type: "zero-length",
+        x: i.point.x,
+        y: i.point.y,
+        time: i.time || 0,
+        segmentIndex: i.segmentIndex,
+        type: i.type === "collision" ? "obstacle" : (i.type as any),
       });
     }
-    currentStart = line.endPoint;
   });
 
   collisionMarkers.set(markers);
 
-  if (markers.length > 0) {
-    const boundaryCount = markers.filter((m) => m.type === "boundary").length;
-    const zeroLengthCount = markers.filter(
+  const errors = issues.filter((i) => i.severity === "error");
+  const warnings = issues.filter((i) => i.severity === "warning");
+
+  if (errors.length > 0) {
+    const boundaryCount = errors.filter((m) => m.type === "boundary").length;
+    const zeroLengthCount = errors.filter(
       (m) => m.type === "zero-length",
     ).length;
-    const obstacleCount = markers.length - boundaryCount - zeroLengthCount;
+    const obstacleCount = errors.filter((m) => m.type === "collision").length;
 
-    let msg = `Found ${markers.length} issues! `;
+    let msg = `Found ${errors.length} issues! `;
     const parts = [];
     if (obstacleCount > 0) parts.push(`${obstacleCount} obstacle`);
     if (boundaryCount > 0) parts.push(`${boundaryCount} boundary`);
     if (zeroLengthCount > 0) parts.push(`${zeroLengthCount} zero-length`);
 
-    msg += `(${parts.join(", ")})`;
+    if (parts.length > 0) msg += `(${parts.join(", ")})`;
 
     notification.set({
       message: msg,
-      type: "error", // Maybe separate later if needed, but error is fine for invalid state
+      type: "error",
       timeout: 5000,
+    });
+  } else if (warnings.length > 0) {
+    notification.set({
+      message: `Path is valid, but found ${warnings.length} warnings. Check Inspector tab.`,
+      type: "warning",
+      timeout: 4000,
     });
   } else {
     notification.set({
