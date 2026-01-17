@@ -595,7 +595,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   // Extended Commands
   {
     id: "set-file-manager-directory",
-    key: "ctrl+alt+m",
+    key: "",
     description: "Set File Manager Directory",
     action: "setFileManagerDirectory",
     category: "File",
@@ -623,7 +623,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "show-debug",
-    key: "alt+d",
+    key: "",
     description: "Show/Hide Debug Sequence",
     action: "toggleDebugSequence",
     category: "View",
@@ -679,7 +679,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "copy-json",
-    key: "cmd+shift+c, ctrl+shift+c",
+    key: "",
     description: "Copy Path JSON to Clipboard",
     action: "copyPathJson",
     category: "Export",
