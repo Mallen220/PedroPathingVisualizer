@@ -14,10 +14,14 @@ describe("PluginManager", () => {
     customExportersStore.set([]);
     pluginsStore.set([]);
     themesStore.set([]);
+    localStorage.clear();
     vi.clearAllMocks();
   });
 
   it("should load plugins from electronAPI", async () => {
+    // Enable the plugin via localStorage so it's active upon load
+    localStorage.setItem("plugin_enabled_test-plugin.js", "true");
+
     const mockListPlugins = vi.fn().mockResolvedValue(["test-plugin.js"]);
     const mockReadPlugin = vi.fn().mockResolvedValue(`
       pedro.registerExporter("Test CSV", (data) => {
@@ -39,6 +43,7 @@ describe("PluginManager", () => {
     expect(plugins).toHaveLength(1);
     expect(plugins[0].name).toBe("test-plugin.js");
     expect(plugins[0].loaded).toBe(true);
+    expect(plugins[0].enabled).toBe(true);
 
     const exporters = get(customExportersStore);
     expect(exporters).toHaveLength(1);
@@ -69,6 +74,9 @@ describe("PluginManager", () => {
   });
 
   it("should register themes", async () => {
+    // Enable the plugin via localStorage so it's active upon load
+    localStorage.setItem("plugin_enabled_Example-pink-theme.js", "true");
+
     const mockListPlugins = vi
       .fn()
       .mockResolvedValue(["Example-pink-theme.js"]);
