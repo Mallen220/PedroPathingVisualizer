@@ -57,6 +57,8 @@
   {disabled}
   {title}
   type="button"
+  aria-label={confirming ? "Confirm Deletion" : title}
+  aria-live="polite"
   {...$$restProps}
 >
   {#if confirming}

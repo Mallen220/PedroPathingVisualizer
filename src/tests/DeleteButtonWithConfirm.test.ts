@@ -8,6 +8,8 @@ describe("DeleteButtonWithConfirm", () => {
     render(DeleteButtonWithConfirm);
     const button = screen.getByTitle("Delete");
     expect(button).toBeInTheDocument();
+    // Verify aria-label defaults to title
+    expect(button).toHaveAttribute("aria-label", "Delete");
   });
 
   it("requires two clicks to confirm", async () => {
@@ -22,6 +24,9 @@ describe("DeleteButtonWithConfirm", () => {
 
     // Should show "Confirm" text
     expect(screen.getByText("Confirm")).toBeInTheDocument();
+
+    // Verify aria-label changes
+    expect(button).toHaveAttribute("aria-label", "Confirm Deletion");
 
     // Should NOT have fired click event
     expect(mockClickHandler).not.toHaveBeenCalled();
@@ -44,12 +49,15 @@ describe("DeleteButtonWithConfirm", () => {
     // First click
     await fireEvent.click(button);
     expect(screen.getByText("Confirm")).toBeInTheDocument();
+    expect(button).toHaveAttribute("aria-label", "Confirm Deletion");
 
     // Advance timers
     await vi.advanceTimersByTimeAsync(3500);
 
     // Should revert to icon (Confirm text gone)
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(button).toHaveAttribute("aria-label", "Delete");
+
 
     // Click again (should be treated as first click)
     await fireEvent.click(button);
@@ -76,6 +84,7 @@ describe("DeleteButtonWithConfirm", () => {
 
     // Should revert
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(button).toHaveAttribute("aria-label", "Delete");
 
     vi.useRealTimers();
   });

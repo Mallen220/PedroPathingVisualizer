@@ -17,6 +17,7 @@
     on:click={toggleCollapsed}
     class="flex items-center gap-2 font-semibold hover:bg-neutral-200 dark:hover:bg-neutral-800 px-2 py-1 rounded transition-colors text-sm text-neutral-800 dark:text-neutral-200"
     title="{collapsed ? 'Show' : 'Hide'} {title}"
+    aria-expanded={!collapsed}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -45,6 +46,7 @@
       on:click={onAdd}
       class="text-sm text-purple-500 hover:text-purple-600 flex items-center gap-1 px-2 py-1"
       title="Add Item"
+      aria-label="Add Item to {title}"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
