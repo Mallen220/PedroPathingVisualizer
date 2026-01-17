@@ -559,21 +559,21 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "add-path-start",
-    key: "",
+    key: "alt+s",
     description: "Add Path at Start",
     action: "addPathAtStart",
     category: "Editing",
   },
   {
     id: "add-wait-start",
-    key: "",
+    key: "shift+w",
     description: "Add Wait at Start",
     action: "addWaitAtStart",
     category: "Editing",
   },
   {
     id: "add-rotate-start",
-    key: "",
+    key: "alt+t",
     description: "Add Rotate at Start",
     action: "addRotateAtStart",
     category: "Editing",
@@ -587,7 +587,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "clear-obstacles",
-    key: "",
+    key: "ctrl+shift+backspace",
     description: "Clear All Obstacles",
     action: "clearObstacles",
     category: "Editing",
@@ -595,7 +595,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   // Extended Commands
   {
     id: "set-file-manager-directory",
-    key: "",
+    key: "ctrl+alt+m",
     description: "Set File Manager Directory",
     action: "setFileManagerDirectory",
     category: "File",
@@ -623,21 +623,21 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "show-debug",
-    key: "",
+    key: "alt+d",
     description: "Show/Hide Debug Sequence",
     action: "toggleDebugSequence",
     category: "View",
   },
   {
     id: "toggle-bounds",
-    key: "",
+    key: "alt+b",
     description: "Toggle Field Boundaries",
     action: "toggleFieldBoundaries",
     category: "View",
   },
   {
     id: "toggle-drag",
-    key: "",
+    key: "alt+r",
     description: "Toggle Drag Restriction",
     action: "toggleDragRestriction",
     category: "View",
@@ -658,14 +658,14 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "select-last",
-    key: "",
+    key: "shift+end",
     description: "Select Last Point",
     action: "selectLast",
     category: "Editing",
   },
   {
     id: "reset-start",
-    key: "",
+    key: "shift+home",
     description: "Reset Start Point",
     action: "resetStartPoint",
     category: "Editing",
@@ -679,7 +679,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "copy-json",
-    key: "",
+    key: "cmd+shift+c, ctrl+shift+c",
     description: "Copy Path JSON to Clipboard",
     action: "copyPathJson",
     category: "Export",
@@ -735,7 +735,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   {
     id: "docs",
-    key: "",
+    key: "f1",
     description: "Open Documentation",
     action: "openDocs",
     category: "Help",
