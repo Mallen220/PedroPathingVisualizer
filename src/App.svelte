@@ -16,6 +16,11 @@
   import WhatsNewDialog from "./lib/components/whats-new/WhatsNewDialog.svelte";
   import SaveNameDialog from "./lib/components/SaveNameDialog.svelte";
   import UnsavedChangesDialog from "./lib/components/UnsavedChangesDialog.svelte";
+  import FileManager from "./lib/FileManager.svelte";
+  import SettingsDialog from "./lib/components/SettingsDialog.svelte";
+  import PluginManagerDialog from "./lib/components/PluginManagerDialog.svelte";
+  import KeyboardShortcutsDialog from "./lib/components/KeyboardShortcutsDialog.svelte";
+  import ExportCodeDialog from "./lib/components/ExportCodeDialog.svelte";
 
   // Stores
   import {
@@ -32,6 +37,7 @@
     fileManagerNewFileMode,
     projectMetadataStore,
     currentDirectoryStore,
+    showPluginManager,
   } from "./stores";
   import {
     startPointStore,
@@ -890,9 +896,8 @@
   }
 
   // Sync controller updates to Robot State
-  let committedRobotState:
-    | { x: number; y: number; heading: number }
-    | null = null;
+  let committedRobotState: { x: number; y: number; heading: number } | null =
+    null;
 
   $: {
     if (timePrediction && timePrediction.timeline && lines.length > 0) {
@@ -1130,6 +1135,15 @@
     showExportGif.set(true);
   }
 
+  // --- Export Dialog Logic ---
+  let exportDialog: ExportCodeDialog;
+  $: if ($exportDialogState.isOpen && exportDialog) {
+    exportDialog.openWithFormat(
+      $exportDialogState.format,
+      $exportDialogState.exporterName,
+    );
+  }
+
   // --- Apply Theme ---
   $: {
     // Depend on themesStore so we re-run when plugins load
@@ -1254,6 +1268,33 @@
   onSave={handleUnsavedSave}
   onDiscard={handleUnsavedDiscard}
   onCancel={handleUnsavedCancel}
+/>
+
+<SettingsDialog bind:isOpen={$showSettings} bind:settings={$settingsStore} />
+<KeyboardShortcutsDialog
+  bind:isOpen={$showShortcuts}
+  bind:settings={$settingsStore}
+/>
+<PluginManagerDialog bind:isOpen={$showPluginManager} />
+
+{#if $showFileManager}
+  <FileManager
+    bind:isOpen={$showFileManager}
+    bind:startPoint={$startPointStore}
+    bind:lines={$linesStore}
+    bind:shapes={$shapesStore}
+    bind:sequence={$sequenceStore}
+    bind:settings={$settingsStore}
+  />
+{/if}
+
+<ExportCodeDialog
+  bind:this={exportDialog}
+  bind:startPoint={$startPointStore}
+  bind:lines={$linesStore}
+  bind:sequence={$sequenceStore}
+  bind:shapes={$shapesStore}
+  settings={$settingsStore}
 />
 
 <!-- Drag Overlay -->

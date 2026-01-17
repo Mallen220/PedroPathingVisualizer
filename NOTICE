@@ -160,3 +160,6 @@ src/lib/actions/menuNavigation.ts
 src/lib/components/settings/CustomFieldWizard.svelte
 src/lib/components/PluginManagerDialog.svelte
 src/lib/components/whats-new/pages/plugins.md
+src/lib/components/tabs/DiffTab.svelte
+src/lib/diffStore.ts
+src/tests/keepInZones.test.ts

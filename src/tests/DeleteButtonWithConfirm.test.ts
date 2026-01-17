@@ -58,7 +58,6 @@ describe("DeleteButtonWithConfirm", () => {
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
     expect(button).toHaveAttribute("aria-label", "Delete");
 
-
     // Click again (should be treated as first click)
     await fireEvent.click(button);
     expect(screen.getByText("Confirm")).toBeInTheDocument();

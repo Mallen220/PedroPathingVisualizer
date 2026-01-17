@@ -89,7 +89,7 @@ describe("PathOptimizer Keep-In Zones", () => {
     const collisions = optimizer.getCollisions();
 
     expect(collisions.length).toBeGreaterThan(0);
-    expect(collisions.some(c => c.type === "keep-in")).toBe(true);
+    expect(collisions.some((c) => c.type === "keep-in")).toBe(true);
   });
 
   it("should NOT report violation if robot is fully inside keep-in zone", () => {
@@ -156,18 +156,18 @@ describe("PathOptimizer Keep-In Zones", () => {
     const collisions = optimizer.getCollisions();
 
     expect(collisions.length).toBeGreaterThan(0);
-    expect(collisions.some(c => c.type === "keep-in")).toBe(true);
+    expect(collisions.some((c) => c.type === "keep-in")).toBe(true);
   });
 
   it("should prioritize checking against multiple keep-in zones (union behavior check)", () => {
-     // If we have two disjoint zones, can the robot jump between them? No.
-     // Can the robot be in one OR the other? Yes.
-     // Test: Robot starts in Zone A, ends in Zone B.
-     // Path crosses the gap. Should fail in the gap.
+    // If we have two disjoint zones, can the robot jump between them? No.
+    // Can the robot be in one OR the other? Yes.
+    // Test: Robot starts in Zone A, ends in Zone B.
+    // Path crosses the gap. Should fail in the gap.
 
-     lines[0].endPoint.x = 80;
-     // Gap between x=40 and x=60.
-     shapes = [
+    lines[0].endPoint.x = 80;
+    // Gap between x=40 and x=60.
+    shapes = [
       {
         id: "zoneA",
         vertices: [
@@ -206,6 +206,8 @@ describe("PathOptimizer Keep-In Zones", () => {
 
     // Should have collisions in the gap
     expect(collisions.length).toBeGreaterThan(0);
-    expect(collisions.some(c => c.type === "keep-in" && c.x > 40 && c.x < 60)).toBe(true);
+    expect(
+      collisions.some((c) => c.type === "keep-in" && c.x > 40 && c.x < 60),
+    ).toBe(true);
   });
 });
