@@ -1,3 +1,3 @@
-2026-01-17 - Validation Logic Separation
-Learning: The `PathOptimizer` class encapsulates geometric collision logic but not basic path integrity checks like zero-length segments. Validation logic often needs to span multiple layers (physics, geometry, basic data integrity).
-Action: When extracting validation logic, review the original implementation carefully to ensure all checks (even "trivial" ones) are migrated, as helper classes might be more specialized than assumed.
+2026-01-17 - Error Grouping UI Pattern
+Learning: When displaying time-series validation errors (like path collisions), grouping consecutive events of the same type is critical for usability. Users care about "I hit the wall here," not "I hit the wall at t=1.0, 1.1, 1.2...".
+Action: Always implement aggregation logic for high-frequency validation events before displaying them in list views. Use expand/collapse patterns for the details.

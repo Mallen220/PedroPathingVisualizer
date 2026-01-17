@@ -14,33 +14,34 @@
     BasePoint,
     CollisionMarker,
   } from "../../../types";
+  import { slide } from "svelte/transition";
 
   export let startPoint: Point;
   export let lines: Line[];
   export let sequence: SequenceItem[];
   export let shapes: Shape[];
   export let settings: Settings;
-  export let robotXY: BasePoint;
-  export let robotHeading: number;
+  // Unused exports commented out to avoid build warnings
+  // export let robotXY: BasePoint;
+  // export let robotHeading: number;
   export let isActive: boolean;
-  export let recordChange: () => void;
-  export let onPreviewChange: ((lines: Line[] | null) => void) | null;
+  // export let recordChange: () => void;
+  // export let onPreviewChange: ((lines: Line[] | null) => void) | null;
 
   let issues: InspectionIssue[] = [];
   let isAnalyzing = false;
   let totalTime = 0;
 
-  // Debounce logic could be added if performance is an issue,
-  // but inspectPath is reasonably fast for typical paths.
+  // Track expanded groups by ID
+  let expandedGroups: Record<string, boolean> = {};
+
   $: if (isActive && lines && sequence && settings && shapes) {
     runInspection();
   }
 
   function runInspection() {
     isAnalyzing = true;
-    // Small timeout to allow UI to render "Analyzing..." state if it takes time
     setTimeout(() => {
-      // Calculate total time for seek logic
       const timeResult = calculatePathTime(
         startPoint,
         lines,
@@ -51,9 +52,13 @@
 
       issues = inspectPath(startPoint, lines, settings, sequence, shapes);
 
+      // Reset expansion state when re-inspecting
+      expandedGroups = {};
+
       // Update collision markers store for visualization
+      // We need to flatten the grouped issues to show all markers
       const markers: CollisionMarker[] = [];
-      issues.forEach((i) => {
+      const processIssue = (i: InspectionIssue) => {
         if (
           (i.type === "collision" ||
             i.type === "boundary" ||
@@ -68,7 +73,12 @@
             type: i.type === "collision" ? "obstacle" : (i.type as any),
           });
         }
-      });
+        if (i.children) {
+          i.children.forEach(processIssue);
+        }
+      };
+
+      issues.forEach(processIssue);
       collisionMarkers.set(markers);
 
       isAnalyzing = false;
@@ -88,8 +98,30 @@
     }
   }
 
-  $: errorCount = issues.filter((i) => i.severity === "error").length;
-  $: warningCount = issues.filter((i) => i.severity === "warning").length;
+  function toggleGroup(id: string, e: MouseEvent) {
+    e.stopPropagation();
+    expandedGroups[id] = !expandedGroups[id];
+  }
+
+  // Calculate totals recursively
+  function countSeverity(
+    list: InspectionIssue[],
+    severity: "error" | "warning",
+  ): number {
+    let count = 0;
+    list.forEach((i) => {
+      // If it's a group, we can count it as 1 issue or count all children.
+      // Counting children gives a truer sense of "how many bad frames".
+      // Counting group gives a sense of "how many problems to fix".
+      // Let's count the group itself as 1 if it has children, or just the item.
+      // Actually, the request implies grouping prevents flooding. So 1 group = 1 item in the list.
+      if (i.severity === severity) count++;
+    });
+    return count;
+  }
+
+  $: errorCount = countSeverity(issues, "error");
+  $: warningCount = countSeverity(issues, "warning");
 </script>
 
 <div class="h-full flex flex-col">
@@ -202,7 +234,7 @@
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
-          class="group bg-white dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+          class="group bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
           on:click={() => handleIssueClick(issue)}
         >
           <!-- Severity Indicator Strip -->
@@ -213,7 +245,7 @@
               : 'bg-amber-500'}"
           ></div>
 
-          <div class="pl-2 flex gap-3">
+          <div class="p-3 pl-4 flex gap-3">
             <!-- Icon -->
             <div class="flex-none mt-0.5">
               {#if issue.severity === "error"}
@@ -294,12 +326,35 @@
                 >
                   {issue.message}
                 </h4>
-                {#if issue.time !== undefined}
+                {#if issue.time !== undefined && !issue.children}
                   <span
                     class="text-xs font-mono text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-900 px-1.5 py-0.5 rounded"
                   >
                     {formatTime(issue.time)}
                   </span>
+                {/if}
+                {#if issue.children}
+                  <button
+                    class="p-1 -m-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors"
+                    on:click={(e) => toggleGroup(issue.id, e)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      class="size-4 text-neutral-500 transition-transform duration-200 {expandedGroups[
+                        issue.id
+                      ]
+                        ? 'rotate-180'
+                        : ''}"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </button>
                 {/if}
               </div>
               {#if issue.description}
@@ -323,6 +378,37 @@
               </div>
             </div>
           </div>
+
+          <!-- Children (Dropdown) -->
+          {#if issue.children && expandedGroups[issue.id]}
+            <div
+              class="border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/30"
+              transition:slide={{ duration: 200 }}
+            >
+              {#each issue.children as child}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                  class="px-4 py-2 flex items-center justify-between hover:bg-neutral-100 dark:hover:bg-neutral-700/50 cursor-pointer border-b border-neutral-100 dark:border-neutral-800 last:border-0 pl-11"
+                  on:click={(e) => {
+                    e.stopPropagation(); // Don't trigger parent click
+                    handleIssueClick(child);
+                  }}
+                >
+                  <div class="text-xs text-neutral-700 dark:text-neutral-300">
+                    {child.message}
+                  </div>
+                  {#if child.time !== undefined}
+                    <span
+                      class="text-[10px] font-mono text-neutral-500 dark:text-neutral-400"
+                    >
+                      {formatTime(child.time)}
+                    </span>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
         </div>
       {/each}
     {/if}
