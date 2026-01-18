@@ -8,8 +8,10 @@
   export let isOpen = false;
 
   // Derived status for better UI
-  $: loadedPlugins = $pluginsStore.filter((p) => p.loaded);
-  $: errorPlugins = $pluginsStore.filter((p) => !p.loaded);
+  // Valid plugins are those without initialization errors (loaded or just waiting to be enabled)
+  $: validPlugins = $pluginsStore.filter((p) => !p.error);
+  // Error plugins are those that failed to load (enabled=true but loaded=false with error) or just have an error property
+  $: errorPlugins = $pluginsStore.filter((p) => p.error);
 </script>
 
 {#if isOpen}
@@ -119,16 +121,16 @@
           </div>
         {:else}
           <div class="space-y-4">
-            <!-- Loaded Plugins -->
-            {#if loadedPlugins.length > 0}
+            <!-- Valid Plugins (Enabled or Disabled) -->
+            {#if validPlugins.length > 0}
               <div>
                 <h3
                   class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3 ml-1"
                 >
-                  Installed Plugins ({loadedPlugins.length})
+                  Installed Plugins ({validPlugins.length})
                 </h3>
                 <div class="space-y-3">
-                  {#each loadedPlugins as plugin (plugin.name)}
+                  {#each validPlugins as plugin (plugin.name)}
                     <div
                       class="flex items-start justify-between p-4 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-sm transition-all hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md"
                     >
