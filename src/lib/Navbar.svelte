@@ -19,11 +19,6 @@
   } from "../stores";
   import { getRandomColor } from "../utils";
   import hotkeys from "hotkeys-js";
-  import FileManager from "./FileManager.svelte";
-  import SettingsDialog from "./components/SettingsDialog.svelte";
-  import PluginManagerDialog from "./components/PluginManagerDialog.svelte";
-  import KeyboardShortcutsDialog from "./components/KeyboardShortcutsDialog.svelte";
-  import ExportCodeDialog from "./components/ExportCodeDialog.svelte";
   import { SaveIcon } from "./components/icons";
   import { calculatePathTime, formatTime } from "../utils";
   import { showShortcuts } from "../stores";
@@ -57,7 +52,6 @@
 
   let shortcutsOpen = false;
   let exportMenuOpen = false;
-  let exportDialog: ExportCodeDialog;
 
   let saveDropdownOpen = false;
   let saveDropdownRef: HTMLElement;
@@ -93,14 +87,6 @@
 
   // Update store when local state changes (from closing dialog)
   $: showShortcuts.set(shortcutsOpen);
-
-  // Sync export dialog state
-  $: if ($exportDialogState.isOpen && exportDialog) {
-    exportDialog.openWithFormat(
-      $exportDialogState.format,
-      $exportDialogState.exporterName,
-    );
-  }
 
   function handleGridSizeChange(event: Event) {
     const value = Number((event.target as HTMLSelectElement).value);
@@ -191,30 +177,6 @@
     document.removeEventListener("keydown", handleKeyDown);
   });
 </script>
-
-{#if $showFileManager}
-  <FileManager
-    bind:isOpen={$showFileManager}
-    bind:startPoint
-    bind:lines
-    bind:shapes
-    bind:sequence
-    bind:settings
-  />
-{/if}
-
-<ExportCodeDialog
-  bind:this={exportDialog}
-  bind:startPoint
-  bind:lines
-  bind:sequence
-  bind:shapes
-  {settings}
-/>
-
-<SettingsDialog bind:isOpen={$showSettings} bind:settings />
-<PluginManagerDialog bind:isOpen={$showPluginManager} />
-<KeyboardShortcutsDialog bind:isOpen={shortcutsOpen} bind:settings />
 
 <div
   class="w-full z-50 bg-neutral-50 dark:bg-neutral-900 shadow-md flex flex-wrap justify-between items-center px-4 md:px-6 py-3 border-b border-neutral-200 dark:border-neutral-800"
