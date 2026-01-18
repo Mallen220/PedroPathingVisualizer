@@ -46,11 +46,14 @@ export class PluginManager {
 
       for (const file of files) {
         try {
-          const code = await electronAPI.readPlugin(file);
-          this.executePlugin(file, code);
-
           const enabled = this.getEnabledState(file);
-          plugins.push({ name: file, loaded: true, enabled });
+
+          if (enabled) {
+            const code = await electronAPI.readPlugin(file);
+            this.executePlugin(file, code);
+          }
+
+          plugins.push({ name: file, loaded: enabled, enabled });
         } catch (error) {
           console.error(`Failed to load plugin ${file}:`, error);
           plugins.push({
@@ -79,16 +82,13 @@ export class PluginManager {
     }
   }
 
-  static togglePlugin(name: string, enabled: boolean) {
+  static async togglePlugin(name: string, enabled: boolean) {
     try {
       localStorage.setItem(`plugin_enabled_${name}`, String(enabled));
     } catch {}
 
-    pluginsStore.update((plugins) =>
-      plugins.map((p) => (p.name === name ? { ...p, enabled } : p)),
-    );
-
-    this.refreshActiveResources();
+    // Reload all plugins to reflect the change (especially disabling)
+    await this.reloadPlugins();
   }
 
   private static refreshActiveResources() {
