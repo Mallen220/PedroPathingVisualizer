@@ -15,10 +15,18 @@ import {
   tabRegistry,
   navbarActionRegistry,
   hookRegistry,
+  fieldOverlayRegistry,
+  contextMenuRegistry,
 } from "./registries";
+import AnnotationOverlay from "./components/AnnotationOverlay.svelte";
 
-const { startPointStore, linesStore, shapesStore, sequenceStore } =
-  projectStore;
+const {
+  startPointStore,
+  linesStore,
+  shapesStore,
+  sequenceStore,
+  annotationsStore,
+} = projectStore;
 
 export class PluginManager {
   private static allExporters: CustomExporter[] = [];
@@ -127,11 +135,17 @@ export class PluginManager {
         tabs: tabRegistry,
         navbarActions: navbarActionRegistry,
         hooks: hookRegistry,
+        fieldOverlays: fieldOverlayRegistry,
+        contextMenu: contextMenuRegistry,
       },
       stores: {
         project: projectStore,
         app: appStores,
         get: get,
+      },
+      // Expose internal components for plugins to use
+      components: {
+        AnnotationOverlay,
       },
     };
 

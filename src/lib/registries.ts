@@ -94,6 +94,54 @@ const createNavbarActionRegistry = () => {
 
 export const navbarActionRegistry = createNavbarActionRegistry();
 
+// --- Field Overlay Registry ---
+// Manages additional components to render over the field.
+export interface FieldOverlayDefinition {
+  id: string;
+  component: any;
+  props?: Record<string, any>;
+}
+
+const createFieldOverlayRegistry = () => {
+  const { subscribe, update, set } = writable<FieldOverlayDefinition[]>([]);
+
+  return {
+    subscribe,
+    register: (overlay: FieldOverlayDefinition) => {
+      update((overlays) => [...overlays, overlay]);
+    },
+    unregister: (id: string) => {
+      update((overlays) => overlays.filter((o) => o.id !== id));
+    },
+    reset: () => set([]),
+  };
+};
+
+export const fieldOverlayRegistry = createFieldOverlayRegistry();
+
+// --- Context Menu Registry ---
+// Manages items in the field context menu.
+export interface ContextMenuItem {
+  label: string;
+  action: (x: number, y: number) => void;
+  icon?: string;
+  destructive?: boolean;
+}
+
+const createContextMenuRegistry = () => {
+  const { subscribe, update, set } = writable<ContextMenuItem[]>([]);
+
+  return {
+    subscribe,
+    register: (item: ContextMenuItem) => {
+      update((items) => [...items, item]);
+    },
+    reset: () => set([]),
+  };
+};
+
+export const contextMenuRegistry = createContextMenuRegistry();
+
 // --- Hook Registry ---
 // Allows registering callbacks for specific named events (hooks).
 // e.g., "onSave", "onLoad", "onProjectReset"

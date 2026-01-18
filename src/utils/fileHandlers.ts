@@ -26,6 +26,7 @@ import type {
   Annotation,
 } from "../types";
 import { makeId } from "./nameGenerator";
+import { hookRegistry } from "../lib/registries";
 
 interface ExtendedElectronAPI {
   writeFile: (filePath: string, content: string) => Promise<boolean>;
@@ -51,7 +52,7 @@ function getElectronAPI(): ExtendedElectronAPI | undefined {
   return (window as any).electronAPI as ExtendedElectronAPI | undefined;
 }
 
-export function loadProjectData(data: any) {
+export async function loadProjectData(data: any) {
   if (data.startPoint) startPointStore.set(data.startPoint);
   // Helper to strip " (##)" suffix from names to restore linkage
   const stripSuffix = (name: string) => {
@@ -102,7 +103,8 @@ export function loadProjectData(data: any) {
     sequenceStore.set(seq);
   }
   if (data.shapes) shapesStore.set(data.shapes);
-  if (data.annotations) annotationsStore.set(data.annotations);
+  // Plugin hook for loading data
+  await hookRegistry.run("onLoad", data);
 }
 
 function addToRecentFiles(path: string, settings?: Settings) {
@@ -240,8 +242,10 @@ async function performSave(
       settings,
       sequence: sequenceToSave,
       shapes,
-      annotations,
-    };
+    } as any;
+
+    // Plugin hook for saving data
+    await hookRegistry.run("onSave", projectData);
 
     const jsonString = JSON.stringify(projectData, null, 2);
 
