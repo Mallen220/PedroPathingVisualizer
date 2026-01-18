@@ -124,10 +124,38 @@
     if (!el) return false;
     const tag = el.tagName;
     return (
-      ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(tag) ||
-      el.getAttribute("role") === "button" ||
+      ["INPUT", "TEXTAREA", "SELECT"].includes(tag) ||
       (el as any).isContentEditable
     );
+  }
+
+  function isInputFocused(): boolean {
+    const el = document.activeElement as HTMLElement | null;
+    if (!el) return false;
+    const tag = el.tagName;
+    return (
+      ["INPUT", "TEXTAREA", "SELECT"].includes(tag) ||
+      (el as any).isContentEditable
+    );
+  }
+
+  function isButtonFocused(): boolean {
+    const el = document.activeElement as HTMLElement | null;
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === "BUTTON" || el.getAttribute("role") === "button";
+  }
+
+  function shouldBlockShortcut(e: KeyboardEvent): boolean {
+    if (isInputFocused()) return true;
+    if (isButtonFocused()) {
+      // If focused on a button, only block interaction keys (Space, Enter)
+      // BUT allow them if modifiers are present (e.g. Shift+Enter for focusValue)
+      if ((e.key === " " || e.key === "Enter") && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function getKey(action: string): string {
@@ -1631,7 +1659,7 @@
       const handler = (actions as any)[binding.action];
       if (handler && binding.key) {
         hotkeys(binding.key, (e) => {
-          if (isUIElementFocused()) return;
+          if (shouldBlockShortcut(e)) return;
           e.preventDefault();
           handler(e);
         });
