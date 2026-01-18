@@ -139,6 +139,18 @@
     }
   }
 
+  export function toggleCollapseSelected() {
+    if (activeTabInstance && activeTabInstance.toggleCollapseSelected) {
+      activeTabInstance.toggleCollapseSelected();
+    }
+  }
+
+  export function focusValue() {
+    if (activeTabInstance && activeTabInstance.focusValue) {
+      activeTabInstance.focusValue();
+    }
+  }
+
   export async function scrollToItem(type: string, id: string) {
     if (type === "path" || type === "wait" || type === "rotate") {
       activeTab = "path";

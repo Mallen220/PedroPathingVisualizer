@@ -1196,6 +1196,11 @@
     }
   }
 
+  function panView(dx: number, dy: number) {
+    if (isUIElementFocused()) return;
+    fieldPan.update((p) => ({ x: p.x + dx, y: p.y + dy }));
+  }
+
   function selectLast() {
     if (lines.length > 0) {
       const lastLineIdx = lines.length - 1;
@@ -1303,6 +1308,12 @@
       else activeControlTab = "field";
     },
     toggleCollapseAll: () => toggleCollapseAllTrigger.update((v) => v + 1),
+    toggleCollapseSelected: () => {
+      if (isUIElementFocused()) return;
+      if (controlTabRef && controlTabRef.toggleCollapseSelected) {
+        controlTabRef.toggleCollapseSelected();
+      }
+    },
     showHelp: () => showShortcuts.update((v) => !v),
     openSettings: () => showSettings.update((v) => !v),
     openWhatsNew: () => {
@@ -1347,6 +1358,12 @@
     focusY: () => focusRequest.set({ field: "y", timestamp: Date.now() }),
     focusHeading: () =>
       focusRequest.set({ field: "heading", timestamp: Date.now() }),
+    focusValue: () => {
+      if (isUIElementFocused()) return;
+      if (controlTabRef && controlTabRef.focusValue) {
+        controlTabRef.focusValue();
+      }
+    },
     togglePlay: () => {
       if (playing) pause();
       else play();
@@ -1402,6 +1419,10 @@
     resetStartPoint: () => resetStartPoint(),
     panToStart: () => panToStart(),
     panToEnd: () => panToEnd(),
+    panViewUp: () => panView(0, 50),
+    panViewDown: () => panView(0, -50),
+    panViewLeft: () => panView(50, 0),
+    panViewRight: () => panView(-50, 0),
     selectLast: () => selectLast(),
     copyPathJson: () => copyPathJson(),
     toggleDebugSequence: () =>
