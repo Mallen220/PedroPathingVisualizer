@@ -2,27 +2,6 @@
 
 ## **Features:**
 
-### **Robot Profiles**
-
-Easily manage multiple robot configurations.
-
-- **Save & Load:** Store different robot settings (dimensions, velocity, acceleration) and switch between them instantly.
-- **Quick Apply:** Apply a profile to override your current settings.
-
-### **Custom Field Maps**
-
-Bring your own field environment into the app.
-
-- **Upload & Calibrate:** Upload a custom image and calibrate it using two reference points.
-- **Visual Context:** See your paths overlaid on your specific practice field or game environment.
-
-### **Unsaved Changes Protection**
-
-Never lose your work again.
-
-- **Safety Prompts:** Receive a warning if you try to leave or close the app with unsaved changes.
-- **Discard or Save:** Choose to save your work or discard changes.
-
 ### **Interactive Onboarding**
 
 New to the application? Our new interactive tutorial guides you through the basics of creating and managing paths.
@@ -82,7 +61,6 @@ A new view mode designed for showcasing your paths without distractions.
 - **Full Focus:** Instantly hide the sidebar and navbar to dedicate the entire screen to the field view.
 - **Easy Toggle:** Enter Presentation Mode via the "View" menu or by pressing `Alt + P`.
 
-## **Improvements:**
+## **Bug Fixes:**
 
-- **Performance:** Major code refactoring for the Control Tab to improve responsiveness and maintainability.
-- **UX Enhancements:** Improved accessibility for delete buttons and section headers, plus a more intuitive Command Palette experience.
+- **Settings & Keybinds:** Resolved integration issues with Settings and Keybindings to ensure reliable configuration.
