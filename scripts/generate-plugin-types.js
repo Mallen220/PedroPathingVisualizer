@@ -32,6 +32,8 @@ function generate() {
 
 ${content}
 
+export {};
+
 // Global variable exposed to plugins
 declare global {
   const pedro: PedroAPI;

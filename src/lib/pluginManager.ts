@@ -17,6 +17,7 @@ import {
   hookRegistry,
   fieldContextMenuRegistry,
 } from "./registries";
+import { registerCoreUI } from "./coreRegistrations";
 
 const { startPointStore, linesStore, shapesStore, sequenceStore } =
   projectStore;
@@ -48,7 +49,9 @@ export class PluginManager {
             }
             this.executePlugin(file, code);
           }
-          plugins.push({ name: file, loaded: enabled, enabled });
+          // "loaded" means we successfully discovered and (if enabled) executed the plugin
+          // Disabled plugins should still appear as loaded to avoid showing a false error state in the UI
+          plugins.push({ name: file, loaded: true, enabled });
         } catch (error: any) {
           console.error(`Failed to load plugin ${file}:`, error);
           const errorMessage = error?.message || String(error);
@@ -71,8 +74,11 @@ export class PluginManager {
     try {
       const key = `plugin_enabled_${name}`;
       const val = localStorage.getItem(key);
-      // Default to false (disabled) if not explicitly enabled
-      return val === null ? false : val === "true";
+      // StickyNotes is enabled by default, others are disabled
+      if (val === null) {
+        return name === "StickyNotes.ts" || name === "StickyNotes.js";
+      }
+      return val === "true";
     } catch {
       return false;
     }
@@ -174,6 +180,9 @@ export class PluginManager {
     navbarActionRegistry.reset();
     hookRegistry.reset();
     fieldContextMenuRegistry.reset();
+
+    // Restore built-in components/tabs before loading plugins so the UI baseline persists
+    registerCoreUI();
 
     await this.init();
   }
