@@ -257,9 +257,11 @@ interface Notification {
   action?: () => void;
 }
 
+// ------------------------------------------------------------------
+// Plugin System Interfaces
+// ------------------------------------------------------------------
 
-
-export interface PedroData {
+interface PedroData {
   startPoint: Point;
   lines: Line[];
   shapes: Shape[];
@@ -267,7 +269,7 @@ export interface PedroData {
 }
 
 // Registry Interfaces
-export interface Registry<T> {
+interface Registry<T> {
   subscribe: (run: (value: any) => void) => () => void;
   register: (item: T) => void;
   unregister?: (id: string) => void;
@@ -275,11 +277,11 @@ export interface Registry<T> {
   reset: () => void;
 }
 
-export interface ComponentRegistryState {
+interface ComponentRegistryState {
   [key: string]: any;
 }
 
-export interface TabDefinition {
+interface TabDefinition {
   id: string;
   label: string;
   component: any;
@@ -287,7 +289,7 @@ export interface TabDefinition {
   order?: number;
 }
 
-export interface NavbarAction {
+interface NavbarAction {
   id: string;
   icon: string; // SVG string
   title?: string;
@@ -296,23 +298,23 @@ export interface NavbarAction {
   order?: number;
 }
 
-export type HookCallback = (...args: any[]) => void | Promise<void>;
+type HookCallback = (...args: any[]) => void | Promise<void>;
 
-export interface HookRegistry {
+interface HookRegistry {
   register: (hookName: string, callback: HookCallback) => void;
   run: (hookName: string, ...args: any[]) => Promise<void>;
   clear: () => void;
 }
 
 // Writable Store Interface (simplified from Svelte)
-export interface Writable<T> {
+interface Writable<T> {
   set: (value: T) => void;
   update: (updater: (value: T) => T) => void;
   subscribe: (run: (value: T) => void) => () => void;
 }
 
 // Project Store Interface
-export interface ProjectStore {
+interface ProjectStore {
   startPointStore: Writable<Point>;
   linesStore: Writable<Line[]>;
   shapesStore: Writable<Shape[]>;
@@ -321,7 +323,7 @@ export interface ProjectStore {
   // ... other stores
 }
 
-export interface PedroAPI {
+interface PedroAPI {
   /**
    * Register a custom code exporter.
    * @param name The display name of the exporter.
@@ -360,6 +362,7 @@ export interface PedroAPI {
     get: (store: Writable<any>) => any;
   };
 }
+
 
 // Global variable exposed to plugins
 declare global {
