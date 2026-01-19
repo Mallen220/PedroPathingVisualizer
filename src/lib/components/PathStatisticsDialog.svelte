@@ -135,34 +135,92 @@
       angularVelocityData.push({ time: t, value: vAng });
     };
 
+    // Helper to process generic event for graph (implicit or explicit)
+    const processEventForGraph = (ev: any) => {
+      if (ev.type === "wait") {
+        if (ev.duration <= 0) return;
+
+        const startTime = ev.startTime;
+        const endTime = ev.endTime;
+
+        // Check for rotation
+        const diff = Math.abs(
+          getAngularDifference(ev.startHeading || 0, ev.targetHeading || 0)
+        );
+
+        if (diff > 0.1) {
+           // Rotation
+           const maxAngVel = (diff * (Math.PI / 180)) / ev.duration;
+           // Trapezoid visualization
+           addDataPoint(startTime, 0, 0);
+           addDataPoint(startTime + ev.duration * 0.1, 0, maxAngVel);
+           addDataPoint(endTime - ev.duration * 0.1, 0, maxAngVel);
+           addDataPoint(endTime, 0, 0);
+        } else {
+           // Pure Wait
+           addDataPoint(startTime, 0, 0);
+           addDataPoint(endTime, 0, 0);
+        }
+      } else if (ev.type === "travel") {
+         // This is handled by the main path logic usually, but if called separately:
+         // We would need the full profile extraction logic here.
+         // Since we inline it for the main path item, we won't use this helper for 'travel'
+         // events linked to a sequence item unless we refactor fully.
+      }
+    };
+
     // Ensure start at 0
     addDataPoint(0, 0, 0);
 
     sequence.forEach((item) => {
+      // Common logic to consume intermediate events
+      // Find the target event for this sequence item
+      let targetEventIndex = -1;
+
+      for (let i = timelineIndex; i < timeline.length; i++) {
+        const tEv = timeline[i];
+        let isMatch = false;
+
+        if (item.kind === "wait" && tEv.type === "wait" && (tEv as any).waitId === item.id) {
+           isMatch = true;
+        } else if (item.kind === "rotate" && tEv.type === "wait" && (tEv as any).waitId === item.id) {
+           isMatch = true;
+        } else if (item.kind === "path" && tEv.type === "travel") {
+           const line = lineById.get(item.lineId);
+           if (line && tEv.lineIndex === lines.findIndex((l) => l.id === line.id)) {
+              isMatch = true;
+           }
+        }
+
+        if (isMatch) {
+           targetEventIndex = i;
+           break;
+        }
+      }
+
+      // If we found the target event, process everything before it as intermediate
+      if (targetEventIndex !== -1) {
+         for (let i = timelineIndex; i < targetEventIndex; i++) {
+            processEventForGraph(timeline[i]);
+         }
+         timelineIndex = targetEventIndex; // Move cursor to target
+      }
+
+      // Now process the sequence item itself (which corresponds to timeline[timelineIndex] if found)
+      // If not found (e.g. 0 duration wait dropped from timeline?), we handle graceful fallback in blocks below.
+
       // Handle Wait Item
       if (item.kind === "wait") {
-        // Find corresponding wait event
         let event: any = null;
-        for (let i = timelineIndex; i < timeline.length; i++) {
-          const tEv = timeline[i];
-          if (tEv.type === "wait" && (tEv as any).waitId === item.id) {
-            event = tEv;
-            timelineIndex = i + 1; // Advance past this event
-            break;
-          }
+        if (targetEventIndex !== -1) {
+           event = timeline[targetEventIndex];
+           timelineIndex++;
+
+           // Add data for explicit wait
+           processEventForGraph(event);
         }
 
-        // If not found (e.g. 0 duration), we still want to show the row if it exists in sequence
-        const duration = event ? event.duration : item.durationMs / 1000; // Fallback to item duration
-
-        // Add Wait Data (Velocity 0)
-        if (duration > 0 && event) {
-          const startTime = event.startTime;
-          const endTime = event.endTime;
-          // Add points to flatten the graph during wait
-          addDataPoint(startTime, 0, 0);
-          addDataPoint(endTime, 0, 0);
-        }
+        const duration = event ? event.duration : item.durationMs / 1000;
 
         segments.push({
           name: item.name || "Wait",
@@ -178,15 +236,13 @@
 
       // Handle Rotate Item
       if (item.kind === "rotate") {
-        // Find corresponding wait event
         let event: any = null;
-        for (let i = timelineIndex; i < timeline.length; i++) {
-          const tEv = timeline[i];
-          if (tEv.type === "wait" && (tEv as any).waitId === item.id) {
-            event = tEv;
-            timelineIndex = i + 1; // Advance past this event
-            break;
-          }
+        if (targetEventIndex !== -1) {
+           event = timeline[targetEventIndex];
+           timelineIndex++;
+
+           // Add data for explicit rotate
+           processEventForGraph(event);
         }
 
         const duration = event ? event.duration : 0;
@@ -200,21 +256,8 @@
               (event as any).targetHeading,
             ),
           );
-          // Simplified Profile for Rotation (Trapezoid/Triangle)
-          // We can't easily reconstruct exact profile without duplicating logic,
-          // but we can approximate or just show average.
-          // Or better, assume maxAngVel reached if duration allows.
-          // Let's just use the average for now or 0 start/end peak middle.
-          maxAngVel = (diff * (Math.PI / 180)) / event.duration; // Average
+          maxAngVel = (diff * (Math.PI / 180)) / event.duration;
           degrees = diff;
-
-          const startTime = event.startTime;
-          const endTime = event.endTime;
-          // Simple trapezoid approx for visualization
-          addDataPoint(startTime, 0, 0);
-          addDataPoint(startTime + duration * 0.1, 0, maxAngVel);
-          addDataPoint(endTime - duration * 0.1, 0, maxAngVel);
-          addDataPoint(endTime, 0, 0);
         }
 
         segments.push({
@@ -234,18 +277,10 @@
       const line = lineById.get(item.lineId);
       if (!line) return;
 
-      // Find corresponding travel event
       let event: any = null;
-      for (let i = timelineIndex; i < timeline.length; i++) {
-        const tEv = timeline[i];
-        if (
-          tEv.type === "travel" &&
-          tEv.lineIndex === lines.findIndex((l) => l.id === line.id)
-        ) {
-          event = tEv;
-          timelineIndex = i + 1;
-          break;
-        }
+      if (targetEventIndex !== -1) {
+         event = timeline[targetEventIndex];
+         timelineIndex++;
       }
 
       if (!event) return;
