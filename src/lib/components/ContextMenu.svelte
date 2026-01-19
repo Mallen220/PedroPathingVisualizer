@@ -96,7 +96,11 @@
         role="menuitem"
       >
         {#if item.icon}
-          {#if typeof item.icon === "object" || typeof item.icon === "function"}
+          {#if typeof item.icon === "string"}
+            <div class="size-4 [&>svg]:size-4 [&>svg]:stroke-[1.5]">
+              {@html item.icon}
+            </div>
+          {:else if typeof item.icon === "object" || typeof item.icon === "function"}
             <svelte:component this={item.icon} class="size-4" />
           {/if}
         {/if}

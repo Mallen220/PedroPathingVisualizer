@@ -65,6 +65,7 @@ export class PluginManager {
       }
       pluginsStore.set(plugins);
       this.refreshActiveResources();
+      hookRegistry.run("pluginsLoaded");
     } catch (err) {
       console.error("Failed to init plugins:", err);
     }

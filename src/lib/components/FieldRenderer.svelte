@@ -1386,6 +1386,13 @@
     // Trigger hook for plugins to initialize overlays
     hookRegistry.run("fieldOverlayInit", overlayContainer);
 
+    // Re-run when plugins are loaded
+    hookRegistry.register("pluginsLoaded", () => {
+      if (overlayContainer) {
+        hookRegistry.run("fieldOverlayInit", overlayContainer);
+      }
+    });
+
     // Event Listeners
     two.renderer.domElement.addEventListener("mouseenter", () => {
       // Optimization: Start caching rects when user interacts with field
@@ -2279,6 +2286,15 @@ left: ${x(robotXY.x)}px; transform: translate(-50%, -50%) rotate(${robotHeading}
         </button>
       </div>
     </div>
+  {/if}
+
+  {#if showContextMenu}
+    <ContextMenu
+      x={contextMenuX}
+      y={contextMenuY}
+      items={contextMenuItems}
+      on:close={() => (showContextMenu = false)}
+    />
   {/if}
 </div>
 
