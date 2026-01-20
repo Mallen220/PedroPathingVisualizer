@@ -17,6 +17,24 @@ describe("Expanded Plugin API", () => {
     navbarActionRegistry.reset();
     hookRegistry.clear();
     vi.clearAllMocks();
+
+    // Mock localStorage (some tests run without a DOM localStorage)
+    const storage: Record<string, string> = {};
+    Object.defineProperty(window, "localStorage", {
+      value: {
+        getItem: vi.fn((key: string) => storage[key] || null),
+        setItem: vi.fn((key: string, value: string) => {
+          storage[key] = value;
+        }),
+        clear: vi.fn(() => {
+          for (const key in storage) delete storage[key];
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete storage[key];
+        }),
+      },
+      writable: true,
+    });
   });
 
   it("should expose registries in pedro API", async () => {
@@ -48,6 +66,8 @@ describe("Expanded Plugin API", () => {
       listPlugins: mockListPlugins,
       readPlugin: mockReadPlugin,
     };
+
+    localStorage.setItem("plugin_enabled_expanded-plugin.js", "true");
 
     await PluginManager.init();
 
