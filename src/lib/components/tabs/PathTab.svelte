@@ -33,10 +33,13 @@
     selectedPointId,
     toggleCollapseAllTrigger,
   } from "../../../stores";
+  import { processMacroImport } from "../../../utils/macroHelpers";
+  import type { Shape } from "../../../types";
 
   export let startPoint: Point;
   export let lines: Line[];
   export let sequence: SequenceItem[];
+  export let shapes: Shape[]; // Added binding for shapes
   export let settings: Settings;
   export let recordChange: () => void;
   export let isActive: boolean = false; // instead of checking activeTab === 'path'
@@ -308,6 +311,102 @@
     collapsedSections.lines.splice(idx, 1);
     collapsedSections.controlPoints.splice(idx, 1);
     collapsedEventMarkers.splice(idx, 1);
+    recordChange();
+  }
+
+  // --- Macro Handling ---
+  async function addMacro() {
+    // 1. Trigger file picker (this usually requires electron IPC)
+    // For now, we assume window.api exists if running in Electron.
+    // If we are in browser/test, we might need a fallback or mock.
+
+    if (!(window as any).api) {
+      console.error("Native API not available for picking file.");
+      return;
+    }
+
+    const result = await (window as any).api.openFile();
+    if (result && !result.canceled && result.filePath) {
+      // 2. Load File content
+      // We assume openFile returns path, and we need to read it.
+      // Or we can use a helper that reads it.
+      // Let's assume we have a way to read JSON content.
+      // Typically `window.api.readFile(path)`
+
+      try {
+        const contentStr = await (window as any).api.readFile(result.filePath);
+        const data = JSON.parse(contentStr);
+
+        // 3. Process Import
+        // Extract name from filename
+        const filename = result.filePath.split(/[\\/]/).pop() || "Macro";
+        const { macroItem, newLines, newShapes } = processMacroImport(
+          data,
+          result.filePath,
+          filename,
+        );
+
+        // 4. Update Stores
+        lines = [...lines, ...newLines];
+        shapes = [...shapes, ...newShapes];
+        sequence = [...sequence, macroItem];
+
+        // 5. Update collapsed state
+        collapsedSections.macros[macroItem.id] = false;
+
+        // Also update collapsed states for the new lines to keep arrays in sync?
+        // Actually, collapsedSections.lines corresponds to `lines` array index.
+        // So we need to append to it.
+        const newLineStates = newLines.map(() => true);
+        collapsedSections.lines = [...collapsedSections.lines, ...newLineStates];
+        collapsedSections.controlPoints = [...collapsedSections.controlPoints, ...newLineStates];
+        collapsedEventMarkers = [...collapsedEventMarkers, ...newLineStates];
+
+        recordChange();
+      } catch (e) {
+        console.error("Failed to load macro", e);
+      }
+    }
+  }
+
+  function removeMacro(sIdx: number) {
+    const item = sequence[sIdx] as SequenceMacroItem;
+    const macroId = item.id;
+
+    // Remove associated lines and shapes
+    // Lines and shapes have `fromMacroId` equal to macroId
+
+    // We need to be careful removing from `lines` because it shifts indices for other path items in sequence.
+    // BUT `sequence` items reference `lineId`, not index. So simply filtering `lines` is safe IF we also remove the sequence items.
+    // Wait, the macro item is ONE item in the `sequence` array.
+    // But the `lines` array contains the expanded lines.
+    // Do any other sequence items reference these lines?
+    // No, only the macro's internal logic implies them (or if we expanded them).
+    // The `lines` are just sitting there.
+    // So we can safely filter them out.
+
+    lines = lines.filter(l => l.fromMacroId !== macroId);
+    shapes = shapes.filter(s => s.fromMacroId !== macroId);
+
+    // Sync collapsed arrays (rebuild them to match new lines length)
+    // The easiest way is to re-initialize them or map them.
+    // But `collapsedSections.lines` relies on index.
+    // If we remove items, indices shift.
+    // We should probably just reset collapsed states or try to preserve valid ones.
+    // For simplicity, let's reset or just rebuild based on current IDs if we tracked IDs.
+    // We track by index.
+    // Rebuild:
+    collapsedSections.lines = lines.map(() => true);
+    collapsedSections.controlPoints = lines.map(() => true);
+    collapsedEventMarkers = lines.map(() => false);
+
+    // Remove from sequence
+    const newSeq = [...sequence];
+    newSeq.splice(sIdx, 1);
+    sequence = newSeq;
+
+    delete collapsedSections.macros[macroId];
+
     recordChange();
   }
 
@@ -961,6 +1060,27 @@
         />
       </svg>
       Add Rotate
+    </button>
+    <button
+      on:click={addMacro}
+      class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-700 rounded-md shadow-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+      aria-label="Add Macro"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        class="size-4"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+        />
+      </svg>
+      Add Macro
     </button>
   </div>
 </div>

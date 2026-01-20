@@ -28,6 +28,8 @@
   export let canMoveDown: boolean = true;
 
   $: isSelected = $selectedLineId === line.id;
+  $: isMacro = !!line.fromMacroId;
+  $: isReadOnly = line.locked || isMacro;
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
@@ -167,10 +169,15 @@
             value={line.name}
             placeholder="Path Name"
             aria-label="Path name"
-            title="Edit path name"
+            title={isMacro
+              ? "Cannot edit macro path name"
+              : line.locked
+                ? "Path locked"
+                : "Edit path name"}
             class="w-full pl-2 pr-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-md focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all placeholder-neutral-400 truncate"
             class:text-green-500={hoveredLinkId === line.id}
-            disabled={line.locked}
+            class:opacity-60={isReadOnly}
+            disabled={isReadOnly}
             on:input={handleNameInput}
             on:blur={() => recordChange && recordChange()}
             on:click|stopPropagation
@@ -215,18 +222,67 @@
       <ColorPicker
         bind:color={line.color}
         title="Change Path Color"
-        disabled={line.locked}
+        disabled={isReadOnly}
       />
 
-      <button
-        on:click|stopPropagation={() => {
-          line.locked = !line.locked;
-          lines = [...lines];
-        }}
-        class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
-        title={line.locked ? "Unlock Path" : "Lock Path"}
-        aria-label={line.locked ? "Unlock Path" : "Lock Path"}
-      >
+      {#if !isMacro}
+        <button
+          on:click|stopPropagation={() => {
+            line.locked = !line.locked;
+            lines = [...lines];
+          }}
+          class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
+          title={line.locked ? "Unlock Path" : "Lock Path"}
+          aria-label={line.locked ? "Unlock Path" : "Lock Path"}
+        >
+          {#if line.locked}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              class="size-4 text-amber-500"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          {:else}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width={2}
+              stroke="currentColor"
+              class="size-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+              />
+            </svg>
+          {/if}
+        </button>
+      {:else}
+        <div class="p-1.5 text-neutral-400" title="Part of a Macro (Read-only)">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="size-4 text-blue-500"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+            />
+          </svg>
+        </div>
+      {/if}
         {#if line.locked}
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -265,8 +321,8 @@
       >
         <button
           on:click|stopPropagation={() =>
-            !line.locked && onMoveUp && onMoveUp()}
-          disabled={!canMoveUp || line.locked}
+            !isReadOnly && onMoveUp && onMoveUp()}
+          disabled={!canMoveUp || isReadOnly}
           class="p-1 rounded-md hover:bg-white dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm hover:shadow"
           title="Move Up"
           aria-label="Move Up"
@@ -286,8 +342,8 @@
         </button>
         <button
           on:click|stopPropagation={() =>
-            !line.locked && onMoveDown && onMoveDown()}
-          disabled={!canMoveDown || line.locked}
+            !isReadOnly && onMoveDown && onMoveDown()}
+          disabled={!canMoveDown || isReadOnly}
           class="p-1 rounded-md hover:bg-white dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm hover:shadow"
           title="Move Down"
           aria-label="Move Down"
@@ -309,8 +365,8 @@
 
       {#if lines.length > 1}
         <DeleteButtonWithConfirm
-          on:click={() => !line.locked && onRemove && onRemove()}
-          disabled={line.locked}
+          on:click={() => !isReadOnly && onRemove && onRemove()}
+          disabled={isReadOnly}
           title="Delete Path"
         />
       {/if}
@@ -347,7 +403,7 @@
                 min="0"
                 max="144"
                 bind:value={line.endPoint.x}
-                disabled={line.locked}
+                disabled={isReadOnly}
                 title={snapToGridTitle}
                 aria-label="Target X position"
                 placeholder="0"
@@ -366,7 +422,7 @@
                 max="144"
                 type="number"
                 bind:value={line.endPoint.y}
-                disabled={line.locked}
+                disabled={isReadOnly}
                 title={snapToGridTitle}
                 aria-label="Target Y position"
                 placeholder="0"
@@ -385,7 +441,7 @@
           <HeadingControls
             bind:this={headingControls}
             endPoint={line.endPoint}
-            locked={line.locked}
+            locked={isReadOnly}
             on:change={() => (lines = [...lines])}
             on:commit={() => {
               lines = [...lines];

@@ -269,31 +269,34 @@ describe("Time Calculator Extended", () => {
   describe("Macro Handling", () => {
     it("should correctly tag events with macroId and name", () => {
       const startPoint: Point = { x: 0, y: 0, heading: "constant", degrees: 0 };
-      const lines: Line[] = []; // Main path empty, purely macro
 
+      // Simulate imported lines in global store
       const macroLines: Line[] = [
         {
-          id: "ML1",
+          id: "m1__ML1", // Prefixed ID
           endPoint: { x: 10, y: 0, heading: "constant", degrees: 0 },
           controlPoints: [],
           color: "blue",
+          fromMacroId: "m1",
         },
       ];
 
-      // Mock macro data
-      const macros = new Map();
-      macros.set("macro1.pp", {
-        startPoint: { x: 5, y: 5, heading: "constant", degrees: 90 }, // Offset from 0,0
-        lines: macroLines,
-        sequence: [{ kind: "path", lineId: "ML1" }],
-      });
+      const lines: Line[] = [...macroLines]; // Main path contains macro lines
 
+      // Simulate imported sequence
       const sequence: SequenceItem[] = [
         {
           kind: "macro",
           id: "m1",
           name: "My Macro",
           filePath: "macro1.pp",
+          anchorPoint: { x: 5, y: 5, heading: "constant", degrees: 90 }, // Offset from 0,0
+          internalSequence: [
+            {
+              kind: "path",
+              lineId: "m1__ML1",
+            } as any,
+          ],
         },
       ];
 
@@ -302,7 +305,6 @@ describe("Time Calculator Extended", () => {
         lines,
         defaultSettings,
         sequence,
-        macros,
       );
 
       // Expected events:

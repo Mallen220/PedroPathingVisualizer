@@ -576,7 +576,6 @@ export function calculatePathTime(
   lines: Line[],
   settings: Settings,
   sequence?: SequenceItem[],
-  macros?: Map<string, import("../types").PedroData>,
 ): TimePrediction {
   const msToSeconds = (value?: number | string) => {
     const numeric = Number(value);
@@ -694,149 +693,129 @@ export function calculatePathTime(
       }
 
       if (item.kind === "macro") {
-        if (macros && macros.has(item.filePath)) {
-          const macroData = macros.get(item.filePath)!;
+        const macroItem = item as any; // Cast to access internalSequence
+        if (macroItem.internalSequence && macroItem.internalSequence.length > 0) {
+          // BRIDGE LOGIC
+          // Try to access `anchorPoint` from the item (will add to type definitions in a fix-up if needed, or assume dynamic).
+          const macroAnchor = (macroItem as any).anchorPoint as Point | undefined;
 
-          // Bridge Path Logic
-          const dist = getDistance(lastPoint, macroData.startPoint);
-          if (dist > 0.1) {
-            // Determine bridge heading based on macro start point preferences
-            let bridgeEndPoint: Point;
-            const target = macroData.startPoint;
+          if (macroAnchor) {
+            // Bridge Path Logic
+            const dist = getDistance(lastPoint, macroAnchor);
+            if (dist > 0.1) {
+              let bridgeEndPoint: Point;
+              const target = macroAnchor;
 
-            if (target.heading === "constant") {
-              bridgeEndPoint = {
-                x: target.x,
-                y: target.y,
-                heading: "constant",
-                degrees: target.degrees,
+              if (target.heading === "constant") {
+                bridgeEndPoint = {
+                  x: target.x,
+                  y: target.y,
+                  heading: "constant",
+                  degrees: target.degrees,
+                };
+              } else if (target.heading === "linear") {
+                bridgeEndPoint = {
+                  x: target.x,
+                  y: target.y,
+                  heading: "linear",
+                  startDeg: 0,
+                  endDeg: target.startDeg,
+                };
+              } else {
+                bridgeEndPoint = {
+                  x: target.x,
+                  y: target.y,
+                  heading: "tangential",
+                  reverse: target.reverse,
+                };
+              }
+
+              const bridgeLine: Line = {
+                id: `bridge-${item.id}`,
+                startPoint: lastPoint,
+                endPoint: bridgeEndPoint,
+                controlPoints: [],
+                color: "rgba(100, 100, 100, 0.5)",
+                name: `Bridge to ${item.name}`,
               };
-            } else if (target.heading === "linear") {
-              // Bridge ends where macro starts.
-              // If macro start is linear, it implies it starts at `startDeg`.
-              // So bridge should interpolate to that `startDeg`.
-              bridgeEndPoint = {
-                x: target.x,
-                y: target.y,
-                heading: "linear",
-                startDeg: 0, // Ignored by calculator (uses current)
-                endDeg: target.startDeg,
-              };
-            } else {
-              // Tangential
-              bridgeEndPoint = {
-                x: target.x,
-                y: target.y,
-                heading: "tangential",
-                reverse: target.reverse,
-              };
-            }
 
-            // Create a bridge line
-            const bridgeLine: Line = {
-              id: `bridge-${item.id}`,
-              startPoint: lastPoint, // Implicit start
-              endPoint: bridgeEndPoint,
-              controlPoints: [],
-              color: "rgba(100, 100, 100, 0.5)", // Ghostly gray
-              name: `Bridge to ${item.name}`,
-            };
+              // Rotation to bridge
+              let requiredStartHeadingRaw = getLineStartHeading(
+                bridgeLine,
+                lastPoint,
+              );
+              let requiredStartHeading = unwrapAngle(
+                requiredStartHeadingRaw,
+                currentHeading,
+              );
+              if (!Number.isFinite(requiredStartHeading))
+                requiredStartHeading = currentHeading;
 
-            // --- ROTATION CHECK TO FACE BRIDGE ---
-            // Unwind requiredStartHeading relative to currentHeading
-            let requiredStartHeadingRaw = getLineStartHeading(
-              bridgeLine,
-              lastPoint,
-            );
-            let requiredStartHeading = unwrapAngle(
-              requiredStartHeadingRaw,
-              currentHeading,
-            );
+              const diff = Math.abs(currentHeading - requiredStartHeading);
+              if (diff > 0.1) {
+                const rotTime = calculateRotationTime(diff, safeSettings);
+                timeline.push({
+                  type: "wait",
+                  name: `Rotate to ${item.name}`,
+                  duration: rotTime,
+                  startTime: currentTime,
+                  endTime: currentTime + rotTime,
+                  startHeading: currentHeading,
+                  targetHeading: requiredStartHeading,
+                  atPoint: lastPoint,
+                  macroId: item.id,
+                  macroName: item.name,
+                });
+                currentTime += rotTime;
+                currentHeading = requiredStartHeading;
+              }
 
-            if (!Number.isFinite(requiredStartHeading))
-              requiredStartHeading = currentHeading;
+              const bridgeAnalysis = analyzePathSegment(
+                lastPoint,
+                [],
+                bridgeLine.endPoint,
+                50,
+                currentHeading,
+              );
+              const bridgeLength = bridgeAnalysis.length;
+              segmentLengths.push(bridgeLength);
 
-            const diff = Math.abs(currentHeading - requiredStartHeading);
-            if (diff > 0.1) {
-              const rotTime = calculateRotationTime(diff, safeSettings);
+              let bridgeTime = 0;
+              if (useMotionProfile) {
+                const result = calculateMotionProfileDetailed(
+                  bridgeAnalysis.steps,
+                  safeSettings,
+                );
+                bridgeTime = result.totalTime;
+              } else {
+                const avgVel =
+                  (safeSettings.xVelocity + safeSettings.yVelocity) / 2;
+                bridgeTime = bridgeLength / avgVel;
+              }
+
               timeline.push({
-                type: "wait", // Reuse wait type for stationary actions
-                name: `Rotate to ${item.name}`,
-                duration: rotTime,
+                type: "travel",
+                duration: bridgeTime,
                 startTime: currentTime,
-                endTime: currentTime + rotTime,
-                startHeading: currentHeading,
-                targetHeading: requiredStartHeading,
-                atPoint: lastPoint,
-                macroId: item.id, // Associate bridge setup with macro
+                endTime: currentTime + bridgeTime,
+                lineIndex: -1,
+                line: bridgeLine,
+                prevPoint: lastPoint,
+                name: "Bridge Path",
+                macroId: item.id,
                 macroName: item.name,
               });
-              currentTime += rotTime;
-              currentHeading = requiredStartHeading;
-            }
-            // -------------------------------------
-
-            // Analyze bridge segment
-            const bridgeAnalysis = analyzePathSegment(
-              lastPoint,
-              [],
-              bridgeLine.endPoint,
-              50,
-              currentHeading,
-            );
-
-            const bridgeLength = bridgeAnalysis.length;
-            segmentLengths.push(bridgeLength);
-
-            let bridgeTime = 0;
-            if (useMotionProfile) {
-              // Approximate with linear motion for bridge
-              // Or better, use calculateMotionProfileDetailed
-              const result = calculateMotionProfileDetailed(
-                bridgeAnalysis.steps,
-                safeSettings,
-              );
-              bridgeTime = result.totalTime;
+              currentTime += bridgeTime;
+              lastPoint = bridgeLine.endPoint;
+              currentHeading = currentHeading + bridgeAnalysis.netRotation;
             } else {
-              const avgVel =
-                (safeSettings.xVelocity + safeSettings.yVelocity) / 2;
-              bridgeTime = bridgeLength / avgVel;
+              lastPoint = macroAnchor;
             }
-
-            timeline.push({
-              type: "travel",
-              duration: bridgeTime,
-              startTime: currentTime,
-              endTime: currentTime + bridgeTime,
-              lineIndex: -1, // Special index for synthetic lines? Or just leave undefined
-              line: bridgeLine,
-              prevPoint: lastPoint,
-              name: "Bridge Path",
-              macroId: item.id,
-              macroName: item.name,
-            });
-            currentTime += bridgeTime;
-            lastPoint = bridgeLine.endPoint; // Snap to macro start
-
-            // Update heading after bridge
-            currentHeading = currentHeading + bridgeAnalysis.netRotation;
-          } else {
-            // Snap exactly if close enough to avoid drift
-            lastPoint = macroData.startPoint;
           }
 
-          // Use macro sequence if available, otherwise derive from macro lines
-          const macroSeq =
-            macroData.sequence && macroData.sequence.length > 0
-              ? macroData.sequence
-              : (macroData.lines.map((ln) => ({
-                  kind: "path",
-                  lineId: ln.id!,
-                })) as SequenceItem[]);
-
           processSequence(
-            macroSeq,
-            macroData.lines,
+            macroItem.internalSequence,
+            contextLines, // Use the global context lines which now contain imported lines
             recursionDepth + 1,
             item.id,
             item.name,

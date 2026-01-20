@@ -69,6 +69,8 @@ export interface Line {
   waitBeforeName?: string;
   waitAfterName?: string;
   _linkedName?: string; // Metadata for linked names
+  fromMacroId?: string; // ID of the macro instance this line belongs to
+  originalId?: string; // Original ID of the line in the macro file
 }
 
 export type SequencePathItem = {
@@ -103,6 +105,8 @@ export type SequenceMacroItem = {
   name: string;
   locked?: boolean;
   eventMarkers?: EventMarker[]; // Maybe macros can have markers too?
+  internalSequence: SequenceItem[]; // The sequence items within the macro (with IDs adapted)
+  anchorPoint?: Point; // The starting point defined in the macro file, used for bridging
 };
 
 export type SequenceItem =
@@ -193,6 +197,8 @@ export interface Shape {
   locked?: boolean;
   type?: "obstacle" | "keep-in";
   visible?: boolean;
+  fromMacroId?: string; // ID of the macro instance this shape belongs to
+  originalId?: string; // Original ID of the shape in the macro file
 }
 
 export type TimelineEventType = "travel" | "wait";
