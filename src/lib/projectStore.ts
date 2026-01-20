@@ -56,7 +56,9 @@ export function sanitizeSequence(
   const presentIds = new Set(
     pruned.filter((s) => s.kind === "path").map((s) => (s as any).lineId),
   );
-  const missing = lines.filter((l) => !presentIds.has(l.id));
+  const missing = lines.filter(
+    (l) => !presentIds.has(l.id) && !l.isMacroElement,
+  );
 
   return [
     ...pruned,
