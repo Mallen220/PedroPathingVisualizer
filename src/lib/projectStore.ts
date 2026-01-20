@@ -17,7 +17,7 @@ import {
 } from "../config";
 import { getRandomColor } from "../utils";
 import { regenerateProjectMacros } from "./macroUtils";
-import { notification } from "../stores";
+import { notification, currentDirectoryStore } from "../stores";
 
 export function normalizeLines(input: Line[]): Line[] {
   return (input || []).map((line) => ({
@@ -201,7 +201,16 @@ export async function loadMacro(filePath: string, force = false) {
   const api = (window as any).electronAPI;
   if (api && api.readFile) {
     try {
-      const content = await api.readFile(filePath);
+      let absolutePath = filePath;
+      // Resolve relative path if needed
+      if (api.pathIsAbsolute && !api.pathIsAbsolute(filePath)) {
+        const currentDir = get(currentDirectoryStore);
+        if (currentDir && api.pathResolve) {
+          absolutePath = api.pathResolve(currentDir, filePath);
+        }
+      }
+
+      const content = await api.readFile(absolutePath);
       const data = JSON.parse(content);
       // Validate data
       if (data.startPoint && data.lines) {

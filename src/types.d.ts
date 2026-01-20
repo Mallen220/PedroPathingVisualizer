@@ -2,6 +2,15 @@
 declare global {
   interface Window {
     electronAPI: {
+      getPathForFile: (file: File) => string;
+      pathRelative: (from: string, to: string) => string;
+      pathResolve: (...paths: string[]) => string;
+      pathIsAbsolute: (p: string) => boolean;
+      pathNormalize: (p: string) => string;
+      pathJoin: (...paths: string[]) => string;
+      pathDirname: (p: string) => string;
+      pathSep: string;
+
       getDirectory: () => Promise<string>;
       setDirectory: (path?: string) => Promise<string | null>;
       listFiles: (directory: string) => Promise<FileInfo[]>;

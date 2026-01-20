@@ -6,6 +6,7 @@ import {
   shapesStore,
   sequenceStore,
   settingsStore,
+  macrosStore,
 } from "../lib/projectStore";
 import {
   getDefaultStartPoint,
@@ -29,6 +30,7 @@ export function resetPath() {
     })),
   );
   shapesStore.set(getDefaultShapes());
+  macrosStore.set(new Map());
 }
 
 /**

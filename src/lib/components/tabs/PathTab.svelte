@@ -10,6 +10,7 @@
     Settings,
   } from "../../../types";
   import { tick } from "svelte";
+  import { get } from "svelte/store";
   import _ from "lodash";
   import {
     calculateDragPosition,
@@ -32,6 +33,7 @@
     selectedLineId,
     selectedPointId,
     toggleCollapseAllTrigger,
+    currentDirectoryStore,
   } from "../../../stores";
   import { loadMacro } from "../../../lib/projectStore";
 
@@ -235,16 +237,29 @@
     let name = filePath.split(/[\\/]/).pop() || "Macro";
     name = name.replace(/\.pp$/, "");
 
+    let finalPath = filePath;
+    const api = (window as any).electronAPI;
+
+    // Try to make path relative to project
+    if (api && api.pathRelative) {
+      const currentDir = get(currentDirectoryStore);
+      if (currentDir) {
+        finalPath = api.pathRelative(currentDir, filePath);
+        // Normalize to forward slashes for cross-platform compatibility
+        finalPath = finalPath.replace(/\\/g, "/");
+      }
+    }
+
     const newItem: SequenceMacroItem = {
       kind: "macro",
       id: macroId,
-      filePath: filePath,
+      filePath: finalPath,
       name: name,
       locked: false,
     };
 
     // Load the macro data into the store so it can be expanded
-    await loadMacro(filePath);
+    await loadMacro(finalPath);
 
     const newSeq = [...sequence];
     if (index >= 0 && index <= newSeq.length) {
