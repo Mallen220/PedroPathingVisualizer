@@ -13,7 +13,9 @@ import {
   getLineStartHeading,
   getLineEndHeading,
   getAngularDifference,
+  getDistance,
 } from "./math";
+import { getRandomColor } from "./draw";
 
 /**
  * Calculates the first derivative of a Bezier curve of degree N at t.
@@ -688,6 +690,63 @@ export function calculatePathTime(
       if (item.kind === "macro") {
         if (macros && macros.has(item.filePath)) {
           const macroData = macros.get(item.filePath)!;
+
+          // Bridge Path Logic
+          const dist = getDistance(lastPoint, macroData.startPoint);
+          if (dist > 0.1) {
+            // Create a bridge line
+            const bridgeLine: Line = {
+              id: `bridge-${item.id}`,
+              startPoint: lastPoint, // Implicit start
+              endPoint: { ...macroData.startPoint, heading: "tangential", reverse: false },
+              controlPoints: [],
+              color: "rgba(100, 100, 100, 0.5)", // Ghostly gray
+              name: `Bridge to ${item.name}`,
+            };
+
+            // Analyze bridge segment
+            const bridgeAnalysis = analyzePathSegment(
+              lastPoint,
+              [],
+              bridgeLine.endPoint,
+              50,
+              currentHeading
+            );
+
+            const bridgeLength = bridgeAnalysis.length;
+            segmentLengths.push(bridgeLength);
+
+            let bridgeTime = 0;
+            if (useMotionProfile) {
+                // Approximate with linear motion for bridge
+                // Or better, use calculateMotionProfileDetailed
+                const result = calculateMotionProfileDetailed(bridgeAnalysis.steps, safeSettings);
+                bridgeTime = result.totalTime;
+            } else {
+                const avgVel = (safeSettings.xVelocity + safeSettings.yVelocity) / 2;
+                bridgeTime = bridgeLength / avgVel;
+            }
+
+            timeline.push({
+                type: "travel",
+                duration: bridgeTime,
+                startTime: currentTime,
+                endTime: currentTime + bridgeTime,
+                lineIndex: -1, // Special index for synthetic lines? Or just leave undefined
+                line: bridgeLine,
+                prevPoint: lastPoint,
+                name: "Bridge Path"
+            });
+            currentTime += bridgeTime;
+            lastPoint = bridgeLine.endPoint; // Snap to macro start
+
+            // Update heading after bridge
+            currentHeading = currentHeading + bridgeAnalysis.netRotation;
+          } else {
+             // Snap exactly if close enough to avoid drift
+             lastPoint = macroData.startPoint;
+          }
+
           // Use macro sequence if available, otherwise derive from macro lines
           const macroSeq =
             macroData.sequence && macroData.sequence.length > 0

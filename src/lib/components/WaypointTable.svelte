@@ -1839,7 +1839,7 @@
               on:dragstart={(e) => handleDragStart(e, seqIndex)}
               on:dragend={handleDragEnd}
               on:contextmenu={(e) => handleContextMenu(e, seqIndex)}
-              class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 bg-indigo-50 dark:bg-indigo-900/20 transition-colors duration-150"
+              class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 bg-teal-50 dark:bg-teal-900/20 transition-colors duration-150"
               class:border-t-2={dragOverIndex === seqIndex &&
                 dragPosition === "top"}
               class:border-b-2={dragOverIndex === seqIndex &&
@@ -1867,7 +1867,7 @@
               <td class="px-3 py-2">
                 <div class="relative w-full max-w-[160px]">
                   <input
-                    class="w-full px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs pr-6"
+                    class="w-full px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-teal-500 focus:outline-none text-xs pr-6"
                     value={item.name}
                     on:input={(e) =>
                       // @ts-ignore
@@ -1878,7 +1878,7 @@
                   />
                   <!-- Macro Icon -->
                   <div
-                    class="absolute right-1 top-1/2 -translate-y-1/2 text-indigo-500 flex items-center justify-center"
+                    class="absolute right-1 top-1/2 -translate-y-1/2 text-teal-500 flex items-center justify-center"
                     title={`Macro: ${item.filePath}`}
                   >
                     <svg

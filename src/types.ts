@@ -55,6 +55,7 @@ export interface WaitSegment {
 
 export interface Line {
   id?: string;
+  startPoint?: Point; // Optional start point for synthetic lines (bridge)
   endPoint: Point;
   controlPoints: ControlPoint[];
   color: string;
