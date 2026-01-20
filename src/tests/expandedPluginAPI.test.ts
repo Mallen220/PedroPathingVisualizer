@@ -49,6 +49,7 @@ describe("Expanded Plugin API", () => {
       readPlugin: mockReadPlugin,
     };
 
+    localStorage.setItem("plugin_enabled_expanded-plugin.js", "true");
     await PluginManager.init();
 
     // Verify tab registered

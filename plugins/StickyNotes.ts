@@ -11,6 +11,7 @@ interface StickyNote {
   text: string;
   color: string;
   minimized: boolean;
+  softLocked?: boolean;
 }
 
 const COLORS = ["#fef3c7", "#dcfce7", "#dbeafe", "#fce7f3", "#f3f4f6"]; // yellow, green, blue, pink, gray
@@ -56,6 +57,7 @@ function addNote(x: number, y: number) {
     text: "",
     color: COLORS[0],
     minimized: false,
+    softLocked: false
   };
 
   pedro.stores.project.extraDataStore.update((data) => ({
@@ -109,14 +111,17 @@ function renderNotes() {
 
 function createNoteElement(note: StickyNote) {
   const div = document.createElement("div");
+  // Force text-neutral-800 to ensure dark text on light sticky notes
   div.className =
-    "absolute shadow-lg rounded flex flex-col overflow-hidden pointer-events-auto transition-shadow hover:shadow-xl border border-black/10";
+    "absolute shadow-lg rounded flex flex-col overflow-hidden pointer-events-auto transition-shadow hover:shadow-xl border border-black/10 text-neutral-800";
   div.style.width = `${NOTE_WIDTH}px`;
 
-  // Header
+  // --- Header ---
   const header = document.createElement("div");
   header.className =
-    "flex items-center justify-between px-2 py-1 cursor-move select-none bg-black/5 border-b border-black/10";
+    "flex items-center justify-between px-2 py-1 cursor-move select-none bg-black/5 border-b border-black/10 transition-all duration-200";
+  // Store header reference for updating visibility
+  (div as any)._header = header;
 
   const controls = document.createElement("div");
   controls.className = "flex items-center gap-1.5";
@@ -132,6 +137,18 @@ function createNoteElement(note: StickyNote) {
     updateNote(note.id, { color: nextColor });
   };
 
+  // Soft Lock Button (Compact Mode)
+  const lockBtn = document.createElement("button");
+  lockBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3"><path fill-rule="evenodd" d="M3.25 8a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75H4a.75.75 0 0 1-.75-.75V8Zm12.5-3V8H4.25V5A4.75 4.75 0 1 1 15.75 5Z" clip-rule="evenodd" /></svg>`;
+  lockBtn.className =
+    "text-xs w-4 h-4 flex items-center justify-center hover:bg-black/10 rounded text-black/60";
+  lockBtn.title = "Compact Mode (Soft Lock)";
+  lockBtn.onclick = (e) => {
+    e.stopPropagation();
+    updateNote(note.id, { softLocked: true });
+  };
+
+  // Min/Max Button
   const minBtn = document.createElement("button");
   minBtn.className =
     "text-xs font-bold w-4 h-4 flex items-center justify-center hover:bg-black/10 rounded text-black/60";
@@ -140,6 +157,7 @@ function createNoteElement(note: StickyNote) {
     updateNote(note.id, { minimized: !note.minimized });
   };
 
+  // Close Button
   const closeBtn = document.createElement("button");
   closeBtn.textContent = "×";
   closeBtn.className =
@@ -152,6 +170,7 @@ function createNoteElement(note: StickyNote) {
   };
 
   controls.appendChild(colorBtn);
+  controls.appendChild(lockBtn);
   controls.appendChild(minBtn);
   controls.appendChild(closeBtn);
 
@@ -164,10 +183,30 @@ function createNoteElement(note: StickyNote) {
 
   div.appendChild(header);
 
-  // Content
+  // --- Compact Handle (Visible only when softLocked) ---
+  const compactHandle = document.createElement("div");
+  compactHandle.className = "w-full h-3 bg-black/10 cursor-move hidden group hover:bg-black/20 flex items-center justify-end px-1";
+  compactHandle.title = "Drag to move";
+
+  const unlockBtn = document.createElement("button");
+  unlockBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-2.5 h-2.5"><path fill-rule="evenodd" d="M14.5 9a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-.75.75h-9a.75.75 0 0 1-.75-.75V9.75a.75.75 0 0 1 .75-.75h12Zm-1.75-4.5a3.25 3.25 0 0 0-6.5 0V8h6.5V4.5Z" clip-rule="evenodd" /></svg>`;
+  unlockBtn.className = "text-black/60 hover:text-black hidden group-hover:block cursor-pointer";
+  unlockBtn.title = "Expand Header";
+  unlockBtn.onmousedown = (e) => e.stopPropagation(); // Prevent drag start when clicking button
+  unlockBtn.onclick = (e) => {
+    e.stopPropagation();
+    updateNote(note.id, { softLocked: false });
+  };
+  compactHandle.appendChild(unlockBtn);
+
+  (div as any)._compactHandle = compactHandle;
+  div.appendChild(compactHandle);
+
+
+  // --- Content ---
   const textarea = document.createElement("textarea");
   textarea.className =
-    "w-full p-2 resize-none bg-transparent border-none outline-none text-sm font-sans text-neutral-800 placeholder-neutral-400";
+    "w-full p-2 resize-none bg-transparent border-none outline-none text-sm font-sans text-neutral-800 placeholder-neutral-500/50";
   textarea.style.minHeight = "80px";
   textarea.placeholder = "Type here...";
   textarea.value = note.text;
@@ -179,8 +218,9 @@ function createNoteElement(note: StickyNote) {
 
   div.appendChild(textarea);
 
-  // Drag Logic
-  header.onmousedown = (e) => {
+  // --- Drag Logic ---
+  // Bind drag to both header and compactHandle
+  const startDrag = (e: MouseEvent) => {
     e.preventDefault();
     isDragging = true;
     let startX = e.clientX;
@@ -227,6 +267,9 @@ function createNoteElement(note: StickyNote) {
     document.addEventListener("mouseup", onUp);
   };
 
+  header.onmousedown = startDrag;
+  compactHandle.onmousedown = startDrag;
+
   return div;
 }
 
@@ -234,8 +277,22 @@ function updateNoteElement(div: HTMLElement, note: StickyNote) {
   div.style.backgroundColor = note.color;
 
   const textarea = div.querySelector("textarea") as HTMLTextAreaElement;
-  const minBtn = div.querySelectorAll("button")[0];
-  const colorBtn = div.querySelector(".rounded-full") as HTMLElement;
+  const header = (div as any)._header as HTMLElement;
+  const compactHandle = (div as any)._compactHandle as HTMLElement;
+
+  // Find controls in header
+  const minBtn = header.querySelectorAll("button")[1]; // lock is [0], min is [1]
+  const colorBtn = header.querySelector(".rounded-full") as HTMLElement;
+
+  // Soft Lock State
+  if (note.softLocked) {
+    header.style.display = "none";
+    compactHandle.style.display = "flex";
+    compactHandle.classList.add("group"); // Ensure hover group works
+  } else {
+    header.style.display = "flex";
+    compactHandle.style.display = "none";
+  }
 
   // Minimized state
   if (note.minimized) {

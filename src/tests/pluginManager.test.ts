@@ -79,6 +79,7 @@ describe("PluginManager", () => {
       readPlugin: mockReadPlugin,
     };
 
+    localStorage.setItem("plugin_enabled_bad-plugin.js", "true");
     await PluginManager.init();
 
     const plugins = get(pluginsStore);
@@ -113,15 +114,22 @@ describe("PluginManager", () => {
     const mockListPlugins = vi.fn().mockResolvedValue(["test-ts-plugin.ts"]);
     const mockReadPlugin = vi.fn().mockResolvedValue(`
       // TypeScript syntax
-      const handler = (data: any): string => {
+      const handler = (data) => {
         return "ts-result";
       };
       pedro.registerExporter("TS Exporter", handler);
     `);
 
+    // Mock transpile to return valid JS
     (window as any).electronAPI = {
       listPlugins: mockListPlugins,
       readPlugin: mockReadPlugin,
+      transpilePlugin: vi.fn().mockImplementation((code) => `
+        const handler = (data) => {
+          return "ts-result";
+        };
+        pedro.registerExporter("TS Exporter", handler);
+      `),
     };
 
     localStorage.setItem("plugin_enabled_test-ts-plugin.ts", "true");
