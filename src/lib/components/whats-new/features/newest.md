@@ -2,6 +2,38 @@
 
 ## **Features:**
 
+### **Path Optimization**
+
+Automatically refine your autonomous paths for maximum speed and safety.
+
+- **Genetic Algorithm:** Uses advanced evolution techniques to find the fastest route while strictly avoiding obstacles.
+- **Customizable Control:** Tune iterations, mutation rates, and population size to balance speed vs. exploration.
+- **Safety First:** Ensures all optimized paths respect your robot's dimensions and defined safety margins.
+
+### **Animation Export**
+
+Share your paths with the world by exporting high-quality animations.
+
+- **GIF & APNG:** Export smooth animations in universal formats.
+- **Full Control:** Customize frame rate, resolution, and quality to get the perfect result.
+- **Instant Preview:** Generate and review your animation before saving.
+
+### **Custom Field Maps**
+
+Bring your own field diagrams into the visualizer.
+
+- **Easy Import:** Upload any image to use as a field background.
+- **Calibration Wizard:** Simple 2-point calibration ensures your custom map scales perfectly to real-world coordinates.
+- **Visual Validation:** Verify your map alignment with a built-in preview tool.
+
+### **Integrated File Manager**
+
+Manage your project files without leaving the app.
+
+- **Browse & Search:** Quickly find path files with a powerful search and sortable list or grid views.
+- **Seamless Navigation:** Switch between directories and manage files with an intuitive toolbar.
+- **Smart Context:** Integrated directly with Git status indicators for immediate version control feedback.
+
 ### **Interactive Onboarding**
 
 New to the application? Our new interactive tutorial guides you through the basics of creating and managing paths.
