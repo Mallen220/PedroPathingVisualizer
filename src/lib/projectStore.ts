@@ -207,6 +207,16 @@ export async function loadMacro(filePath: string, force = false) {
       if (data.startPoint && data.lines) {
         // Normalize lines in macro
         data.lines = normalizeLines(data.lines);
+
+        // Resolve nested macro paths to absolute BEFORE storing
+        if (data.sequence && data.sequence.length > 0 && api.resolvePath) {
+          for (const item of data.sequence) {
+            if (item.kind === "macro") {
+              item.filePath = await api.resolvePath(filePath, item.filePath);
+            }
+          }
+        }
+
         macrosStore.update((map) => {
           const newMap = new Map(map);
           newMap.set(filePath, data);
@@ -219,20 +229,7 @@ export async function loadMacro(filePath: string, force = false) {
         if (data.sequence && data.sequence.length > 0) {
           for (const item of data.sequence) {
             if (item.kind === "macro") {
-              if (api.resolvePath) {
-                // Resolve potential relative paths against the current macro file path
-                promises.push(
-                  (async () => {
-                    const resolved = await api.resolvePath(
-                      filePath,
-                      item.filePath,
-                    );
-                    await loadMacro(resolved);
-                  })(),
-                );
-              } else {
-                promises.push(loadMacro(item.filePath));
-              }
+              promises.push(loadMacro(item.filePath));
             }
           }
         }
@@ -296,6 +293,17 @@ export async function loadProjectData(data: any, projectFilePath?: string) {
 
   const sanitized = sanitizeSequence(normLines, processedSeq);
 
+  const api = (window as any).electronAPI;
+
+  // Resolve macro paths in sanitized sequence to absolute paths
+  if (projectFilePath && api && api.resolvePath) {
+    for (const item of sanitized) {
+      if (item.kind === "macro") {
+        item.filePath = await api.resolvePath(projectFilePath, item.filePath);
+      }
+    }
+  }
+
   // Renumber default names to match displayed order
   const renamedLines = renumberDefaultPathNames(normLines);
 
@@ -305,23 +313,10 @@ export async function loadProjectData(data: any, projectFilePath?: string) {
   extraDataStore.set(data.extraData || {});
 
   // Load referenced macros
-  const api = (window as any).electronAPI;
   const promises: Promise<void>[] = [];
   for (const item of sanitized) {
     if (item.kind === "macro") {
-      if (projectFilePath && api && api.resolvePath) {
-        promises.push(
-          (async () => {
-            const resolved = await api.resolvePath(
-              projectFilePath,
-              item.filePath,
-            );
-            await loadMacro(resolved);
-          })(),
-        );
-      } else {
-        promises.push(loadMacro(item.filePath));
-      }
+      promises.push(loadMacro(item.filePath));
     }
   }
 

@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   fileExists: (filePath) => ipcRenderer.invoke("file:exists", filePath),
   resolvePath: (base, relative) =>
     ipcRenderer.invoke("file:resolve-path", base, relative),
+  relativePath: (from, to) =>
+    ipcRenderer.invoke("file:relative-path", from, to),
 
   // Directory settings operations
   getDirectorySettings: () => ipcRenderer.invoke("directory:get-settings"),

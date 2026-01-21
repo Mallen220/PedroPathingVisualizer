@@ -42,6 +42,8 @@ interface ExtendedElectronAPI {
     content: string,
     path?: string,
   ) => Promise<{ success: boolean; filepath: string; error?: string }>;
+  relativePath?: (from: string, to: string) => Promise<string>;
+  resolvePath?: (base: string, relative: string) => Promise<string>;
 }
 
 // Access electronAPI dynamically to allow mocking/runtime changes
@@ -176,6 +178,40 @@ async function performSave(
         });
       }
     });
+
+    // Determine targetPath early if using writeFile strategy (standard Electron)
+    if (
+      electronAPI &&
+      electronAPI.writeFile &&
+      !electronAPI.saveFile &&
+      !targetPath
+    ) {
+      if (electronAPI.showSaveDialog) {
+        const filePath = await electronAPI.showSaveDialog({
+          title: "Save Project",
+          defaultPath: "trajectory.pp",
+          filters: [{ name: "Pedro Path", extensions: ["pp"] }],
+        });
+        if (!filePath) return false;
+        targetPath = filePath;
+      } else {
+        return false;
+      }
+    }
+
+    // Convert macro paths to relative paths if possible
+    if (targetPath && electronAPI && electronAPI.relativePath) {
+      await Promise.all(
+        sequenceToSave.map(async (item) => {
+          if (item.kind === "macro" && item.filePath) {
+            item.filePath = await electronAPI.relativePath!(
+              targetPath!,
+              item.filePath,
+            );
+          }
+        }),
+      );
+    }
 
     // Create the project data structure
     const projectData = {

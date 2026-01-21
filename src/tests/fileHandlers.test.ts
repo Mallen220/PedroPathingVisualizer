@@ -31,13 +31,40 @@ vi.mock("../stores", async () => {
 
 vi.mock("../lib/projectStore", async () => {
   const { writable } = await import("svelte/store");
+
+  const startPointStore = writable({ x: 0, y: 0, heading: 0 });
+  const linesStore = writable([]);
+  const sequenceStore = writable([]);
+  const shapesStore = writable([]);
+  const settingsStore = writable({});
+  const extraDataStore = writable({});
+  const macrosStore = writable(new Map());
+
   return {
-    startPointStore: writable({ x: 0, y: 0, heading: 0 }),
-    linesStore: writable([]),
-    sequenceStore: writable([]),
-    shapesStore: writable([]),
-    settingsStore: writable({}), // Re-export if needed, but usually main stores handles it
-    extraDataStore: writable({}),
+    startPointStore,
+    linesStore,
+    sequenceStore,
+    shapesStore,
+    settingsStore,
+    extraDataStore,
+    macrosStore,
+    updateMacroContent: vi.fn(),
+    loadProjectData: (data: any) => {
+      const lines = (data.lines || []).map((l: any) => {
+        const baseName = l._linkedName || l.name;
+        const stripSuffix = (name: string) => {
+          if (!name) return "";
+          const match = name.match(/^(.*) \(\d+\)$/);
+          return match ? match[1] : name;
+        };
+        return {
+          ...l,
+          name: stripSuffix(baseName),
+        };
+      });
+      linesStore.set(lines);
+      sequenceStore.set(data.sequence || []);
+    },
   };
 });
 
