@@ -952,7 +952,7 @@ export const DEFAULT_SETTINGS: Settings = {
       shapes: [
         {
           id: "itd-red-goal",
-          name: "Red Goal",
+          name: "Center Structure",
           vertices: [
             { x: 96, y: 57 },
             { x: 96, y: 87 },
