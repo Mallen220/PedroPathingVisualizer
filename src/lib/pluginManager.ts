@@ -22,7 +22,7 @@ import {
 } from "./registries";
 import { registerCoreUI } from "./coreRegistrations";
 
-const { startPointStore, linesStore, shapesStore, sequenceStore } =
+const { startPointStore, linesStore, shapesStore, sequenceStore, settingsStore } =
   projectStore;
 
 export class PluginManager {
@@ -138,6 +138,7 @@ export class PluginManager {
           lines: get(linesStore),
           shapes: get(shapesStore),
           sequence: get(sequenceStore),
+          settings: get(settingsStore),
         };
       },
       // Expanded API
