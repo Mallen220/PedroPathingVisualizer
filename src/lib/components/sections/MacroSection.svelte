@@ -2,6 +2,7 @@
 <script lang="ts">
   import { selectedPointId, selectedLineId } from "../../../stores";
   import DeleteButtonWithConfirm from "../common/DeleteButtonWithConfirm.svelte";
+  import MacroTransformDialog from "../dialogs/MacroTransformDialog.svelte";
   import type { SequenceMacroItem, SequenceItem } from "../../../types/index";
 
   export let macro: SequenceMacroItem;
@@ -39,7 +40,15 @@
   function handleBlur() {
     if (recordChange) recordChange();
   }
+
+  let isTransformOpen = false;
 </script>
+
+<MacroTransformDialog
+  bind:isOpen={isTransformOpen}
+  bind:macro
+  onSave={() => recordChange && recordChange()}
+/>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -235,6 +244,36 @@
         >
           {macro.filePath}
         </div>
+      </div>
+
+      <div class="pt-1">
+        <button
+          on:click|stopPropagation={() => (isTransformOpen = true)}
+          disabled={macro.locked}
+          class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors text-neutral-700 dark:text-neutral-300 w-full justify-center border border-neutral-200 dark:border-neutral-700 disabled:opacity-50"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="size-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m0-16.875l-2.25 1.313M3 21.75l2.25-1.313m0-16.875l2.25 1.313"
+            />
+          </svg>
+          Transform Geometry
+          {#if macro.transformations && macro.transformations.length > 0}
+            <span
+              class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 rounded-full text-[10px]"
+              >{macro.transformations.length}</span
+            >
+          {/if}
+        </button>
       </div>
 
       <!-- Action Bar -->
