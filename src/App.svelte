@@ -22,6 +22,7 @@
   import PluginManagerDialog from "./lib/components/dialogs/PluginManagerDialog.svelte";
   import KeyboardShortcutsDialog from "./lib/components/dialogs/KeyboardShortcutsDialog.svelte";
   import ExportCodeDialog from "./lib/components/dialogs/ExportCodeDialog.svelte";
+  import TelemetryDialog from "./lib/components/dialogs/TelemetryDialog.svelte";
   import DialogHost from "./lib/components/DialogHost.svelte";
 
   // Stores
@@ -40,6 +41,7 @@
     projectMetadataStore,
     currentDirectoryStore,
     showPluginManager,
+    showTelemetryDialog,
   } from "./stores";
   import {
     startPointStore,
@@ -1350,6 +1352,7 @@
   bind:settings={$settingsStore}
 />
 <PluginManagerDialog bind:isOpen={$showPluginManager} />
+<TelemetryDialog bind:isOpen={$showTelemetryDialog} />
 
 {#if $showFileManager}
   <FileManager

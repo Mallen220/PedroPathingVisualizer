@@ -669,6 +669,13 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     action: "toggleOnionCurrentPath",
     category: "View",
   },
+  {
+    id: "toggle-telemetry",
+    key: "ctrl+t",
+    description: "Toggle Telemetry Dialog",
+    action: "toggleTelemetry",
+    category: "Tools",
+  },
   // Extended Commands
   {
     id: "set-file-manager-directory",

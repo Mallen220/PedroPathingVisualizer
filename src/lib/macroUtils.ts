@@ -407,7 +407,7 @@ export function expandMacro(
         // Propagate transformations to nested macro
         const childTransforms = [
           ...(item.transformations || []),
-          ...resolvedTransforms // Apply parent transforms (resolved) on top
+          ...resolvedTransforms, // Apply parent transforms (resolved) on top
         ];
 
         const nestedItem: SequenceMacroItem = {

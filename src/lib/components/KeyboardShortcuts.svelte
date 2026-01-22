@@ -22,6 +22,7 @@
     fileManagerNewFileMode,
     showPluginManager,
     showRuler,
+    showTelemetryDialog,
   } from "../../stores";
   import {
     startPointStore,
@@ -1845,6 +1846,7 @@
     rotateField: () => rotateField(),
     toggleContinuousValidation: () => toggleContinuousValidation(),
     toggleOnionCurrentPath: () => toggleOnionCurrentPath(),
+    toggleTelemetry: () => showTelemetryDialog.update((v) => !v),
   };
 
   // --- Derived Commands for Search ---
