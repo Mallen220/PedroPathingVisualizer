@@ -1,7 +1,7 @@
 /// <reference path="./pedro.d.ts" />
 
 // Plugin: Field Annotations
-// Version: 1.1
+// Version: 1.2
 // Description: Add sticky notes to the field for collaboration and planning.
 
 console.log("[FieldAnnotations] Plugin loading...");
@@ -30,25 +30,7 @@ function setAnnotations(list) {
   }
 }
 
-// 1. Context Menu: Add Note
-pedro.registries.contextMenuItems.register({
-  id: "add-annotation",
-  label: "Add Sticky Note",
-  condition: (args) => {
-    try {
-        const list = getAnnotations();
-        // If we click on an existing note, don't show "Add Note"
-        const hit = list.some(note =>
-        Math.abs(args.x - note.x) < NOTE_SIZE_INCHES / 2 &&
-        Math.abs(args.y - note.y) < NOTE_SIZE_INCHES / 2
-        );
-        return !hit;
-    } catch (e) {
-        console.error("[FieldAnnotations] condition failed:", e);
-        return true; // Fallback to showing it
-    }
-  },
-  onClick: (args) => {
+function addNote(x, y) {
     try {
         const text = prompt("Enter note text:");
         if (!text) return;
@@ -58,8 +40,8 @@ pedro.registries.contextMenuItems.register({
 
         const newNote = {
         id: Math.random().toString(36).substring(2, 10),
-        x: args.x,
-        y: args.y,
+        x: x,
+        y: y,
         text: text,
         color: color
         };
@@ -69,10 +51,79 @@ pedro.registries.contextMenuItems.register({
     } catch (e) {
         console.error("[FieldAnnotations] Add Note failed:", e);
     }
+}
+
+// 1. Context Menu: Add Note (Alternative)
+pedro.registries.contextMenuItems.register({
+  id: "add-annotation",
+  label: "Add Sticky Note",
+  condition: (args) => {
+    try {
+        const list = getAnnotations();
+        const hit = list.some(note =>
+            Math.abs(args.x - note.x) < NOTE_SIZE_INCHES / 2 &&
+            Math.abs(args.y - note.y) < NOTE_SIZE_INCHES / 2
+        );
+        return !hit;
+    } catch (e) {
+        console.error("[FieldAnnotations] condition failed:", e);
+        return true;
+    }
+  },
+  onClick: (args) => {
+    addNote(args.x, args.y);
   }
 });
 
-// 2. Context Menu: Delete Note
+// 2. Navbar Action: Add Note
+pedro.registries.navbarActions.register({
+    id: "add-annotation-btn",
+    title: "Add Note",
+    // Icon: Sticky Note SVG
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+</svg>
+`,
+    location: "center",
+    order: 10,
+    onClick: () => {
+        // Calculate center of view
+        try {
+            const pan = pedro.stores.get(pedro.stores.app.fieldViewStore.fieldPan) || {x: 0, y: 0};
+            // Default to center of field if we can't get pan info,
+            // but actually we want the field coordinates of the viewport center.
+            // fieldViewStore exposes xScale/yScale which map Field -> Screen.
+            // We need Screen -> Field (invert).
+
+            const fieldView = pedro.stores.get(pedro.stores.app.fieldViewStore);
+            if (fieldView && fieldView.xScale && fieldView.xScale.invert) {
+                const width = fieldView.width || 800;
+                const height = fieldView.height || 600;
+
+                // Center of screen
+                const cx = width / 2;
+                const cy = height / 2;
+
+                const fx = fieldView.xScale.invert(cx);
+                const fy = fieldView.yScale.invert(cy);
+
+                // Clamp to field bounds (0-144)
+                const clampedX = Math.max(0, Math.min(144, fx));
+                const clampedY = Math.max(0, Math.min(144, fy));
+
+                addNote(clampedX, clampedY);
+            } else {
+                // Fallback
+                addNote(72, 72);
+            }
+        } catch(e) {
+            console.error("Error calculating center:", e);
+            addNote(72, 72);
+        }
+    }
+});
+
+// 3. Context Menu: Delete Note
 pedro.registries.contextMenuItems.register({
   id: "delete-annotation",
   label: "Delete Sticky Note",
@@ -80,8 +131,8 @@ pedro.registries.contextMenuItems.register({
     try {
         const list = getAnnotations();
         const hit = list.some(note =>
-        Math.abs(args.x - note.x) < NOTE_SIZE_INCHES / 2 &&
-        Math.abs(args.y - note.y) < NOTE_SIZE_INCHES / 2
+            Math.abs(args.x - note.x) < NOTE_SIZE_INCHES / 2 &&
+            Math.abs(args.y - note.y) < NOTE_SIZE_INCHES / 2
         );
         return hit;
     } catch (e) {
@@ -93,12 +144,12 @@ pedro.registries.contextMenuItems.register({
     try {
         const list = getAnnotations();
         const note = list.find(note =>
-        Math.abs(args.x - note.x) < NOTE_SIZE_INCHES / 2 &&
-        Math.abs(args.y - note.y) < NOTE_SIZE_INCHES / 2
+            Math.abs(args.x - note.x) < NOTE_SIZE_INCHES / 2 &&
+            Math.abs(args.y - note.y) < NOTE_SIZE_INCHES / 2
         );
 
         if (note && confirm(`Delete note "${note.text}"?`)) {
-        setAnnotations(list.filter(n => n.id !== note.id));
+            setAnnotations(list.filter(n => n.id !== note.id));
         }
     } catch (e) {
         console.error("[FieldAnnotations] Delete Note failed:", e);
@@ -106,17 +157,7 @@ pedro.registries.contextMenuItems.register({
   }
 });
 
-// Debug Item (Always Visible)
-pedro.registries.contextMenuItems.register({
-  id: "debug-annotation-check",
-  label: "Field Annotations Active",
-  condition: () => false, // Hidden by default, enable if needed for debugging by changing to true
-  onClick: () => {
-    alert("Plugin is active! Annotations: " + getAnnotations().length);
-  }
-});
-
-// 3. Render Notes
+// 4. Render Notes
 pedro.registries.fieldRenderers.register({
   id: "annotation-renderer",
   fn: (two) => {
@@ -135,7 +176,6 @@ pedro.registries.fieldRenderers.register({
             const cx = xScale(note.x);
             const cy = yScale(note.y);
 
-            // Safety check for NaN
             if (isNaN(cx) || isNaN(cy)) return;
 
             const wPx = Math.abs(xScale(note.x + NOTE_SIZE_INCHES/2) - xScale(note.x - NOTE_SIZE_INCHES/2));
