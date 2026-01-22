@@ -192,3 +192,4 @@ src/tests/macroIntegration.test.ts
 src/tests/nestedMacros.test.ts
 src/types/index.ts
 src/tests/recursiveMacroLoading.test.ts
+src/lib/components/dialogs/TransformDialog.svelte
