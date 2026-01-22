@@ -1310,6 +1310,35 @@
                 </div>
               </div>
 
+              <!-- Program Font Size -->
+              <div>
+                <label
+                  for="program-font-size"
+                  class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                >
+                  Program Font Size
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Adjust the scale of the user interface
+                  </div>
+                </label>
+                <div class="flex items-center gap-2">
+                  <input
+                    id="program-font-size"
+                    type="range"
+                    min="75"
+                    max="150"
+                    step="5"
+                    bind:value={settings.programFontSize}
+                    class="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  />
+                  <span
+                    class="text-sm font-medium text-neutral-700 dark:text-neutral-300 min-w-[3rem] text-right"
+                  >
+                    {settings.programFontSize || 100}%
+                  </span>
+                </div>
+              </div>
+
               <!-- Field Map Section -->
 
               <div>

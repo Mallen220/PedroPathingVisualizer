@@ -166,6 +166,7 @@ export interface Settings {
   robotImage?: string;
   javaPackageName?: string;
   theme: "light" | "dark" | "auto" | string;
+  programFontSize?: number; // Scaling factor for the program font size (percentage)
   autosaveMode?: "time" | "change" | "close" | "never";
   autosaveInterval?: number; // minutes
   showVelocityHeatmap?: boolean; // Show velocity heatmap overlay

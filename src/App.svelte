@@ -1236,6 +1236,15 @@
       }
     }
   }
+
+  // --- Apply Program Font Size ---
+  $: {
+    if (settings && settings.programFontSize) {
+      document.documentElement.style.fontSize = `${settings.programFontSize}%`;
+    } else {
+      document.documentElement.style.fontSize = "100%";
+    }
+  }
 </script>
 
 <svelte:window
