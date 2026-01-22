@@ -64,7 +64,7 @@ export const hoveredMarkerId = writable<string | null>(null);
 
 // Focus request store to trigger input focus
 export const focusRequest = writable<{
-  field: "x" | "y" | "heading" | "name";
+  field: "x" | "y" | "heading" | "name" | "color";
   timestamp: number;
   id?: string;
 } | null>(null);

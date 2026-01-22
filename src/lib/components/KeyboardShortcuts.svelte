@@ -1691,6 +1691,8 @@
     focusY: () => focusRequest.set({ field: "y", timestamp: Date.now() }),
     focusHeading: () =>
       focusRequest.set({ field: "heading", timestamp: Date.now() }),
+    changeColor: () =>
+      focusRequest.set({ field: "color", timestamp: Date.now() }),
     togglePlay: () => {
       if (playing) pause();
       else play();

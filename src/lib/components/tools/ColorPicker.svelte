@@ -5,6 +5,11 @@
   export let disabled: boolean = false;
   // Explicitly export tabindex to allow parent to control focusability
   export let tabindex: number | undefined = undefined;
+
+  let input: HTMLInputElement;
+  export function open() {
+    input?.click();
+  }
 </script>
 
 <div
@@ -12,6 +17,7 @@
   style="background-color: {color}"
 >
   <input
+    bind:this={input}
     type="color"
     bind:value={color}
     class="opacity-0 absolute inset-0 w-full h-full cursor-pointer"

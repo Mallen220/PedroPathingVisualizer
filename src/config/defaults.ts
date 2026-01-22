@@ -509,6 +509,13 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     category: "Editing",
   },
   {
+    id: "change-color",
+    key: "alt+c",
+    description: "Change Color",
+    action: "changeColor",
+    category: "Editing",
+  },
+  {
     id: "open-whats-new",
     key: "shift+n",
     description: "Open What's New",

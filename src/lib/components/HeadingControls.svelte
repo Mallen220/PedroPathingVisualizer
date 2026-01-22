@@ -32,8 +32,13 @@
 
   export function focus() {
     if (endPoint.heading === "constant" && constantInput) constantInput.focus();
-    else if (endPoint.heading === "linear" && startInput) startInput.focus();
-    else if (endPoint.heading === "tangential" && reverseInput)
+    else if (endPoint.heading === "linear" && startInput) {
+      if (document.activeElement === startInput && endInput) {
+        endInput.focus();
+      } else {
+        startInput.focus();
+      }
+    } else if (endPoint.heading === "tangential" && reverseInput)
       reverseInput.focus();
   }
 </script>

@@ -46,6 +46,7 @@
   let yInput: HTMLInputElement;
   let headingControls: HeadingControls;
   let nameInput: HTMLInputElement | undefined;
+  let colorPicker: ColorPicker;
 
   // Container-based responsiveness: observe the grid container's width and
   // toggle a compact layout when it becomes too narrow (e.g., in a small
@@ -78,6 +79,9 @@
       if ($focusRequest.field === "y" && yInput) yInput.focus();
       if ($focusRequest.field === "heading" && headingControls)
         headingControls.focus();
+    }
+    if ($focusRequest.field === "color" && isSelected && colorPicker) {
+      colorPicker.open();
     }
     // Special handling for rename focus which can happen on any selection of this line
     if (
@@ -220,6 +224,7 @@
     <!-- Right: Controls -->
     <div class="flex items-center gap-1">
       <ColorPicker
+        bind:this={colorPicker}
         bind:color={line.color}
         title="Change Path Color"
         disabled={line.locked}

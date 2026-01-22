@@ -1,7 +1,13 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import { createTriangle } from "../../../utils";
-  import { snapToGrid, showGrid, gridSize } from "../../../stores";
+  import {
+    snapToGrid,
+    showGrid,
+    gridSize,
+    focusRequest,
+    selectedPointId,
+  } from "../../../stores";
   import { settingsStore } from "../../projectStore";
   import TrashIcon from "../icons/TrashIcon.svelte";
   import SaveIcon from "../icons/SaveIcon.svelte";
@@ -16,9 +22,21 @@
 
   let selectedPresetId: string = "";
   let showSaveDialog = false;
+  let colorInputs: HTMLInputElement[] = [];
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
+
+  $: if ($focusRequest && $focusRequest.field === "color") {
+    // Check if an obstacle is selected: "obstacle-{shapeIdx}-{vertexIdx}"
+    if ($selectedPointId && $selectedPointId.startsWith("obstacle-")) {
+      const parts = $selectedPointId.split("-");
+      const shapeIdx = Number(parts[1]);
+      if (!isNaN(shapeIdx) && colorInputs[shapeIdx]) {
+        colorInputs[shapeIdx].click();
+      }
+    }
+  }
 
   function openSaveDialog() {
     if (shapes.length === 0) {
@@ -263,6 +281,7 @@
                   style="background-color: {shape.color}"
                 >
                   <input
+                    bind:this={colorInputs[shapeIdx]}
                     type="color"
                     bind:value={shape.color}
                     class="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
