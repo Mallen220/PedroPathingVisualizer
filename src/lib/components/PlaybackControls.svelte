@@ -204,13 +204,6 @@
     {/if}
   </div>
 
-  <!-- Time Display -->
-  <div
-    class="px-2 font-mono text-xs text-neutral-600 dark:text-neutral-400 select-none whitespace-nowrap"
-  >
-    {formatTime(currentTime)} / {formatTime(totalSeconds)}
-  </div>
-
   <div class="w-full relative h-6 flex items-center">
     <!-- Timeline Highlights Layer (Under slider) -->
     <div
@@ -355,6 +348,13 @@
         </div>
       {/if}
     {/each}
+  </div>
+
+  <!-- Time Display -->
+  <div
+    class="px-2 font-mono text-xs text-neutral-600 dark:text-neutral-400 select-none whitespace-nowrap"
+  >
+    {formatTime(currentTime)}
   </div>
 </div>
 
