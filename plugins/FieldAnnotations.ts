@@ -19,6 +19,10 @@ let currentWidth = 2;
 let isMouseDown = false;
 let lastPoint: { x: number; y: number } | null = null;
 
+// Panning state
+let isPanning = false;
+let startPan: { x: number; y: number } = { x: 0, y: 0 };
+
 // UI Elements
 let toolbar: HTMLElement | null = null;
 
@@ -61,12 +65,6 @@ pedro.registries.fieldRenderers.register({
 
       const vertices = path.points.flatMap((p) => [xScale(p.x), yScale(p.y)]);
 
-      // two.makeCurve takes spread arguments or array, let's pass spread?
-      // Type defs vary, but standard two.js makeCurve takes arguments.
-      // However, if we look at two.js source or types, it often accepts array.
-      // Let's assume standard behavior: makeCurve(x1, y1, x2, y2, ..., open)
-      // or makeCurve([x1, y1, x2, y2], open)
-      // Safest is spread.
       const line = two.makeCurve(...vertices, true);
       line.noFill();
       line.stroke = path.color;
@@ -117,7 +115,7 @@ function createToolbar() {
   addBtn(toolbar, "Eraser", false, () => {
     currentTool = "eraser";
     updateCursor();
-  }); // Simple eraser just undoes last path for now? Or implement real eraser? Let's do Undo.
+  });
   addBtn(toolbar, "Undo", false, () => {
     undoLastPath();
   });
@@ -172,6 +170,9 @@ function updateCursor() {
   if (!overlayContainer) return;
   if (currentTool === "pen") {
     overlayContainer.style.cursor = "crosshair";
+  } else if (currentTool === "eraser") {
+    // Simple custom cursor or just default
+    overlayContainer.style.cursor = "not-allowed"; // Or something indicating deletion
   } else {
     overlayContainer.style.cursor = "default";
   }
@@ -180,56 +181,157 @@ function updateCursor() {
 function setupOverlayEvents() {
   if (!overlayContainer) return;
 
-  overlayContainer.addEventListener("mousedown", (e) => {
-    if (currentTool !== "pen") return;
-    isMouseDown = true;
+  // Disable context menu to allow Right Click panning
+  overlayContainer.addEventListener("contextmenu", (e) => {
+    if (currentTool !== "none") {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
 
-    const { x, y } = getFieldCoords(e.clientX, e.clientY);
-    currentPath = [{ x, y }];
-    lastPoint = { x, y };
+  overlayContainer.addEventListener("mousedown", (e) => {
+    if (currentTool === "none") return;
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    // Right Click (2) or Middle Click (1) -> Pan
+    if (e.button === 2 || e.button === 1) {
+      isPanning = true;
+      startPan = { x: e.clientX, y: e.clientY };
+      overlayContainer!.style.cursor = "grabbing";
+      return;
+    }
+
+    // Left Click (0) -> Draw or Erase
+    if (e.button === 0) {
+      if (currentTool === "pen") {
+        isMouseDown = true;
+        const { x, y } = getFieldCoords(e.clientX, e.clientY);
+        currentPath = [{ x, y }];
+        lastPoint = { x, y };
+      } else if (currentTool === "eraser") {
+        isMouseDown = true;
+        eraseAt(e.clientX, e.clientY);
+      }
+    }
   });
 
   overlayContainer.addEventListener("mousemove", (e) => {
-    if (!isMouseDown || currentTool !== "pen") return;
+    if (currentTool === "none") return;
 
-    const { x, y } = getFieldCoords(e.clientX, e.clientY);
+    e.stopPropagation();
+    e.preventDefault();
 
-    // Distal filter?
-    const dx = x - lastPoint!.x;
-    const dy = y - lastPoint!.y;
-    if (dx * dx + dy * dy > 0.1) {
-      // 0.1 inch squared threshold
-      currentPath.push({ x, y });
-      lastPoint = { x, y };
+    // Handle Panning
+    if (isPanning) {
+      const dx = e.clientX - startPan.x;
+      const dy = e.clientY - startPan.y;
 
-      // Draw temp line in overlay
-      renderTempSegment(
-        currentPath[currentPath.length - 2],
-        currentPath[currentPath.length - 1],
-      );
+      const settings = pedro.stores.get(pedro.stores.project.settingsStore);
+      const rotation = settings.fieldRotation || 0;
+
+      const rad = -((rotation * Math.PI) / 180);
+      const rdx = dx * Math.cos(rad) - dy * Math.sin(rad);
+      const rdy = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+      const fieldPanStore = (pedro.stores.app as any).fieldPan;
+      if (fieldPanStore) {
+        fieldPanStore.update((p: { x: number; y: number }) => ({
+          x: p.x + rdx,
+          y: p.y + rdy,
+        }));
+      }
+
+      startPan = { x: e.clientX, y: e.clientY };
+      return;
+    }
+
+    // Handle Drawing
+    if (isMouseDown && currentTool === "pen") {
+      const { x, y } = getFieldCoords(e.clientX, e.clientY);
+
+      const dx = x - lastPoint!.x;
+      const dy = y - lastPoint!.y;
+      if (dx * dx + dy * dy > 0.1) {
+        currentPath.push({ x, y });
+        lastPoint = { x, y };
+        renderTempSegment(
+          currentPath[currentPath.length - 2],
+          currentPath[currentPath.length - 1],
+        );
+      }
+    }
+
+    // Handle Eraser
+    if (isMouseDown && currentTool === "eraser") {
+      eraseAt(e.clientX, e.clientY);
     }
   });
 
   overlayContainer.addEventListener("mouseup", (e) => {
-    if (!isMouseDown || currentTool !== "pen") return;
-    isMouseDown = false;
+    if (currentTool === "none") return;
 
-    // Save path
-    if (currentPath.length > 1) {
-      const newPath: AnnotationPath = {
-        points: currentPath,
-        color: currentColor,
-        width: currentWidth,
-      };
+    e.stopPropagation();
+    e.preventDefault();
 
-      pedro.stores.project.extraDataStore.update((data) => ({
-        ...data,
-        fieldAnnotations: [...(data.fieldAnnotations || []), newPath],
-      }));
+    if (isPanning) {
+      isPanning = false;
+      updateCursor();
+      return;
     }
 
+    if (isMouseDown) {
+      isMouseDown = false;
+
+      if (currentTool === "pen") {
+        if (currentPath.length > 1) {
+          const newPath: AnnotationPath = {
+            points: currentPath,
+            color: currentColor,
+            width: currentWidth,
+          };
+
+          pedro.stores.project.extraDataStore.update((data) => ({
+            ...data,
+            fieldAnnotations: [...(data.fieldAnnotations || []), newPath],
+          }));
+        }
+        currentPath = [];
+        clearTempDrawing();
+      }
+    }
+  });
+
+  overlayContainer.addEventListener("mouseleave", () => {
+    isPanning = false;
+    isMouseDown = false;
     currentPath = [];
     clearTempDrawing();
+    updateCursor();
+  });
+}
+
+function eraseAt(clientX: number, clientY: number) {
+  const { x, y } = getFieldCoords(clientX, clientY);
+  const eraserRadius = 4; // inches
+
+  pedro.stores.project.extraDataStore.update((data) => {
+    const paths = data.fieldAnnotations || [];
+    const newPaths = paths.filter((path: AnnotationPath) => {
+      // Check if any point in path is close to cursor
+      // This is simple point-based collision, could be improved with segment distance
+      return !path.points.some(p => {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        return (dx * dx + dy * dy) < (eraserRadius * eraserRadius);
+      });
+    });
+
+    if (paths.length !== newPaths.length) {
+      return { ...data, fieldAnnotations: newPaths };
+    }
+    return data;
   });
 }
 
@@ -277,31 +379,16 @@ function clearTempDrawing() {
 function getFieldCoords(clientX: number, clientY: number) {
   if (!overlayContainer) return { x: 0, y: 0 };
 
-  // We need to account for overlayContainer position?
-  // It is absolute inset-0 in FieldRenderer, so it matches the viewport of FieldRenderer.
-  // But clientX/Y are global.
   const rect = overlayContainer.getBoundingClientRect();
   const relX = clientX - rect.left;
   const relY = clientY - rect.top;
 
-  const fieldView = pedro.stores.get(pedro.stores.app.fieldViewStore);
-
-  // Handle rotation if needed (FieldRenderer handles it for display, but input needs inverse)
-  // FieldRenderer.svelte handles input rotation in getTransformedCoordinates.
-  // We should probably replicate that.
-  // Or better: access the settings to check rotation.
   const settings = pedro.stores.get(pedro.stores.project.settingsStore);
   const rotation = settings.fieldRotation || 0;
 
-  // Transform relative coords based on rotation to match unrotated field view
   const { x, y } = rotatePoint(relX, relY, rect.width, rect.height, -rotation);
 
-  // Now invert scales
-  // Check if invert exists (it should as they are D3 scales)
-  // But in plugin context, they are functions.
-  // PluginManager getData() returns stores.
-  // The store value has xScale and yScale.
-
+  const fieldView = pedro.stores.get(pedro.stores.app.fieldViewStore);
   let fieldX = 0;
   let fieldY = 0;
 
@@ -309,7 +396,6 @@ function getFieldCoords(clientX: number, clientY: number) {
     fieldX = fieldView.xScale.invert(x);
     fieldY = fieldView.yScale.invert(y);
   } else {
-    // Fallback if invert not available (unlikely with d3)
     console.warn("xScale.invert missing");
   }
 
