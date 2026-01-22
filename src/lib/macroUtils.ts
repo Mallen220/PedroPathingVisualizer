@@ -8,6 +8,7 @@ import type {
   SequenceWaitItem,
   SequenceRotateItem,
   PedroData,
+  Transformation,
 } from "../types";
 import {
   getDistance,
@@ -25,6 +26,177 @@ function unwrapAngle(target: number, reference: number): number {
   const diff = getAngularDifference(reference, target);
   return reference + diff;
 }
+
+// --- Transformation Helpers ---
+
+function resolvePivot(
+  pivot: Transformation["pivot"],
+  center: { x: number; y: number },
+): { x: number; y: number } {
+  if (!pivot || pivot === "origin") return { x: 72, y: 72 };
+  if (pivot === "center") return center;
+  return pivot; // it's {x,y}
+}
+
+function applyPointTransformInternal(
+  p: { x: number; y: number },
+  t: Transformation,
+  pivot: { x: number; y: number },
+): { x: number; y: number } {
+  let x = p.x;
+  let y = p.y;
+
+  if (t.type === "translate") {
+    x += t.dx || 0;
+    y += t.dy || 0;
+  } else if (t.type === "rotate" && t.degrees) {
+    const rad = (t.degrees * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const dx = x - pivot.x;
+    const dy = y - pivot.y;
+    x = pivot.x + (dx * cos - dy * sin);
+    y = pivot.y + (dx * sin + dy * cos);
+  } else if (t.type === "flip") {
+    if (t.axis === "horizontal") {
+      // Mirror across vertical axis at pivot.x
+      x = 2 * pivot.x - x;
+    } else if (t.axis === "vertical") {
+      // Mirror across horizontal axis at pivot.y
+      y = 2 * pivot.y - y;
+    }
+  }
+
+  return { x, y };
+}
+
+function transformHeading(degrees: number, t: Transformation): number {
+  let d = degrees;
+  if (t.type === "rotate" && t.degrees) {
+    d += t.degrees;
+  } else if (t.type === "flip") {
+    if (t.axis === "horizontal") {
+      // Mirror across vertical axis: 0 -> 180, 90 -> 90.
+      // Formula: 180 - angle
+      d = 180 - d;
+    } else if (t.axis === "vertical") {
+      // Mirror across horizontal axis: 0 -> 0, 90 -> -90
+      // Formula: -angle
+      d = -d;
+    }
+  }
+  // Normalize to -180 to 180 or 0-360? Usually just keep it wrapped or raw.
+  // Let's normalize to 0-360 for cleanliness, but standardizing later is fine.
+  return d;
+}
+
+function calculateMacroCenter(data: PedroData): { x: number; y: number } {
+  let minX = data.startPoint.x;
+  let minY = data.startPoint.y;
+  let maxX = data.startPoint.x;
+  let maxY = data.startPoint.y;
+
+  data.lines.forEach((l) => {
+    [l.endPoint, ...l.controlPoints].forEach((p) => {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    });
+  });
+
+  return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+}
+
+function transformMacroData(
+  data: PedroData,
+  transforms: Transformation[],
+): { data: PedroData; resolvedTransforms: Transformation[] } {
+  if (!transforms || transforms.length === 0) {
+    return { data, resolvedTransforms: [] };
+  }
+
+  // Clone data deeply
+  const newData: PedroData = JSON.parse(JSON.stringify(data));
+  const resolvedTransforms: Transformation[] = [];
+
+  transforms.forEach((t) => {
+    // Determine pivot for this step
+    const center = calculateMacroCenter(newData);
+    const pivot = resolvePivot(t.pivot, center);
+
+    // Helper to transform a generic point-like object in place
+    const transformPt = (pt: { x: number; y: number }) => {
+      const res = applyPointTransformInternal(pt, t, pivot);
+      pt.x = res.x;
+      pt.y = res.y;
+    };
+
+    // Apply to startPoint
+    transformPt(newData.startPoint);
+    if (newData.startPoint.heading === "constant") {
+      newData.startPoint.degrees = transformHeading(
+        newData.startPoint.degrees,
+        t,
+      );
+    } else if (newData.startPoint.heading === "linear") {
+      newData.startPoint.startDeg = transformHeading(
+        newData.startPoint.startDeg,
+        t,
+      );
+      newData.startPoint.endDeg = transformHeading(
+        newData.startPoint.endDeg,
+        t,
+      );
+    }
+    // Tangential reverse logic?
+    if (
+      newData.startPoint.heading === "tangential" &&
+      t.type === "flip" &&
+      newData.startPoint.reverse !== undefined
+    ) {
+      // Flipping geometry preserves tangential relationship direction relative to path,
+      // but the "absolute" angle flips. The 'reverse' flag just means "backward along path".
+      // That shouldn't change.
+    }
+
+    // Apply to lines
+    newData.lines.forEach((line) => {
+      transformPt(line.endPoint);
+      if (line.endPoint.heading === "constant") {
+        line.endPoint.degrees = transformHeading(line.endPoint.degrees, t);
+      } else if (line.endPoint.heading === "linear") {
+        line.endPoint.startDeg = transformHeading(line.endPoint.startDeg, t);
+        line.endPoint.endDeg = transformHeading(line.endPoint.endDeg, t);
+      }
+
+      line.controlPoints.forEach((cp) => transformPt(cp));
+    });
+
+    // Handle sequence items (Wait, Rotate, nested Macro?)
+    if (newData.sequence) {
+      newData.sequence.forEach((seqItem) => {
+        if (seqItem.kind === "rotate") {
+          seqItem.degrees = transformHeading(seqItem.degrees, t);
+        }
+        // Wait items don't have spatial properties
+        // Macro items: we don't transform them here, we pass the transformation down via resolvedTransforms
+        // because we haven't loaded their data yet (or we have, but we recurse later).
+        // However, if we flip the coordinate system, the nested macro will be flipped by applying resolvedTransforms later.
+      });
+    }
+
+    // Save resolved transform for children
+    resolvedTransforms.push({
+      ...t,
+      pivot: pivot, // Explicit coordinates
+    });
+  });
+
+  return { data: newData, resolvedTransforms };
+}
+
+// --- Main Expansion Logic ---
 
 /**
  * Expands a macro into a list of lines and a sequence of items.
@@ -52,18 +224,24 @@ export function expandMacro(
   const nextVisited = new Set(visitedPaths);
   nextVisited.add(macroItem.filePath);
 
+  // --- Apply Transformations to Macro Data ---
+  const { data: transformedData, resolvedTransforms } = transformMacroData(
+    macroData,
+    macroItem.transformations || [],
+  );
+
   const generatedLines: Line[] = [];
   const generatedSequence: SequenceItem[] = [];
 
-  // 1. Bridge Generation
-  const dist = getDistance(prevPoint, macroData.startPoint);
+  // 1. Bridge Generation (uses transformed start point)
+  const dist = getDistance(prevPoint, transformedData.startPoint);
   let currentHeading = prevHeading;
   let currentPoint = prevPoint;
 
   if (dist > 0.1) {
     // Determine bridge heading based on macro start point preferences
     let bridgeEndPoint: Point;
-    const target = macroData.startPoint;
+    const target = transformedData.startPoint;
 
     if (target.heading === "constant") {
       bridgeEndPoint = {
@@ -81,7 +259,7 @@ export function expandMacro(
         y: target.y,
         heading: "linear",
         startDeg: 0, // Ignored by calculator (uses current)
-        endDeg: target.startDeg,
+        endDeg: target.endDeg, // Use endDeg from target? or target.startDeg? Usually target.startDeg
         isMacroElement: true,
         macroId: macroItem.id,
       };
@@ -118,11 +296,11 @@ export function expandMacro(
     // Estimate new heading after bridge
     currentHeading = getLineEndHeading(bridgeLine, prevPoint);
   } else {
-    currentPoint = macroData.startPoint;
+    currentPoint = transformedData.startPoint;
   }
 
   // 2. Process Macro Lines/Sequence
-  const macroLines = macroData.lines.map((l) => ({ ...l }));
+  const macroLines = transformedData.lines.map((l) => ({ ...l }));
 
   // Create a mapping from old ID to new ID to preserve sequence references
   const lineIdMap = new Map<string, string>();
@@ -156,9 +334,9 @@ export function expandMacro(
   });
 
   const sourceSeq =
-    macroData.sequence && macroData.sequence.length > 0
-      ? macroData.sequence
-      : macroData.lines.map(
+    transformedData.sequence && transformedData.sequence.length > 0
+      ? transformedData.sequence
+      : transformedData.lines.map(
           (l) => ({ kind: "path", lineId: l.id! }) as SequenceItem,
         );
 
@@ -225,10 +403,18 @@ export function expandMacro(
       const nestedData = macrosMap.get(item.filePath);
       if (nestedData) {
         const nestedId = `macro-${macroItem.id}-${item.id}`;
+
+        // Propagate transformations to nested macro
+        const childTransforms = [
+          ...(item.transformations || []),
+          ...resolvedTransforms // Apply parent transforms (resolved) on top
+        ];
+
         const nestedItem: SequenceMacroItem = {
           ...item,
           id: nestedId,
           locked: true,
+          transformations: childTransforms,
         };
 
         const result = expandMacro(
@@ -252,8 +438,6 @@ export function expandMacro(
         currentHeading = result.endHeading;
       } else {
         // Missing data for nested macro, push placeholder or skip
-        // We can push it, but it won't have sequence expanded.
-        // When data loads, refreshMacros will re-run.
         generatedSequence.push({
           ...item,
           id: `macro-${macroItem.id}-${item.id}`,
@@ -299,9 +483,6 @@ export function regenerateProjectMacros(
   if (startPoint.heading === "linear") currentHeading = startPoint.startDeg;
   else if (startPoint.heading === "constant")
     currentHeading = startPoint.degrees;
-  // Tangential start depends on first line... handled inside loop logic or special case?
-  // If first item is macro, we need to know heading.
-  // If first item is path, we process it.
 
   // Special handling for initial tangential heading
   if (startPoint.heading === "tangential") {
@@ -330,7 +511,7 @@ export function regenerateProjectMacros(
           requiredStartHeadingRaw,
           currentHeading,
         );
-        currentHeading = requiredStartHeading; // Snap?
+        currentHeading = requiredStartHeading;
 
         const endHeadingRaw = getLineEndHeading(line, currentPoint);
         if (line.endPoint.heading === "tangential") {
@@ -345,7 +526,6 @@ export function regenerateProjectMacros(
       }
     } else if (item.kind === "wait") {
       newSequence.push(item);
-      // Wait doesn't change heading or point
     } else if (item.kind === "rotate") {
       newSequence.push(item);
       currentHeading = item.degrees;
@@ -378,10 +558,8 @@ export function regenerateProjectMacros(
       } else {
         // Macro data missing, just push item as is
         newSequence.push(item);
+
         // Attempt to preserve existing lines for this macro if they exist in the input
-        // This handles cases where data is loading or failed to load
-        // Match lines that belong to this macro instance, including nested ones
-        // ID format: macro-{instanceId}-... or bridge-{instanceId}
         const prefix = `macro-${item.id}-`;
         const bridgePrefix = `bridge-${item.id}`;
         const preservedLines = lines.filter(
@@ -393,7 +571,7 @@ export function regenerateProjectMacros(
         if (preservedLines.length > 0) {
           newLines.push(...preservedLines);
 
-          // Reconstruct sequence if missing so that logic persists
+          // Reconstruct sequence if missing
           if (!item.sequence || item.sequence.length === 0) {
             const reconstructedSeq: SequenceItem[] = preservedLines.map(
               (l) => ({
@@ -408,7 +586,7 @@ export function regenerateProjectMacros(
             newSequence[newSequence.length - 1] = newItem;
           }
 
-          // Update current point to end of last line to maintain continuity for subsequent items
+          // Update current point to end of last line
           const lastLine = preservedLines[preservedLines.length - 1];
           currentPoint = lastLine.endPoint;
           currentHeading = getLineEndHeading(
@@ -417,7 +595,6 @@ export function regenerateProjectMacros(
               ? preservedLines[preservedLines.length - 2].endPoint
               : currentPoint,
           );
-          // Approximate heading if we can't calculate perfectly
           if (lastLine.endPoint.heading === "constant")
             currentHeading = lastLine.endPoint.degrees;
           else if (lastLine.endPoint.heading === "linear")

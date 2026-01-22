@@ -102,6 +102,18 @@ export type SequenceRotateItem = {
   _linkedName?: string; // Metadata for linked names
 };
 
+export interface Transformation {
+  type: "translate" | "rotate" | "flip";
+  // Translate
+  dx?: number;
+  dy?: number;
+  // Rotate
+  degrees?: number;
+  pivot?: "origin" | "center" | { x: number; y: number };
+  // Flip
+  axis?: "horizontal" | "vertical";
+}
+
 export type SequenceMacroItem = {
   kind: "macro";
   id: string; // Unique instance ID
@@ -110,6 +122,7 @@ export type SequenceMacroItem = {
   locked?: boolean;
   eventMarkers?: EventMarker[]; // Maybe macros can have markers too?
   sequence?: SequenceItem[]; // The expanded sequence for this macro instance
+  transformations?: Transformation[];
 };
 
 export type SequenceItem =

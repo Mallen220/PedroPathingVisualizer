@@ -1,7 +1,9 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import { selectedPointId, selectedLineId } from "../../../stores";
+  import { slide } from "svelte/transition";
   import DeleteButtonWithConfirm from "../common/DeleteButtonWithConfirm.svelte";
+  import MacroTransformControls from "./MacroTransformControls.svelte";
   import type { SequenceMacroItem, SequenceItem } from "../../../types/index";
 
   export let macro: SequenceMacroItem;
@@ -39,6 +41,8 @@
   function handleBlur() {
     if (recordChange) recordChange();
   }
+
+  let showTransforms = false;
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -235,6 +239,54 @@
         >
           {macro.filePath}
         </div>
+      </div>
+
+      <div class="pt-1">
+        <button
+          on:click|stopPropagation={() => (showTransforms = !showTransforms)}
+          disabled={macro.locked}
+          class={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors w-full justify-center border disabled:opacity-50 ${
+            showTransforms
+              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300"
+              : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
+          }`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="size-3.5 transition-transform duration-200 {showTransforms
+              ? 'rotate-180'
+              : ''}"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+            />
+          </svg>
+          <div class="flex items-center gap-1.5">
+            <span>Transform Geometry</span>
+            {#if macro.transformations && macro.transformations.length > 0}
+              <span
+                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 rounded-full text-[10px]"
+              >
+                {macro.transformations.length}
+              </span>
+            {/if}
+          </div>
+        </button>
+
+        {#if showTransforms}
+          <div transition:slide={{ duration: 200 }} class="mt-2">
+            <MacroTransformControls
+              bind:macro
+              onUpdate={() => recordChange && recordChange()}
+            />
+          </div>
+        {/if}
       </div>
 
       <!-- Action Bar -->
