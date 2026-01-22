@@ -37,6 +37,7 @@
     robotHeadingStore,
     sequenceStore, // Imported for potential use, though main logic uses lines
     percentStore,
+    extraDataStore,
   } from "../projectStore";
   import {
     diffMode,
@@ -127,6 +128,7 @@
   $: zoom = $fieldZoom;
   $: pan = $fieldPan;
   $: scaleFactor = zoom;
+  $: extraData = $extraDataStore; // Force reactivity when plugin data changes
   $: baseSize = Math.min(width, height);
   $: x = d3
     .scaleLinear()
