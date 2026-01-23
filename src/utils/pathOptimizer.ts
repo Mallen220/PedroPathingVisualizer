@@ -276,6 +276,7 @@ export class PathOptimizer {
           activeEvent.prevPoint ||
           (lineIdx === 0 ? this.startPoint : lines[lineIdx - 1].endPoint);
 
+
         const timeProgress =
           activeEvent.duration > 0
             ? (t - activeEvent.startTime) / activeEvent.duration
