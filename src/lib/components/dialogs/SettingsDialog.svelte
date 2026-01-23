@@ -13,7 +13,7 @@
   import RobotProfileManager from "../settings/RobotProfileManager.svelte";
   import CustomFieldWizard from "../settings/CustomFieldWizard.svelte";
   import { themesStore } from "../../pluginsStore";
-  import { showPluginManager, showShortcuts } from "../../../stores";
+  import { showPluginManager, showShortcuts, startTutorial } from "../../../stores";
 
   export let isOpen = false;
   export let settings: Settings = { ...DEFAULT_SETTINGS };
@@ -25,6 +25,7 @@
     file: true,
     advanced: true,
     theme: true,
+    help: true,
     credits: true,
   };
 
@@ -1736,6 +1737,93 @@
                 Turn to logic, export options, start/end states, and so, so much
                 more!
               </p>
+            </div>
+          {/if}
+        </div>
+
+        <!-- Help & Resources Section -->
+        <div class="mb-4">
+          <button
+            on:click={() =>
+              (collapsedSections.help = !collapsedSections.help)}
+            class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            aria-expanded={!collapsedSections.help}
+          >
+            <div class="flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width={1.5}
+                stroke="currentColor"
+                class="size-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"
+                />
+              </svg>
+              <span class="font-semibold">Help & Resources</span>
+            </div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width={2}
+              stroke="currentColor"
+              class="size-5 transition-transform duration-200"
+              class:rotate-180={collapsedSections.help}
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m19.5 8.25-7.5 7.5-7.5-7.5"
+              />
+            </svg>
+          </button>
+
+          {#if !collapsedSections.help}
+            <div
+              class="mt-2 space-y-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
+            >
+              <button
+                on:click={() => {
+                  isOpen = false;
+                  startTutorial.set(true);
+                }}
+                class="flex items-center justify-between w-full p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors text-left"
+              >
+                <div>
+                  <div
+                    class="text-sm font-medium text-neutral-900 dark:text-white"
+                  >
+                    Replay Welcome Tutorial
+                  </div>
+                  <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                    Walk through the basics of the visualizer
+                  </div>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width={1.5}
+                  stroke="currentColor"
+                  class="size-5 text-blue-500"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z"
+                  />
+                </svg>
+              </button>
             </div>
           {/if}
         </div>

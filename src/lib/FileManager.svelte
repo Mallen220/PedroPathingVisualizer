@@ -41,6 +41,7 @@
     fileManagerNewFileMode,
     currentDirectoryStore,
     gitStatusStore,
+    showTelemetryDialog,
   } from "../stores";
   import { settingsStore, loadMacro, loadProjectData } from "./projectStore";
   import { saveProject } from "../utils/fileHandlers";
@@ -902,6 +903,7 @@
       on:change-dir={changeDirectoryDialog}
       on:new-file={() => (creatingNewFile = true)}
       on:import-file={handleImportFile}
+      on:telemetry={() => showTelemetryDialog.set(true)}
     />
 
     <!-- Breadcrumbs -->

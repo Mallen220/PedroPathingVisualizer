@@ -15,6 +15,7 @@
     "view-change": "list" | "grid";
     search: string;
     "import-file": File;
+    telemetry: void;
   }>();
 
   function handleSearch(e: Event) {
@@ -176,6 +177,29 @@
         />
       </svg>
     </label>
+
+    <!-- Telemetry -->
+    <button
+      on:click={() => dispatch("telemetry")}
+      class="p-1.5 text-neutral-500 hover:text-orange-600 dark:text-neutral-400 dark:hover:text-orange-400 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+      title="Telemetry Import"
+      aria-label="Telemetry Import"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="2"
+        stroke="currentColor"
+        class="size-5"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z"
+        />
+      </svg>
+    </button>
 
     <!-- New File -->
     <button

@@ -19,6 +19,7 @@
   import UnsavedChangesDialog from "./lib/components/dialogs/UnsavedChangesDialog.svelte";
   import FileManager from "./lib/FileManager.svelte";
   import SettingsDialog from "./lib/components/dialogs/SettingsDialog.svelte";
+  import TelemetryDialog from "./lib/components/dialogs/TelemetryDialog.svelte";
   import PluginManagerDialog from "./lib/components/dialogs/PluginManagerDialog.svelte";
   import KeyboardShortcutsDialog from "./lib/components/dialogs/KeyboardShortcutsDialog.svelte";
   import ExportCodeDialog from "./lib/components/dialogs/ExportCodeDialog.svelte";
@@ -40,6 +41,7 @@
     projectMetadataStore,
     currentDirectoryStore,
     showPluginManager,
+    showTelemetryDialog,
   } from "./stores";
   import {
     startPointStore,
@@ -1361,6 +1363,8 @@
     bind:settings={$settingsStore}
   />
 {/if}
+
+<TelemetryDialog bind:isOpen={$showTelemetryDialog} />
 
 <ExportCodeDialog
   bind:this={exportDialog}
