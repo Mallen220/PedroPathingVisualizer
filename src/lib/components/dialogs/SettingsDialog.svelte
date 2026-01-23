@@ -13,7 +13,7 @@
   import RobotProfileManager from "../settings/RobotProfileManager.svelte";
   import CustomFieldWizard from "../settings/CustomFieldWizard.svelte";
   import { themesStore } from "../../pluginsStore";
-  import { showPluginManager, showShortcuts } from "../../../stores";
+  import { showPluginManager, showShortcuts, startTutorial } from "../../../stores";
 
   export let isOpen = false;
   export let settings: Settings = { ...DEFAULT_SETTINGS };
@@ -450,6 +450,39 @@
 
       <!-- Settings Content -->
       <div class="w-full flex-1 overflow-y-auto pr-2">
+
+        <!-- Welcome Tutorial Section -->
+        <div class="mb-4">
+          <button
+            on:click={() => {
+              isOpen = false;
+              startTutorial.set(true);
+            }}
+            class="flex items-center justify-between w-full py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+          >
+            <div class="flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width={1.5}
+                stroke="currentColor"
+                class="size-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"
+                />
+              </svg>
+              <span class="font-semibold">Welcome Tutorial</span>
+            </div>
+            <div class="text-sm text-blue-600 dark:text-blue-400 font-medium">
+              Start Tutorial
+            </div>
+          </button>
+        </div>
+        
         <!-- Keyboard Shortcuts Section -->
         <div class="mb-4">
           <button
@@ -478,6 +511,8 @@
             </div>
           </button>
         </div>
+
+        
 
         <!-- Plugin Manager Section -->
         <div class="mb-4">
