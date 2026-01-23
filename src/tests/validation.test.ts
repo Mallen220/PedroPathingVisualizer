@@ -98,8 +98,9 @@ describe("Validation Utils", () => {
         ],
       },
     ];
+    const sequence: SequenceItem[] = [{ kind: "path", lineId: "1" }];
 
-    validatePath(startPoint, lines, dummySettings, dummySequence, dummyShapes);
+    validatePath(startPoint, lines, dummySettings, sequence, dummyShapes);
 
     expect(mocks.collisionMarkersSet).toHaveBeenCalledWith([
       expect.objectContaining({ type: "zero-length" }),
@@ -203,12 +204,13 @@ describe("Validation Utils", () => {
         ],
       },
     ];
+    const sequence: SequenceItem[] = [{ kind: "path", lineId: "1" }];
 
     mocks.getCollisions.mockReturnValue([
       { x: 5, y: 5, time: 1, segmentIndex: 0, type: "obstacle" },
     ]);
 
-    validatePath(startPoint, lines, dummySettings, dummySequence, dummyShapes);
+    validatePath(startPoint, lines, dummySettings, sequence, dummyShapes);
 
     // Should have 1 zero-length (from internal check) and 1 obstacle (from mock)
     expect(mocks.collisionMarkersSet).toHaveBeenCalledWith(

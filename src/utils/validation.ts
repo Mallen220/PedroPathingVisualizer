@@ -11,6 +11,24 @@ import type {
   TimelineEvent,
 } from "../types";
 
+function getOrderedLines(
+  sequence: SequenceItem[],
+  linesMap: Map<string, Line>,
+): Line[] {
+  const result: Line[] = [];
+  sequence.forEach((item) => {
+    if (item.kind === "path") {
+      const line = linesMap.get(item.lineId);
+      if (line) result.push(line);
+    } else if (item.kind === "macro") {
+      if (item.sequence) {
+        result.push(...getOrderedLines(item.sequence, linesMap));
+      }
+    }
+  });
+  return result;
+}
+
 export function validatePath(
   startPoint: Point,
   lines: Line[],
@@ -30,19 +48,30 @@ export function validatePath(
   const markers: CollisionMarker[] = optimizer.getCollisions(timeline);
 
   // Zero-length path validation
+  // Create a map for fast lookup
+  const linesMap = new Map<string, Line>();
+  lines.forEach((l) => {
+    if (l.id) linesMap.set(l.id, l);
+  });
+
+  // Get lines in execution order
+  const orderedLines = getOrderedLines(sequence, linesMap);
+
   let currentStart = startPoint;
-  lines.forEach((line, index) => {
+  orderedLines.forEach((line) => {
     const dx = line.endPoint.x - currentStart.x;
     const dy = line.endPoint.y - currentStart.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     // If distance is effectively zero (epsilon check), add a boundary marker
     if (dist < 0.001) {
+      // Find the index in the original lines array for consistent referencing
+      const originalIndex = lines.findIndex((l) => l.id === line.id);
       markers.push({
         x: currentStart.x,
         y: currentStart.y,
         time: 0, // Not really applicable, but needed for type
-        segmentIndex: index,
+        segmentIndex: originalIndex,
         type: "zero-length",
       });
     }
