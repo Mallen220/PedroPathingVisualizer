@@ -1,6 +1,6 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
-  import type { Line } from "../../../types/index";
+  import type { Line, PathConstraints } from "../../../types/index";
   import { snapToGrid, showGrid, gridSize } from "../../../stores";
   import ControlPointsSection from "./ControlPointsSection.svelte";
   import HeadingControls from "../HeadingControls.svelte";
@@ -46,6 +46,23 @@
   let yInput: HTMLInputElement;
   let headingControls: HeadingControls;
   let nameInput: HTMLInputElement | undefined;
+
+  let collapsedConstraints = true;
+
+  function updateConstraints(field: keyof PathConstraints, value: string) {
+    if (!line.constraints) line.constraints = {};
+    const num = parseFloat(value);
+    if (isNaN(num) || value === "") {
+      delete line.constraints[field];
+      if (Object.keys(line.constraints).length === 0) {
+        line.constraints = undefined;
+      }
+    } else {
+      line.constraints[field] = num;
+    }
+    lines = [...lines];
+    recordChange();
+  }
 
   // Container-based responsiveness: observe the grid container's width and
   // toggle a compact layout when it becomes too narrow (e.g., in a small
@@ -400,6 +417,120 @@
             }}
           />
         </div>
+      </div>
+
+      <!-- Constraints Section -->
+      <div
+        class="border rounded-lg border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/50"
+      >
+        <button
+          on:click={() => (collapsedConstraints = !collapsedConstraints)}
+          class="flex items-center justify-between w-full p-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-t-lg transition-colors"
+        >
+          <div class="flex items-center gap-2">
+            <span>Constraint Overrides</span>
+            {#if line.constraints}
+              <span
+                class="w-1.5 h-1.5 rounded-full bg-blue-500"
+                title="Overrides active"
+              ></span>
+            {/if}
+          </div>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width={2}
+            stroke="currentColor"
+            class="size-3.5 transition-transform duration-200 {collapsedConstraints
+              ? '-rotate-90'
+              : 'rotate-0'}"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m19.5 8.25-7.5 7.5-7.5-7.5"
+            />
+          </svg>
+        </button>
+
+        {#if !collapsedConstraints}
+          <div class="p-3 grid grid-cols-2 gap-3 border-t border-neutral-200 dark:border-neutral-700">
+            <div>
+              <label
+                class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1"
+              >
+                Max Velocity (in/s)
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Global"
+                class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-1 focus:ring-blue-500 outline-none"
+                value={line.constraints?.maxVelocity ?? ""}
+                on:input={(e) =>
+                  // @ts-ignore
+                  updateConstraints("maxVelocity", e.target.value)}
+                disabled={line.locked}
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1"
+              >
+                Max Accel (in/s²)
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Global"
+                class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-1 focus:ring-blue-500 outline-none"
+                value={line.constraints?.maxAcceleration ?? ""}
+                on:input={(e) =>
+                  // @ts-ignore
+                  updateConstraints("maxAcceleration", e.target.value)}
+                disabled={line.locked}
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1"
+              >
+                Max Decel (in/s²)
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Global"
+                class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-1 focus:ring-blue-500 outline-none"
+                value={line.constraints?.maxDeceleration ?? ""}
+                on:input={(e) =>
+                  // @ts-ignore
+                  updateConstraints("maxDeceleration", e.target.value)}
+                disabled={line.locked}
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1"
+              >
+                Max Ang Vel (rad/s)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="Global"
+                class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:ring-1 focus:ring-blue-500 outline-none"
+                value={line.constraints?.maxAngularVelocity ?? ""}
+                on:input={(e) =>
+                  // @ts-ignore
+                  updateConstraints("maxAngularVelocity", e.target.value)}
+                disabled={line.locked}
+              />
+            </div>
+          </div>
+        {/if}
       </div>
 
       <ControlPointsSection

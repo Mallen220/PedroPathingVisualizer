@@ -740,8 +740,19 @@ export function calculatePathTime(
 
       // Use a small epsilon
       if (diff > 0.1) {
+        // Create Segment-Specific Settings for Rotation
+        let rotSettings = safeSettings;
+        if (line.constraints) {
+          rotSettings = {
+            ...safeSettings,
+            ...line.constraints,
+            aVelocity:
+              line.constraints.maxAngularVelocity ?? safeSettings.aVelocity,
+          };
+        }
+
         // Convert diff to rotation time WITH ACCELERATION logic for Wait events
-        const rotTime = calculateRotationTime(diff, safeSettings);
+        const rotTime = calculateRotationTime(diff, rotSettings);
 
         timeline.push({
           type: "wait",
@@ -773,10 +784,21 @@ export function calculatePathTime(
       let velocityProfile: number[] | undefined = undefined;
       let headingProfile: number[] | undefined = undefined;
 
+      // Create Segment-Specific Settings
+      let segmentSettings = safeSettings;
+      if (line.constraints) {
+        segmentSettings = {
+          ...safeSettings,
+          ...line.constraints,
+          aVelocity:
+            line.constraints.maxAngularVelocity ?? safeSettings.aVelocity,
+        };
+      }
+
       if (useMotionProfile) {
         const result = calculateMotionProfileDetailed(
           analysis.steps,
-          safeSettings,
+          segmentSettings,
         );
         translationTime = result.totalTime;
         motionProfile = result.profile;
@@ -831,7 +853,7 @@ export function calculatePathTime(
       // Use simple velocity check for segment duration max check
       // This maintains continuity with previous logic that didn't penalize smooth travel
       const rotationTime =
-        (rotationRequired * (Math.PI / 180)) / safeSettings.aVelocity;
+        (rotationRequired * (Math.PI / 180)) / segmentSettings.aVelocity;
 
       const segmentTime = Math.max(translationTime, rotationTime);
 

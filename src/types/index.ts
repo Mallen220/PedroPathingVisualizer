@@ -56,6 +56,13 @@ export interface WaitSegment {
   position?: "before" | "after";
 }
 
+export interface PathConstraints {
+  maxVelocity?: number;
+  maxAcceleration?: number;
+  maxDeceleration?: number;
+  maxAngularVelocity?: number;
+}
+
 export interface Line {
   id?: string;
   startPoint?: Point; // Optional start point for synthetic lines (bridge)
@@ -72,6 +79,7 @@ export interface Line {
   waitBeforeName?: string;
   waitAfterName?: string;
   _linkedName?: string; // Metadata for linked names
+  constraints?: PathConstraints;
   isMacroElement?: boolean;
   macroId?: string;
   originalId?: string;
