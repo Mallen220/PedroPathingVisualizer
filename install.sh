@@ -26,11 +26,23 @@ print_logo() {
     echo -e "${NC}"
 }
 
+# Global variable to store selected version (set by user choice)
+SELECTED_VERSION=""
+
 # Return all asset download URLs that match a pattern from the latest release
 # Uses extended grep to support alternation patterns and is case-insensitive
+# If SELECTED_VERSION is set, uses that specific release instead
 get_download_urls() {
     local pattern=$1
-    curl -s "https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases/latest" | \
+    local api_url
+    
+    if [ -n "$SELECTED_VERSION" ]; then
+        api_url="https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases/tags/v${SELECTED_VERSION}"
+    else
+        api_url="https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases/latest"
+    fi
+    
+    curl -s "$api_url" | \
     grep -o '"browser_download_url": "[^"]*"' | \
     cut -d'"' -f4 | \
     grep -Ei "$pattern" || true
@@ -40,6 +52,14 @@ get_download_urls() {
 get_latest_version() {
     curl -s "https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases/latest" | \
     grep -o '"tag_name": "[^"]*"' | \
+    head -1 | cut -d'"' -f4 | sed 's/^v//' || true
+}
+
+# Return the latest pre-release version if one exists, empty string otherwise
+get_prerelease_version() {
+    curl -s "https://api.github.com/repos/Mallen220/PedroPathingVisualizer/releases" | \
+    grep -B 5 '"prerelease": true' | \
+    grep '"tag_name"' | \
     head -1 | cut -d'"' -f4 | sed 's/^v//' || true
 }
 
@@ -530,6 +550,48 @@ if [ -z "$CHOICE" ]; then
         "Windows") CHOICE=3 ;;
         *) print_error "Could not auto-detect OS. Please select manualy."; exit 1 ;;
     esac
+fi
+
+# Check for pre-release versions and prompt user if found
+print_info "Checking for available versions..."
+LATEST_VERSION=$(get_latest_version)
+PRERELEASE_VERSION=$(get_prerelease_version)
+
+if [ -n "$PRERELEASE_VERSION" ] && [ "$PRERELEASE_VERSION" != "$LATEST_VERSION" ]; then
+    echo ""
+    print_info "Pre-release version available!"
+    echo ""
+    echo "Select version to install:"
+    echo "  1) Latest stable release: v$LATEST_VERSION"
+    echo "  2) Pre-release version: v$PRERELEASE_VERSION"
+    echo ""
+    read -p "Enter choice [1-2] (Default: 1): " VERSION_CHOICE < /dev/tty
+    
+    if [ -z "$VERSION_CHOICE" ]; then
+        VERSION_CHOICE=1
+    fi
+    
+    case "$VERSION_CHOICE" in
+        1)
+            SELECTED_VERSION="$LATEST_VERSION"
+            print_status "Using stable release: v$LATEST_VERSION"
+            ;;
+        2)
+            SELECTED_VERSION="$PRERELEASE_VERSION"
+            print_status "Using pre-release: v$PRERELEASE_VERSION"
+            ;;
+        *)
+            print_error "Invalid selection. Using stable release."
+            SELECTED_VERSION="$LATEST_VERSION"
+            ;;
+    esac
+    echo ""
+else
+    if [ -n "$LATEST_VERSION" ]; then
+        SELECTED_VERSION="$LATEST_VERSION"
+        print_status "Using latest release: v$LATEST_VERSION"
+        echo ""
+    fi
 fi
 
 case "$CHOICE" in
