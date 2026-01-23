@@ -1390,8 +1390,12 @@
               const lineIdx = ev.lineIndex;
               const line = lines[lineIdx];
               if (line) {
+                // Use the exact prevPoint captured in the timeline to anchor
+                // segment start; this stays correct across macro expansions and
+                // translated macros where array order may not match execution.
                 const lineStartPoint =
-                  lineIdx === 0 ? startPoint : lines[lineIdx - 1].endPoint;
+                  ev.prevPoint ||
+                  (lineIdx === 0 ? startPoint : lines[lineIdx - 1].endPoint);
                 let t1 = 0;
                 let t2 = 1;
 

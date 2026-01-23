@@ -1,6 +1,7 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PathOptimizer } from "../utils/pathOptimizer";
+import { calculatePathTime } from "../utils/timeCalculator";
 import { pointInPolygon, getRobotCorners } from "../utils/geometry";
 import type { Line, Point, SequenceItem, Settings, Shape } from "../types";
 
@@ -12,9 +13,11 @@ describe("PathOptimizer", () => {
   let shapes: Shape[];
 
   beforeEach(() => {
+    // Offset from boundary so validation does not flag the starting safety margin
+    // as a boundary collision while we check macro sequencing behavior.
     startPoint = {
       x: 0,
-      y: 0,
+      y: 20,
       heading: "constant",
       degrees: 0,
     };
@@ -69,6 +72,10 @@ describe("PathOptimizer", () => {
       sequence,
       shapes,
     );
+
+    // Sanity check the optimizer captured start point
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((optimizer as any).startPoint.y).toBe(20);
     expect(optimizer).toBeDefined();
   });
 
@@ -229,5 +236,121 @@ describe("PathOptimizer", () => {
 
     const seeds = optimizer.findValidPathSeeds();
     expect(Array.isArray(seeds)).toBe(true);
+  });
+
+  it("should respect timeline prevPoint for macro sequences to avoid ghost collisions", () => {
+    startPoint = {
+      x: 0,
+      y: 0,
+      heading: "constant",
+      degrees: 0,
+    };
+
+    const firstLine: Line = {
+      id: "user-line",
+      endPoint: { x: 10, y: 20, heading: "constant", degrees: 0 },
+      controlPoints: [],
+      color: "red",
+    };
+
+    const unusedLine: Line = {
+      id: "unused-line",
+      endPoint: { x: 100, y: 100, heading: "constant", degrees: 0 },
+      controlPoints: [],
+      color: "gray",
+    };
+
+    const macroLine: Line = {
+      id: "macro-line",
+      endPoint: { x: 10, y: 30, heading: "constant", degrees: 0 },
+      controlPoints: [],
+      color: "blue",
+      isMacroElement: true,
+      macroId: "m1",
+    };
+
+    lines = [firstLine, unusedLine, macroLine];
+
+    // Obstacle around the unused line location to catch incorrect prevPoint usage
+    shapes = [
+      {
+        id: "obstacle1",
+        vertices: [
+          { x: 95, y: 95 },
+          { x: 95, y: 105 },
+          { x: 105, y: 105 },
+          { x: 105, y: 95 },
+        ],
+        color: "black",
+        fillColor: "black",
+      },
+    ];
+
+    sequence = [
+      { kind: "path", lineId: firstLine.id! },
+      {
+        kind: "macro",
+        id: "m1",
+        name: "Macro",
+        filePath: "macro.json",
+        sequence: [{ kind: "path", lineId: macroLine.id! }],
+      },
+    ];
+
+    const optimizer = new PathOptimizer(
+      startPoint,
+      lines,
+      settings,
+      sequence,
+      shapes,
+    );
+
+    const timeline = calculatePathTime(startPoint, lines, settings, sequence);
+    const markers = optimizer.getCollisions(timeline.timeline, lines);
+
+    // If prevPoint were taken from lines order (unusedLine), we'd start inside the obstacle.
+    const obstacleMarkers = markers.filter((m) => m.type === "obstacle");
+    expect(obstacleMarkers).toHaveLength(0);
+  });
+
+  it("should not extend collisions across segments when the type matches", () => {
+    startPoint = { x: 10, y: 10, heading: "constant", degrees: 0 };
+
+    // Two out-of-bounds segments; collisions should be separate per segment.
+    lines = [
+      {
+        id: "seg-1",
+        endPoint: { x: -10, y: 10, heading: "constant", degrees: 0 },
+        controlPoints: [],
+        color: "red",
+      },
+      {
+        id: "seg-2",
+        endPoint: { x: 10, y: -10, heading: "constant", degrees: 0 },
+        controlPoints: [],
+        color: "blue",
+      },
+    ];
+
+    sequence = [
+      { kind: "path", lineId: "seg-1" },
+      { kind: "path", lineId: "seg-2" },
+    ];
+
+    const optimizer = new PathOptimizer(
+      startPoint,
+      lines,
+      settings,
+      sequence,
+      shapes,
+    );
+
+    const timeline = calculatePathTime(startPoint, lines, settings, sequence);
+    const markers = optimizer.getCollisions(timeline.timeline, lines);
+
+    const boundaryMarkers = markers.filter((m) => m.type === "boundary");
+    expect(boundaryMarkers.length).toBeGreaterThanOrEqual(2);
+    expect(boundaryMarkers[0]?.segmentIndex).toBe(0);
+    expect(boundaryMarkers[boundaryMarkers.length - 1]?.segmentIndex).toBe(1);
   });
 });
