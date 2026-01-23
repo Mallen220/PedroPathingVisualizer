@@ -5,6 +5,7 @@ export const POTATO_THEME_CSS = `
   --potato-dark: #6D4C41;
   --potato-shadow: #8D6E63;
   --potato-accent: #8B4513;
+  --potato-text-dark: #3E2723;
 }
 
 /* Override global backgrounds and text */
@@ -16,8 +17,13 @@ body,
 .dark\\:bg-neutral-800,
 .dark\\:bg-black {
   background-color: var(--potato-flesh) !important;
-  color: var(--potato-dark) !important;
+  color: var(--potato-text-dark) !important;
   border-color: var(--potato-skin) !important;
+}
+
+/* Ensure images stay transparent */
+img {
+  background-color: transparent !important;
 }
 
 /* Headers, sidebars, darker sections */
@@ -48,9 +54,15 @@ button:hover {
   transform: scale(1.05) rotate(2deg) !important;
 }
 
-/* Icons - Make them brown/potato-y */
+/* Icons - Make them distinct */
 svg {
-  color: var(--potato-dark) !important;
+  color: var(--potato-text-dark) !important; /* Dark brown on light background */
+  filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.2));
+}
+
+/* Icons inside potato buttons should be white */
+button:not(.bg-transparent) svg {
+  color: #FFF !important;
   filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.2));
 }
 
@@ -62,7 +74,7 @@ svg {
 .dark\\:text-neutral-100,
 .dark\\:text-neutral-300,
 .dark\\:text-neutral-400 {
-  color: var(--potato-dark) !important;
+  color: var(--potato-text-dark) !important;
 }
 
 .text-blue-600, .dark\\:text-blue-400 {
@@ -98,6 +110,7 @@ export function firePotatoConfetti(x: number, y: number) {
     potato.style.top = y + 'px';
     potato.style.pointerEvents = 'none';
     potato.style.zIndex = '9999';
+    potato.style.backgroundColor = 'transparent'; // Ensure transparent
     potato.style.transition = 'all 1s ease-out';
     potato.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`;
 
