@@ -1070,6 +1070,36 @@
     return items;
   }
 
+  function syncSelectionToUI() {
+    const sel = $selectedPointId;
+    if (!sel || !controlTabRef || !controlTabRef.scrollToItem) return;
+
+    if (sel.startsWith("wait-")) {
+      controlTabRef.scrollToItem("wait", sel.substring(5));
+    } else if (sel.startsWith("rotate-")) {
+      controlTabRef.scrollToItem("rotate", sel.substring(7));
+    } else if (sel.startsWith("point-")) {
+      // Points map to paths
+      // point-LINENUM-PTIDX
+      const parts = sel.split("-");
+      const lineNum = Number(parts[1]);
+      if (lineNum > 0) {
+        const line = lines[lineNum - 1];
+        if (line && line.id) {
+          controlTabRef.scrollToItem("path", line.id);
+        }
+      }
+    } else if (sel.startsWith("event-")) {
+      const parts = sel.split("-");
+      const lineIdx = Number(parts[1]);
+      const evIdx = Number(parts[2]);
+      const line = lines[lineIdx];
+      if (line && line.eventMarkers && line.eventMarkers[evIdx]) {
+        controlTabRef.scrollToItem("event", line.eventMarkers[evIdx].id);
+      }
+    }
+  }
+
   function cycleSelection(dir: number) {
     if (isUIElementFocused()) return;
     const items = getSelectableItems();
@@ -1086,6 +1116,40 @@
       if (lineNum > 0) selectedLineId.set(lines[lineNum - 1].id || null);
       else selectedLineId.set(null);
     } else selectedLineId.set(null);
+
+    syncSelectionToUI();
+  }
+
+  function cycleSequenceSelection(dir: number) {
+    if (isUIElementFocused()) return;
+    if (sequence.length === 0) return;
+
+    let currentIdx = getSelectedSequenceIndex();
+
+    if (currentIdx === null) {
+      currentIdx = 0;
+    } else {
+      currentIdx = (currentIdx + dir + sequence.length) % sequence.length;
+    }
+
+    const item = sequence[currentIdx];
+    if (!item) return;
+
+    if (item.kind === "path") {
+      selectedLineId.set((item as any).lineId);
+      const lineIdx = lines.findIndex((l) => l.id === (item as any).lineId);
+      if (lineIdx !== -1) {
+        selectedPointId.set(`point-${lineIdx + 1}-0`);
+      }
+    } else if (item.kind === "wait") {
+      selectedPointId.set(`wait-${(item as any).id}`);
+      selectedLineId.set(null);
+    } else if (item.kind === "rotate") {
+      selectedPointId.set(`rotate-${(item as any).id}`);
+      selectedLineId.set(null);
+    }
+
+    syncSelectionToUI();
   }
 
   function modifyValue(delta: number) {
@@ -1580,6 +1644,8 @@
     movePointRight: () => movePoint(1, 0),
     selectNext: () => cycleSelection(1),
     selectPrev: () => cycleSelection(-1),
+    selectNextSequence: () => cycleSequenceSelection(1),
+    selectPrevSequence: () => cycleSequenceSelection(-1),
     increaseValue: () => modifyValue(1),
     decreaseValue: () => modifyValue(-1),
     toggleHeadingMode: () => toggleHeadingMode(),
