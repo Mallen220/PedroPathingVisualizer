@@ -1485,7 +1485,7 @@
                       <div>
                         <h4 class="font-semibold mb-2">Support & Community</h4>
                         <a
-                          href="https://discord.gg/ku59afNBBM"
+                          href="https://discord.gg/chHSzS4ewF"
                           target="_blank"
                           class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:underline"
                         >

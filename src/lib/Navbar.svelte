@@ -958,7 +958,7 @@
         rel="noreferrer"
         title="Discord Server"
         aria-label="Discord Server"
-        href="https://discord.gg/ku59afNBBM"
+        href="https://discord.gg/chHSzS4ewF"
         class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
       >
         <svg
