@@ -58,7 +58,8 @@
   }
 
   interface Insight {
-    time: number;
+    startTime: number;
+    endTime?: number;
     type: "warning" | "info" | "error";
     message: string;
     value?: number;
@@ -153,6 +154,10 @@
     let _maxLin = 0;
     let _maxAng = 0;
 
+    // Track active warnings for coalescing
+    let activeVelocityWarning: Insight | null = null;
+    let activeFrictionWarning: Insight | null = null;
+
     // Helper to add data point to charts
     // Avoid duplicate time points if possible, or just push
     const addDataPoint = (
@@ -167,54 +172,53 @@
       accelerationData.push({ time: t, value: accLin });
       centripetalData.push({ time: t, value: accCent });
 
-      // Check for insights
+      // --- Insight Logic ---
+
+      // 1. Max Velocity Warning (Info)
       if (vLin >= maxVel * 0.99) {
-        // Debounce insights: only add if not recently added
-        const lastInsight = insights[insights.length - 1];
-        if (
-          !lastInsight ||
-          lastInsight.type !== "info" ||
-          lastInsight.message !== "Max Velocity Reached" ||
-          t - lastInsight.time > 0.5
-        ) {
-          insights.push({
-            time: t,
+        if (!activeVelocityWarning) {
+          activeVelocityWarning = {
+            startTime: t,
             type: "info",
             message: "Max Velocity Reached",
             value: vLin,
-          });
+          };
+        } else {
+          // Update value to max seen in this range
+          if (vLin > (activeVelocityWarning.value || 0)) {
+            activeVelocityWarning.value = vLin;
+          }
+        }
+      } else {
+        // Condition ended
+        if (activeVelocityWarning) {
+          activeVelocityWarning.endTime = t;
+          insights.push(activeVelocityWarning);
+          activeVelocityWarning = null;
         }
       }
 
-      if (Math.abs(accLin) >= maxAccel * 0.95) {
-        const lastInsight = insights[insights.length - 1];
-        if (
-          !lastInsight ||
-          lastInsight.message !== "Max Acceleration Reached" ||
-          t - lastInsight.time > 0.5
-        ) {
-          insights.push({
-            time: t,
-            type: "warning",
-            message: "Max Acceleration Reached",
-            value: accLin,
-          });
-        }
-      }
-
+      // 2. Centripetal Friction Warning (Error)
       if (kFriction > 0 && accCent > frictionLimitAccel) {
-        const lastInsight = insights[insights.length - 1];
-        if (
-          !lastInsight ||
-          lastInsight.message !== "Risk of Wheel Slip (Centripetal)" ||
-          t - lastInsight.time > 0.5
-        ) {
-          insights.push({
-            time: t,
+        if (!activeFrictionWarning) {
+          activeFrictionWarning = {
+            startTime: t,
             type: "error",
             message: "Risk of Wheel Slip (Centripetal)",
             value: accCent,
-          });
+          };
+        } else {
+          // Update value to max seen in this range
+          if (accCent > (activeFrictionWarning.value || 0)) {
+            activeFrictionWarning.value = accCent;
+          }
+        }
+      } else {
+        // Condition ended
+        if (activeFrictionWarning) {
+          activeFrictionWarning.endTime = t;
+          insights.push(activeFrictionWarning);
+          activeFrictionWarning = null;
         }
       }
     };
@@ -517,6 +521,17 @@
       simHeading = analysis.startHeading + analysis.netRotation;
     });
 
+    // Finalize any open warnings at end of timeline
+    const totalT = timePred.totalTime;
+    if (activeVelocityWarning) {
+      activeVelocityWarning.endTime = totalT;
+      insights.push(activeVelocityWarning);
+    }
+    if (activeFrictionWarning) {
+      activeFrictionWarning.endTime = totalT;
+      insights.push(activeFrictionWarning);
+    }
+
     pathStats = {
       totalTime: timePred.totalTime,
       totalDistance: timePred.totalDistance,
@@ -543,9 +558,12 @@
     if (!pathStats) return;
 
     if (activeTab === "insights") {
-      let md = `| Time | Type | Message | Value |\n|---:|---|---|---:|\n`;
+      let md = `| Time Range | Type | Message | Max Value |\n|---:|---|---|---:|\n`;
       pathStats.insights.forEach((ins) => {
-        md += `| ${ins.time.toFixed(2)}s | ${ins.type.toUpperCase()} | ${ins.message} | ${ins.value ? ins.value.toFixed(1) : "-"} |\n`;
+        const timeStr = ins.endTime
+          ? `${ins.startTime.toFixed(2)}s - ${ins.endTime.toFixed(2)}s`
+          : `${ins.startTime.toFixed(2)}s`;
+        md += `| ${timeStr} | ${ins.type.toUpperCase()} | ${ins.message} | ${ins.value ? ins.value.toFixed(1) : "-"} |\n`;
       });
       navigator.clipboard.writeText(md).then(() => {
         notification.set({
@@ -1006,9 +1024,15 @@
                       {insight.message}
                     </div>
                     <div class="mt-1 opacity-80">
-                      At {formatTime(insight.time)}
+                      {#if insight.endTime && insight.endTime - insight.startTime > 0.05}
+                        At {formatTime(insight.startTime)} - {formatTime(
+                          insight.endTime,
+                        )}
+                      {:else}
+                        At {formatTime(insight.startTime)}
+                      {/if}
                       {#if insight.value}
-                        • Value: {insight.value.toFixed(1)}
+                        • Max Value: {insight.value.toFixed(1)}
                       {/if}
                     </div>
                   </div>
