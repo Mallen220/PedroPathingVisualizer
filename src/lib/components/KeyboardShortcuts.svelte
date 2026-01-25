@@ -147,14 +147,11 @@
     const tag = el.tagName;
     return tag === "BUTTON" || el.getAttribute("role") === "button";
   }
-  
-  function shouldBlockShortcut(
-    e: KeyboardEvent,
-    actionId?: string,
-  ): boolean {
+
+  function shouldBlockShortcut(e: KeyboardEvent, actionId?: string): boolean {
     // Whitelist specific actions that should work even when input is focused
     if (actionId === "toggle-command-palette") return false;
-  if (e.key === "Escape") return false;
+    if (e.key === "Escape") return false;
     if (isInputFocused()) return true;
     if (isButtonFocused()) {
       // If focused on a button, only block interaction keys (Space, Enter)
