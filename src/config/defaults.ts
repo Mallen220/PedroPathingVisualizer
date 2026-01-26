@@ -207,6 +207,20 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     category: "Navigation",
   },
   {
+    id: "select-next",
+    key: "",
+    description: "Select Next Item",
+    action: "selectNext",
+    category: "Navigation",
+  },
+  {
+    id: "select-prev",
+    key: "",
+    description: "Select Previous Item",
+    action: "selectPrev",
+    category: "Navigation",
+  },
+  {
     id: "toggle-heading-mode",
     key: "shift+h",
     description: "Toggle Heading Mode",
@@ -635,6 +649,13 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     category: "View",
   },
   {
+    id: "open-telemetry",
+    key: "",
+    description: "Open Telemetry Dialog",
+    action: "openTelemetry",
+    category: "View",
+  },
+  {
     id: "toggle-ruler",
     key: "alt+m",
     description: "Toggle Ruler",
@@ -855,7 +876,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   {
     id: "docs",
     key: "f1",
-    description: "Open Documentation",
+    description: "Open Documentation / Help",
     action: "openDocs",
     category: "Help",
   },

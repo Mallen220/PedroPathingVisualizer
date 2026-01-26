@@ -22,6 +22,7 @@
     fileManagerNewFileMode,
     showPluginManager,
     showRuler,
+    showTelemetryDialog,
   } from "../../stores";
   import {
     startPointStore,
@@ -1919,6 +1920,7 @@
     },
     toggleDiff: () => toggleDiff(),
     togglePluginManager: () => showPluginManager.update((v) => !v),
+    openTelemetry: () => showTelemetryDialog.set(true),
     toggleRuler: () => showRuler.update((v) => !v),
     cycleFieldMap: () => cycleFieldMap(),
     rotateField: () => rotateField(),
