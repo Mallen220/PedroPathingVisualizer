@@ -395,6 +395,20 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     category: "Navigation",
   },
   {
+    id: "select-next",
+    key: ".",
+    description: "Select Next Point",
+    action: "selectNext",
+    category: "Navigation",
+  },
+  {
+    id: "select-prev",
+    key: ",",
+    description: "Select Previous Point",
+    action: "selectPrev",
+    category: "Navigation",
+  },
+  {
     id: "select-paths-tab",
     key: "alt+1",
     description: "Switch to Paths tab",
