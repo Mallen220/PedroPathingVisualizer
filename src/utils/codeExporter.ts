@@ -26,6 +26,8 @@ export async function generateJavaCode(
   exportFullCode: boolean,
   sequence?: SequenceItem[],
   packageName: string = "org.firstinspires.ftc.teamcode.Commands.AutoCommands",
+  opModeType: "Linear" | "Iterative" = "Linear",
+  telemetryType: "Standard" | "Panels" | "None" = "Standard",
 ): Promise<string> {
   const headingTypeToFunctionName = {
     constant: "setConstantHeadingInterpolation",
@@ -176,10 +178,20 @@ export async function generateJavaCode(
     `;
   }
 
-  // Generate state machine logic
-  let stateMachineCode = "";
-  let stateStep = 0;
+  // Determine starting pose values
+  const startX = startPoint.x.toFixed(3);
+  const startY = startPoint.y.toFixed(3);
+  let startHeading = "0";
+  if (startPoint.heading === "constant") {
+    startHeading = `Math.toRadians(${startPoint.degrees})`;
+  } else if (startPoint.heading === "linear") {
+    startHeading = `Math.toRadians(${startPoint.startDeg})`;
+  } else {
+    // Tangential - assume 0 or user should configure? Defaulting to 0.
+    startHeading = "0";
+  }
 
+  // Generate sequence items
   const rawSequence =
     sequence && sequence.length > 0
       ? sequence
@@ -193,19 +205,177 @@ export async function generateJavaCode(
 
   const targetSequence = flattenSequence(rawSequence);
 
-  targetSequence.forEach((item) => {
-    stateMachineCode += `\n        case ${stateStep}:`;
+  let file = "";
 
-    if (item.kind === "path") {
-      const lineIndex = lines.findIndex(
-        (l) =>
-          (l.id || `line-${lines.indexOf(l) + 1}`) === (item as any).lineId,
-      );
+  // Helper for telemetry
+  const generateTelemetryUpdate = (status?: string) => {
+      let code = "";
+      if (telemetryType === "Standard") {
+          if (status) code += `telemetry.addData("Status", "${status}");\n            `;
+          code += `telemetry.addData("X", follower.getPose().getX());
+            telemetry.addData("Y", follower.getPose().getY());
+            telemetry.addData("Heading", follower.getPose().getHeading());
+            telemetry.update();`;
+      } else if (telemetryType === "Panels") {
+          if (status) code += `panelsTelemetry.debug("Status", "${status}");\n            `;
+          code += `panelsTelemetry.debug("X", follower.getPose().getX());
+            panelsTelemetry.debug("Y", follower.getPose().getY());
+            panelsTelemetry.debug("Heading", follower.getPose().getHeading());
+            panelsTelemetry.update(telemetry);`;
+      }
+      return code;
+  };
 
-      const idx = lineIndex !== -1 ? lineIndex : -1;
+  if (!exportFullCode) {
+    file = AUTO_GENERATED_FILE_WARNING_MESSAGE + pathsClass + namedCommandsSection;
+  } else if (opModeType === "Linear") {
+    // LINEAR OPMODE GENERATION
 
-      if (idx !== -1) {
-        stateMachineCode += `\n          follower.followPath(paths.${pathChainNames[idx]}, true);`;
+    // Helper to generate linear sequence
+    let sequenceCode = "";
+    targetSequence.forEach((item) => {
+        if (item.kind === "path") {
+             const lineIndex = lines.findIndex(l => (l.id || `line-${lines.indexOf(l)+1}`) === (item as any).lineId);
+             if (lineIndex !== -1) {
+                 sequenceCode += `
+        follower.followPath(paths.${pathChainNames[lineIndex]}, true);
+        while (opModeIsActive() && follower.isBusy()) {
+            follower.update();
+            ${generateTelemetryUpdate()}
+        }
+        `;
+             }
+        } else if (item.kind === "wait") {
+             const waitMs = (item as any).durationMs || 0;
+             sequenceCode += `
+        pathTimer.reset();
+        while (opModeIsActive() && pathTimer.getMilliseconds() < ${waitMs}) {
+            follower.update();
+            ${generateTelemetryUpdate()}
+        }
+        `;
+        } else if (item.kind === "rotate") {
+              const degrees = (item as any).degrees || 0;
+              const radians = (degrees * Math.PI) / 180;
+              sequenceCode += `
+        follower.turnTo(${radians.toFixed(3)});
+        while (opModeIsActive() && follower.isBusy()) {
+            follower.update();
+            ${generateTelemetryUpdate()}
+        }
+        `;
+        }
+    });
+
+    file = `
+    ${AUTO_GENERATED_FILE_WARNING_MESSAGE}
+
+    package ${packageName};
+
+    import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+    import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+    import com.qualcomm.robotcore.util.ElapsedTime;
+    import com.pedropathing.follower.Follower;
+    import com.pedropathing.paths.PathChain;
+    import com.pedropathing.geometry.Pose;
+    import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+    import com.pedropathing.geometry.BezierCurve;
+    import com.pedropathing.geometry.BezierLine;
+    ${eventMarkerNames.size > 0 ? "import com.pedropathing.NamedCommands;" : ""}
+    ${telemetryType === "Panels" ? "import com.bylazar.telemetry.TelemetryManager;\n    import com.bylazar.telemetry.PanelsTelemetry;" : ""}
+    ${telemetryType === "Panels" ? "import com.bylazar.configurables.annotations.Configurable;" : ""}
+
+    @Autonomous(name = "Pedro Pathing Autonomous", group = "Autonomous")
+    ${telemetryType === "Panels" ? "@Configurable" : ""}
+    public class PedroAutonomous extends LinearOpMode {
+      public Follower follower;
+      private ElapsedTime pathTimer;
+      private Paths paths;
+      ${telemetryType === "Panels" ? "private TelemetryManager panelsTelemetry;" : ""}
+
+      @Override
+      public void runOpMode() {
+        pathTimer = new ElapsedTime();
+        follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(new Pose(${startX}, ${startY}, ${startHeading}));
+
+        paths = new Paths(follower);
+
+        ${telemetryType === "Panels" ? "panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();" : ""}
+
+        opModeInit();
+
+        waitForStart();
+
+        opModeStart();
+
+        ${sequenceCode}
+      }
+
+      private void opModeInit() {
+          ${generateTelemetryUpdate("Initialized")}
+      }
+
+      private void opModeStart() {
+          ${generateTelemetryUpdate("Started")}
+      }
+
+      // Paths class
+      ${pathsClass}
+
+      // Named Commands
+      ${namedCommandsSection}
+    }
+    `;
+
+  } else {
+    // ITERATIVE OPMODE GENERATION (Existing logic adapted)
+
+    let stateMachineCode = "";
+    let stateStep = 0;
+
+    targetSequence.forEach((item) => {
+      stateMachineCode += `\n        case ${stateStep}:`;
+
+      if (item.kind === "path") {
+        const lineIndex = lines.findIndex(
+          (l) =>
+            (l.id || `line-${lines.indexOf(l) + 1}`) === (item as any).lineId,
+        );
+
+        const idx = lineIndex !== -1 ? lineIndex : -1;
+
+        if (idx !== -1) {
+          stateMachineCode += `\n          follower.followPath(paths.${pathChainNames[idx]}, true);`;
+          stateMachineCode += `\n          setPathState(${stateStep + 1});`;
+          stateMachineCode += `\n          break;`;
+
+          stateMachineCode += `\n        case ${stateStep + 1}:`;
+          stateMachineCode += `\n          if(!follower.isBusy()) {`;
+          stateMachineCode += `\n            setPathState(${stateStep + 2});`;
+          stateMachineCode += `\n          }`;
+          stateMachineCode += `\n          break;`;
+          stateStep += 2;
+        } else {
+          stateMachineCode += `\n          setPathState(${stateStep + 1});`;
+          stateMachineCode += `\n          break;`;
+          stateStep += 1;
+        }
+      } else if (item.kind === "wait") {
+        const waitMs = (item as any).durationMs || 0;
+        stateMachineCode += `\n          setPathState(${stateStep + 1});`;
+        stateMachineCode += `\n          break;`;
+
+        stateMachineCode += `\n        case ${stateStep + 1}:`;
+        stateMachineCode += `\n          if(pathTimer.getMilliseconds() > ${waitMs}) {`;
+        stateMachineCode += `\n            setPathState(${stateStep + 2});`;
+        stateMachineCode += `\n          }`;
+        stateMachineCode += `\n          break;`;
+        stateStep += 2;
+      } else if (item.kind === "rotate") {
+        const degrees = (item as any).degrees || 0;
+        const radians = (degrees * Math.PI) / 180;
+        stateMachineCode += `\n          follower.turnTo(${radians.toFixed(3)});`;
         stateMachineCode += `\n          setPathState(${stateStep + 1});`;
         stateMachineCode += `\n          break;`;
 
@@ -215,48 +385,14 @@ export async function generateJavaCode(
         stateMachineCode += `\n          }`;
         stateMachineCode += `\n          break;`;
         stateStep += 2;
-      } else {
-        stateMachineCode += `\n          setPathState(${stateStep + 1});`;
-        stateMachineCode += `\n          break;`;
-        stateStep += 1;
       }
-    } else if (item.kind === "wait") {
-      const waitMs = (item as any).durationMs || 0;
-      stateMachineCode += `\n          setPathState(${stateStep + 1});`;
-      stateMachineCode += `\n          break;`;
+    });
 
-      stateMachineCode += `\n        case ${stateStep + 1}:`;
-      stateMachineCode += `\n          if(pathTimer.getMilliseconds() > ${waitMs}) {`;
-      stateMachineCode += `\n            setPathState(${stateStep + 2});`;
-      stateMachineCode += `\n          }`;
-      stateMachineCode += `\n          break;`;
-      stateStep += 2;
-    } else if (item.kind === "rotate") {
-      const degrees = (item as any).degrees || 0;
-      const radians = (degrees * Math.PI) / 180;
-      stateMachineCode += `\n          follower.turnTo(${radians.toFixed(3)});`;
-      stateMachineCode += `\n          setPathState(${stateStep + 1});`;
-      stateMachineCode += `\n          break;`;
+    stateMachineCode += `\n        case ${stateStep}:`;
+    stateMachineCode += `\n          requestOpModeStop();`;
+    stateMachineCode += `\n          pathState = -1;`;
+    stateMachineCode += `\n          break;`;
 
-      stateMachineCode += `\n        case ${stateStep + 1}:`;
-      stateMachineCode += `\n          if(!follower.isBusy()) {`;
-      stateMachineCode += `\n            setPathState(${stateStep + 2});`;
-      stateMachineCode += `\n          }`;
-      stateMachineCode += `\n          break;`;
-      stateStep += 2;
-    }
-  });
-
-  stateMachineCode += `\n        case ${stateStep}:`;
-  stateMachineCode += `\n          requestOpModeStop();`;
-  stateMachineCode += `\n          pathState = -1;`;
-  stateMachineCode += `\n          break;`;
-
-  let file = "";
-  if (!exportFullCode) {
-    file =
-      AUTO_GENERATED_FILE_WARNING_MESSAGE + pathsClass + namedCommandsSection;
-  } else {
     file = `
     ${AUTO_GENERATED_FILE_WARNING_MESSAGE}
 
@@ -264,51 +400,45 @@ export async function generateJavaCode(
     import com.qualcomm.robotcore.eventloop.opmode.OpMode;
     import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
     import com.qualcomm.robotcore.util.ElapsedTime;
-    import com.bylazar.configurables.annotations.Configurable;
-    import com.bylazar.telemetry.TelemetryManager;
-    import com.bylazar.telemetry.PanelsTelemetry;
-    import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-    import com.pedropathing.geometry.BezierCurve;
-    import com.pedropathing.geometry.BezierLine;
     import com.pedropathing.follower.Follower;
     import com.pedropathing.paths.PathChain;
     import com.pedropathing.geometry.Pose;
+    import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+    import com.pedropathing.geometry.BezierCurve;
+    import com.pedropathing.geometry.BezierLine;
     ${eventMarkerNames.size > 0 ? "import com.pedropathing.NamedCommands;" : ""}
+    ${telemetryType === "Panels" ? "import com.bylazar.telemetry.TelemetryManager;\n    import com.bylazar.telemetry.PanelsTelemetry;" : ""}
+    ${telemetryType === "Panels" ? "import com.bylazar.configurables.annotations.Configurable;" : ""}
     
     @Autonomous(name = "Pedro Pathing Autonomous", group = "Autonomous")
-    @Configurable // Panels
+    ${telemetryType === "Panels" ? "@Configurable" : ""}
     public class PedroAutonomous extends OpMode {
-      private TelemetryManager panelsTelemetry; // Panels Telemetry instance
-      public Follower follower; // Pedro Pathing follower instance
-      private int pathState; // Current autonomous path state (state machine)
-      private ElapsedTime pathTimer; // Timer for path state machine
-      private Paths paths; // Paths defined in the Paths class
+      public Follower follower;
+      private int pathState;
+      private ElapsedTime pathTimer;
+      private Paths paths;
+      ${telemetryType === "Panels" ? "private TelemetryManager panelsTelemetry;" : ""}
       
       @Override
       public void init() {
-        panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+        pathTimer = new ElapsedTime();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(${startX}, ${startY}, ${startHeading}));
 
-        pathTimer = new ElapsedTime();
-        paths = new Paths(follower); // Build paths
+        paths = new Paths(follower);
 
-        panelsTelemetry.debug("Status", "Initialized");
-        panelsTelemetry.update(telemetry);
+        ${telemetryType === "Panels" ? "panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();" : ""}
+
+        ${generateTelemetryUpdate("Initialized")}
       }
       
       @Override
       public void loop() {
-        follower.update(); // Update Pedro Pathing
-        pathState = autonomousPathUpdate(); // Update autonomous state machine
+        follower.update();
+        pathState = autonomousPathUpdate();
 
-        // Log values to Panels and Driver Station
-        panelsTelemetry.debug("Path State", pathState);
-        panelsTelemetry.debug("X", follower.getPose().getX());
-        panelsTelemetry.debug("Y", follower.getPose().getY());
-        panelsTelemetry.debug("Heading", follower.getPose().getHeading());
-        panelsTelemetry.update(telemetry);
+        ${generateTelemetryUpdate()}
       }
 
       ${pathsClass}
@@ -386,9 +516,11 @@ export async function generateSequentialCommandCode(
   lines: Line[],
   fileName: string | null = null,
   sequence?: SequenceItem[],
-  targetLibrary: "SolversLib" | "NextFTC" = "SolversLib", // - Added parameter
+  targetLibrary: "SolversLib" | "NextFTC" | "PedroPathingPlus" = "SolversLib", // - Added parameter
   packageName: string = "org.firstinspires.ftc.teamcode.Commands.AutoCommands",
 ): Promise<string> {
+  const isPedroPathingPlus = targetLibrary === "PedroPathingPlus";
+
   // Determine class name from file name or use default
   let className = "AutoPath";
   if (fileName) {
@@ -440,110 +572,18 @@ export async function generateSequentialCommandCode(
     poseVariableNames.set(`point${lineIdx + 1}`, endPointName);
 
     // Add control points if they exist
-    // Control points are tied to the line, but stored in .pp with a generated name if not explicit?
-    // The .pp format usually stores points with IDs or Names.
-    // If the standard exporter saves control points as "Score_control1", we must match that.
-    // Assuming the Reader uses the same logic or we need to ensure unique names for control points
-    // that don't conflict even if endpoints share names.
-    // For now, we will assume control points are unique to the line index to be safe,
-    // OR we follow the existing pattern if it matches the file format.
-    // The file format likely saves them nested or as separate points.
-    // The `PedroPathReader` gets them by string name.
-    // The previous code used `${endPointName}_control${controlIdx + 1}`.
-    // If endPointName is shared, this is ambiguous.
-    // We should use the line-specific control point name if possible, or assume the user/saver handles it.
-    // Given the requirement "Control points are always independent", we should probably use a unique name.
-    // However, we must match what `pp.get()` expects.
-    // If the .pp file contains "Score_control1", we must ask for "Score_control1".
-    // If we have two lines ending at Score, do we have "Score_control1" twice in .pp?
-    // Unlikely. The Saver likely handles unique names for control points.
-    // Let's look at how `saveProject` works -> it dumps `lines`.
-    // `Line` has `controlPoints`. They don't have names in the interface usually.
-    // The `PedroPathReader` probably iterates or expects specific naming conventions if it flattens them.
-    // WAIT. `PedroPathReader` reads the JSON.
-    // If `pp.get("name")` is used, the JSON must have a map with that key.
-    // The `PedroPathReader` implementation (which is external Java code) likely constructs the map.
-    // If the Java library parses the JSON, does it flatten everything into a map by name?
-    // If so, duplicate names in the JSON would overwrite each other.
-    // But `lines` is an array in JSON.
-    // `pp.get` implies retrieval by ID or Name.
-    // If the Java reader does `get(String name)`, it implies unique names.
-    // If the user has multiple lines ending at "Score", they share the "Score" point.
-    // But control points are unnamed in the UI usually.
-    // If the reader automatically generates names for unnamed points (like control points),
-    // it likely uses the line index or similar.
-    // However, the previous code used `${endPointName}_control...`.
-    // If I change this, I might break it if the reader expects that.
-    // BUT, if I have collision on `endPointName`, I have collision on control point name.
-    // FIX: We must assume the Reader handles specific naming for control points if they are shared.
-    // Use a safer naming scheme for control points: `${endPointName}_${lineIdx}_control${controlIdx}` ??
-    // No, I can't change what the Reader expects.
-    // The Reader parses the .pp file.
-    // If the .pp file is just the JSON dump of `lines`, it doesn't have "Score_control1" keys explicitly unless
-    // the Reader generates them upon loading.
-    // IF the Reader generates them, it probably follows a pattern.
-    // If the previous code worked for non-shared cases, it assumes the Reader uses `${endPointName}_controlN`.
-    // If we now support shared cases, we might need to rely on the Reader's behavior.
-    // Assumption: The Reader likely indexes control points by the line's end point name? That seems flawed for shared points.
-    // Let's assume for now we must use unique variables for control points in Java,
-    // but the string passed to `pp.get` must match what the Reader has.
-    // If `endPointName` is "Score", and we have two lines, the Reader might have "Score", "Score_control1" (from line 1), "Score_control1" (from line 2??).
-    // This implies the .pp format or Reader is limited?
-    // OR, we should use the `line.id` or similar if available?
-    // The prompt says: "Control points are always independent."
-    // Let's use `line${lineIdx}_control${controlIdx}` for the Java variable name to ensure uniqueness.
-    // For the `pp.get(...)`, we are stuck with what the reader provides.
-    // If the reader provides `${endPointName}_control${idx}`, and endPointName is shared, we have a problem.
-    // But maybe we can hope the reader is smart?
-    // Or maybe we should use `point${lineIdx+1}_control...` if the name is generated?
-    // Let's stick to unique Java variables first.
-
     if (line.controlPoints && line.controlPoints.length > 0) {
       line.controlPoints.forEach((_, controlIdx) => {
-        // We use a unique variable name to avoid Java conflicts
-        const controlPointVarName = `${endPointName}_l${lineIdx}_c${controlIdx + 1}`;
-        // We try to guess the key. If the previous code used `${endPointName}_control...`, it might be unsafe.
-        // Let's stick to the previous pattern for the string key but ensure unique Java variable.
-        // Actually, if I look at `generateJavaCode` (standard), it generates `new Pose(...)` inline.
-        // Sequential code loads from file.
-        // If the file is just the project JSON, and the Reader parses it...
-        // The Reader code is not here.
-        // I will use `${endPointName}_control${controlIdx + 1}` for the key as before,
-        // BUT I will assign it to a unique variable.
-        // Wait, if two lines share "Score", and both have 1 control point.
-        // Both keys would be "Score_control1".
-        // Use unique variable names:
-        const controlPointName = `${endPointName}_control${controlIdx + 1}`;
-        // If we already declared this variable (from another line sharing Score),
-        // we might be overwriting it or reusing it?
-        // "Control points are always independent."
-        // So we should NOT reuse it.
-        // But if `pp.get("Score_control1")` returns the same object...
-        // This implies the Reader might be merging them?
-        // Let's assume for now we generate unique variables.
-        // If the key is ambiguous, we can't fix it here without changing the Reader or the Saver.
-        // However, I can ensure the Java code compiles by making the variable unique.
-
-        // BETTER STRATEGY: Use the line index in the variable name.
+        // Use unique variable names
         const uniqueControlVar = `${endPointName}_line${lineIdx}_control${controlIdx + 1}`;
         allPoseDeclarations.push(`    private Pose ${uniqueControlVar};`);
 
-        // For the key, we use what we think the reader expects.
-        // If the user has "Score" and "Score", checking the .pp file structure (JSON):
-        // It has `lines`.
-        // The Reader likely builds a map.
-        // If the map is built by iterating lines, and using "Name", then "Name_controlN",
-        // subsequent lines would overwrite previous ones in the map if keys collide.
-        // This is an issue in the Reader/Saver logic if true.
-        // But I can only fix the Java exporter.
-        // I will generate the code.
+        const controlPointName = `${endPointName}_control${controlIdx + 1}`;
 
         allPoseInitializations.push(
           `        ${uniqueControlVar} = pp.get(\"${controlPointName}\");`,
         );
 
-        // Store for use in path building
-        // Key: identifying the control point for this specific line/index
         poseVariableNames.set(
           `${lineIdx}_control${controlIdx}`, // Use line index to disambiguate
           uniqueControlVar,
@@ -552,8 +592,8 @@ export async function generateSequentialCommandCode(
     }
   });
 
-  // Generate path chain declarations
-  const pathChainDeclarations = lines
+  // Generate path chain declarations (SKIP for PedroPathingPlus)
+  const pathChainDeclarations = isPedroPathingPlus ? "" : lines
     .map((_, idx) => {
       const startPoseName =
         idx === 0
@@ -582,23 +622,27 @@ export async function generateSequentialCommandCode(
     })
     .join("\n");
 
-  // Generate ProgressTracker field
-  const progressTrackerField = `    private final ProgressTracker progressTracker;`;
+  // Generate ProgressTracker field (SKIP for PedroPathingPlus)
+  const progressTrackerField = isPedroPathingPlus ? "" : `    private final ProgressTracker progressTracker;`;
 
   // Define library-specific names
   const isNextFTC = targetLibrary === "NextFTC";
-  const SequentialGroupClass = isNextFTC
+  const SequentialGroupClass = (isNextFTC || isPedroPathingPlus)
     ? "SequentialGroup"
     : "SequentialCommandGroup";
-  const ParallelRaceClass = isNextFTC
+  const ParallelRaceClass = (isNextFTC || isPedroPathingPlus)
     ? "ParallelRaceGroup"
     : "ParallelRaceGroup";
-  const WaitCmdClass = isNextFTC ? "Delay" : "WaitCommand";
+  const WaitCmdClass = (isNextFTC || isPedroPathingPlus) ? "WaitCommand" : "WaitCommand";
+  // Note: NextFTC used "Delay" previously, but assuming standardizing or user can adjust.
+  // Actually NextFTC uses Delay. Reverting for NextFTC.
+  const RealWaitCmdClass = isNextFTC ? "Delay" : "WaitCommand";
+
   const InstantCmdClass = "InstantCommand";
-  const WaitUntilCmdClass = isNextFTC ? "WaitUntil" : "WaitUntilCommand"; // Assuming NextFTC has similar or user maps it
+  const WaitUntilCmdClass = isNextFTC ? "WaitUntil" : "WaitUntilCommand";
   const FollowPathCmdClass = isNextFTC ? "FollowPath" : "FollowPathCommand";
 
-  // Generate addCommands calls with event handling; iterate sequence if provided
+  // Generate addCommands calls
   const commands: string[] = [];
 
   const defaultSequence: SequenceItem[] = lines.map((ln, idx) => ({
@@ -630,6 +674,23 @@ export async function generateSequentialCommandCode(
       const degrees = rotateItem.degrees || 0;
       const radians = (degrees * Math.PI) / 180;
 
+      // PedroPathingPlus doesn't use ProgressTracker for this path, but Rotate/Wait logic
+      // depends on it in SolversLib.
+      // If PedroPathingPlus, we should use simple commands if possible.
+      // But we lack ProgressTracker instance in PedroPathingPlus mode.
+      // So we fallback to simple turnTo and wait.
+      // If markers exist, we can't easily support them without a tracker/scheduler.
+      // We will support simple Rotate for PedroPathingPlus.
+
+      if (isPedroPathingPlus) {
+          commands.push(
+            `                new ${InstantCmdClass}(() -> follower.turnTo(${radians.toFixed(3)}))`,
+            `                new ${WaitUntilCmdClass}(() -> !follower.isTurning())`
+          );
+          return;
+      }
+
+      // Existing SolversLib/NextFTC logic
       const markers: any[] = Array.isArray(rotateItem.eventMarkers)
         ? [...rotateItem.eventMarkers]
         : [];
@@ -685,18 +746,23 @@ export async function generateSequentialCommandCode(
       const waitItem: any = item as any;
       const waitDuration = waitItem.durationMs || 0;
 
+      const getWaitValue = (ms: number) =>
+        isNextFTC ? (ms / 1000.0).toFixed(3) : ms.toFixed(0);
+
+      if (isPedroPathingPlus) {
+          commands.push(
+            `                new ${RealWaitCmdClass}(${getWaitValue(waitDuration)})`
+          );
+          return;
+      }
+
       const markers: any[] = Array.isArray(waitItem.eventMarkers)
         ? [...waitItem.eventMarkers]
         : [];
 
-      // Determine wait value and formatting
-      // NextFTC Delay uses seconds, SolversLib WaitCommand uses ms (or whatever SolversLib expects, assumed ms)
-      const getWaitValue = (ms: number) =>
-        isNextFTC ? (ms / 1000.0).toFixed(3) : ms.toFixed(0);
-
       if (markers.length === 0) {
         commands.push(
-          `                new ${WaitCmdClass}(${getWaitValue(waitDuration)})`,
+          `                new ${RealWaitCmdClass}(${getWaitValue(waitDuration)})`,
         );
         return;
       }
@@ -741,18 +807,58 @@ export async function generateSequentialCommandCode(
       return;
     }
 
+    if (isPedroPathingPlus) {
+         const startPoseName = lineIdx === 0 ? "startPoint" : `point${lineIdx}`;
+         const startPoseVar = lineIdx === 0 ? "startPoint" : poseVariableNames.get(`point${lineIdx}`);
+         const actualStartPose = startPoseVar || "startPoint";
+         const endPoseVar = line.name ? line.name.replace(/[^a-zA-Z0-9]/g, "") : `point${lineIdx + 1}`;
+
+         const isCurve = line.controlPoints.length > 0;
+         const curveType = isCurve ? "BezierCurve" : "BezierLine";
+
+         let controlPointsStr = "";
+         if (isCurve) {
+            const controlPoints: string[] = [];
+            line.controlPoints.forEach((_, cpIdx) => {
+              const cpVar = poseVariableNames.get(`${lineIdx}_control${cpIdx}`);
+              if (cpVar) controlPoints.push(cpVar);
+            });
+            controlPointsStr = controlPoints.join(", ") + ", ";
+         }
+
+         let headingConfig = "";
+         if (line.endPoint.heading === "constant") {
+            headingConfig = `setConstantHeadingInterpolation(${endPoseVar}.getHeading())`;
+         } else if (line.endPoint.heading === "linear") {
+            headingConfig = `setLinearHeadingInterpolation(${actualStartPose}.getHeading(), ${endPoseVar}.getHeading())`;
+         } else {
+            headingConfig = `setTangentHeadingInterpolation()`;
+         }
+
+         const reverseConfig = line.endPoint.reverse ? "\\n                .setReversed(true)" : "";
+
+         let cmd = `                new ${FollowPathCmdClass}(follower)
+                    .addPath(new ${curveType}(${actualStartPose}, ${controlPointsStr}${endPoseVar}))
+                    .${headingConfig}${reverseConfig}`;
+
+         if (line.eventMarkers && line.eventMarkers.length > 0) {
+             line.eventMarkers.forEach(event => {
+                 cmd += `\\n                    .addParametricCallback(${event.position.toFixed(3)}, () -> NamedCommands.getCommand("${event.name}").schedule())`;
+             });
+         }
+         commands.push(cmd);
+         return;
+    }
+
+    // Existing logic for SolversLib/NextFTC
     const pathName = pathChainVariables[lineIdx];
     const pathDisplayName = pathName;
 
-    // Construct FollowPath instantiation
     const followPathInstance = isNextFTC
       ? `new ${FollowPathCmdClass}(${pathName})`
       : `new ${FollowPathCmdClass}(follower, ${pathName})`;
 
     if (line.eventMarkers && line.eventMarkers.length > 0) {
-      // Path has event markers
-
-      // First: InstantCommand to set up tracker
       commands.push(
         `                new ${InstantCmdClass}(
                     () -> {
@@ -760,7 +866,6 @@ export async function generateSequentialCommandCode(
                         progressTracker.setCurrentPathName("${pathDisplayName}");`,
       );
 
-      // Add event registrations
       line.eventMarkers.forEach((event) => {
         commands[commands.length - 1] += `
                         progressTracker.registerEvent("${event.name}", ${event.position.toFixed(3)});`;
@@ -769,12 +874,10 @@ export async function generateSequentialCommandCode(
       commands[commands.length - 1] += `
                     })`;
 
-      // Second: ParallelRaceGroup for following path with event handling
       commands.push(`                new ${ParallelRaceClass}(
                     ${followPathInstance},
                     new ${SequentialGroupClass}(`);
 
-      // Add WaitUntilCommand for each event
       line.eventMarkers.forEach((event, eventIdx) => {
         if (eventIdx > 0) commands[commands.length - 1] += ",";
         commands[commands.length - 1] += `
@@ -788,7 +891,6 @@ export async function generateSequentialCommandCode(
       commands[commands.length - 1] += `
                     ))`;
     } else {
-      // No event markers - simple InstantCommand + FollowPathCommand
       commands.push(
         `                new ${InstantCmdClass}(
                     () -> {
@@ -800,32 +902,24 @@ export async function generateSequentialCommandCode(
     }
   });
 
-  // Generate path building
-  const pathBuilders = lines
+  // Generate path building (SKIP for PedroPathingPlus)
+  const pathBuilders = isPedroPathingPlus ? "" : lines
     .map((line, idx) => {
       const startPoseName =
         idx === 0
           ? "startPoint"
           : lines[idx - 1]?.name
             ? lines[idx - 1]!.name!.replace(/[^a-zA-Z0-9]/g, "")
-            : `point${idx}`; // Uses 'pointN' which maps to endPointName in poseVariableNames?
-
-      // Correctly resolve the variable name for start pose
-      // In the loop above, we mapped `point${lineIdx+1}` -> `endPointName`
-      // So `point${idx}` refers to the end point of the previous line (which is start of this one)
-      // Special case: `point0` is not set, we use "startPoint" directly.
+            : `point${idx}`;
 
       const startPoseVar =
         idx === 0 ? "startPoint" : poseVariableNames.get(`point${idx}`);
-      // Fallback if something is wrong, though logic aligns with declaration loop
       const actualStartPose = startPoseVar || "startPoint";
 
       const endPoseName = line.name
         ? line.name.replace(/[^a-zA-Z0-9]/g, "")
         : `point${idx + 1}`;
 
-      // We already know the unique end pose variable name is just the cleaned name
-      // Because we declared it as such in the set/addPose
       const endPoseVar = endPoseName;
 
       const pathName = pathChainVariables[idx];
@@ -833,12 +927,10 @@ export async function generateSequentialCommandCode(
       const isCurve = line.controlPoints.length > 0;
       const curveType = isCurve ? "BezierCurve" : "BezierLine";
 
-      // Build control points string
       let controlPointsStr = "";
       if (isCurve) {
         const controlPoints: string[] = [];
         line.controlPoints.forEach((_, cpIdx) => {
-          // Retrieve the unique variable we created
           const cpVar = poseVariableNames.get(`${idx}_control${cpIdx}`);
           if (cpVar) {
             controlPoints.push(cpVar);
@@ -847,7 +939,6 @@ export async function generateSequentialCommandCode(
         controlPointsStr = controlPoints.join(", ") + ", ";
       }
 
-      // Determine heading interpolation
       let headingConfig = "";
       if (line.endPoint.heading === "constant") {
         headingConfig = `setConstantHeadingInterpolation(${endPoseVar}.getHeading())`;
@@ -857,7 +948,6 @@ export async function generateSequentialCommandCode(
         headingConfig = `setTangentHeadingInterpolation()`;
       }
 
-      // Build reverse config
       const reverseConfig = line.endPoint.reverse
         ? "\n                .setReversed(true)"
         : "";
@@ -871,7 +961,16 @@ export async function generateSequentialCommandCode(
 
   // Generate imports based on library
   let imports = "";
-  if (isNextFTC) {
+  if (isPedroPathingPlus) {
+      imports = `
+import com.pedropathingplus.command.SequentialGroup;
+import com.pedropathingplus.command.ParallelRaceGroup;
+import com.pedropathingplus.command.WaitCommand;
+import com.pedropathingplus.command.WaitUntilCommand;
+import com.pedropathingplus.command.InstantCommand;
+import com.pedropathingplus.command.FollowPathCommand;
+`;
+  } else if (isNextFTC) {
     imports = `
 import dev.nextftc.core.command.groups.SequentialGroup;
 import dev.nextftc.core.command.groups.ParallelRaceGroup;
@@ -905,8 +1004,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 ${imports}
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import com.pedropathingplus.PedroPathReader;
-import com.pedropathingplus.pathing.ProgressTracker;
-import com.pedropathingplus.pathing.NamedCommands;
+${isPedroPathingPlus ? "import com.pedropathingplus.pathing.NamedCommands;" : "import com.pedropathingplus.pathing.ProgressTracker;"}
+${!isPedroPathingPlus ? "import com.pedropathingplus.pathing.NamedCommands;" : ""}
 import java.io.IOException;
 import ${packageName.split(".").slice(0, 4).join(".")}.Subsystems.Drivetrain;
 
@@ -923,7 +1022,7 @@ ${pathChainDeclarations}
 
     public ${className}(final Drivetrain drive, HardwareMap hw, Telemetry telemetry) throws IOException {
         this.follower = drive.getFollower();
-        this.progressTracker = new ProgressTracker(follower, telemetry);
+        ${isPedroPathingPlus ? "" : "this.progressTracker = new ProgressTracker(follower, telemetry);"}
 
         PedroPathReader pp = new PedroPathReader("${fileName ? fileName.split(/[\\/]/).pop() || "AutoPath.pp" : "AutoPath.pp"}", hw.appContext);
 

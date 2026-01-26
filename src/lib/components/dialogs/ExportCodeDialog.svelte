@@ -41,7 +41,9 @@
     "java";
   let customExporterName: string | null = null;
   let sequentialClassName = "AutoPath";
-  let targetLibrary: "SolversLib" | "NextFTC" = "SolversLib";
+  let targetLibrary: "SolversLib" | "NextFTC" | "PedroPathingPlus" = "PedroPathingPlus";
+  let opModeType: "Linear" | "Iterative" = "Linear";
+  let telemetryType: "Standard" | "Panels" | "None" = "Standard";
   const DEFAULT_PACKAGE =
     "org.firstinspires.ftc.teamcode.Commands.AutoCommands";
   let packageName = DEFAULT_PACKAGE;
@@ -135,6 +137,8 @@
           exportFullCode,
           sequence,
           packageName,
+          opModeType,
+          telemetryType
         );
         currentLanguage = java;
       } else if (exportFormat === "points") {
@@ -612,6 +616,20 @@
               >
                 <button
                   role="tab"
+                  aria-selected={targetLibrary === "PedroPathingPlus"}
+                  class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {targetLibrary ===
+                  'PedroPathingPlus'
+                    ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-300 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}"
+                  on:click={() => {
+                    targetLibrary = "PedroPathingPlus";
+                    refreshCode();
+                  }}
+                >
+                  PedroPathingPlus
+                </button>
+                <button
+                  role="tab"
                   aria-selected={targetLibrary === "SolversLib"}
                   class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {targetLibrary ===
                   'SolversLib'
@@ -688,6 +706,104 @@
 
           <!-- Java Controls -->
           {#if exportFormat === "java"}
+            <!-- OpMode Type -->
+            <div class="flex flex-col gap-1.5">
+              <span
+                class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+              >
+                OpMode Type
+              </span>
+              <div
+                class="flex p-1 bg-neutral-200 dark:bg-neutral-900 rounded-lg self-start"
+                role="tablist"
+              >
+                <button
+                  role="tab"
+                  aria-selected={opModeType === "Linear"}
+                  class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {opModeType ===
+                  'Linear'
+                    ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-300 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}"
+                  on:click={() => {
+                    opModeType = "Linear";
+                    refreshCode();
+                  }}
+                >
+                  Linear
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={opModeType === "Iterative"}
+                  class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {opModeType ===
+                  'Iterative'
+                    ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-300 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}"
+                  on:click={() => {
+                    opModeType = "Iterative";
+                    refreshCode();
+                  }}
+                >
+                  Iterative
+                </button>
+              </div>
+            </div>
+
+            <!-- Telemetry Type -->
+            <div class="flex flex-col gap-1.5">
+              <span
+                class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+              >
+                Telemetry
+              </span>
+              <div
+                class="flex p-1 bg-neutral-200 dark:bg-neutral-900 rounded-lg self-start"
+                role="tablist"
+              >
+                <button
+                  role="tab"
+                  aria-selected={telemetryType === "Standard"}
+                  class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {telemetryType ===
+                  'Standard'
+                    ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-300 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}"
+                  on:click={() => {
+                    telemetryType = "Standard";
+                    refreshCode();
+                  }}
+                >
+                  Standard
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={telemetryType === "Panels"}
+                  class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {telemetryType ===
+                  'Panels'
+                    ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-300 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}"
+                  on:click={() => {
+                    telemetryType = "Panels";
+                    refreshCode();
+                  }}
+                >
+                  Panels
+                </button>
+                 <button
+                  role="tab"
+                  aria-selected={telemetryType === "None"}
+                  class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {telemetryType ===
+                  'None'
+                    ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-300 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}"
+                  on:click={() => {
+                    telemetryType = "None";
+                    refreshCode();
+                  }}
+                >
+                  None
+                </button>
+              </div>
+            </div>
+
             <label
               class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer select-none"
               aria-label="Export full Java class with imports"
