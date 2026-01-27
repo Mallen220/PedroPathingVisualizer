@@ -381,6 +381,20 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
 
   // Navigation
   {
+    id: "select-next",
+    key: "alt+]",
+    description: "Select Next Item",
+    action: "selectNext",
+    category: "Navigation",
+  },
+  {
+    id: "select-prev",
+    key: "alt+[",
+    description: "Select Previous Item",
+    action: "selectPrev",
+    category: "Navigation",
+  },
+  {
     id: "select-next-sequence",
     key: "ctrl+down, cmd+down, tab",
     description: "Select Next Sequence Item",
