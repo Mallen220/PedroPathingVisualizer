@@ -53,6 +53,7 @@
   import { getRandomColor } from "../../utils";
   import { computeZoomStep } from "../zoomHelpers";
   import _ from "lodash";
+  import { actionRegistry } from "../actionRegistry";
 
   // Actions
   export let saveProject: () => void;
@@ -181,7 +182,7 @@
     if (sel.startsWith("wait-")) {
       const wid = sel.substring(5);
       const idx = seq.findIndex(
-        (s) => s.kind === "wait" && (s as any).id === wid,
+        (s) => actionRegistry.get(s.kind)?.isWait && (s as any).id === wid,
       );
       return idx >= 0 ? idx : null;
     }
@@ -190,7 +191,7 @@
     if (sel.startsWith("rotate-")) {
       const rid = sel.substring(7);
       const idx = seq.findIndex(
-        (s) => s.kind === "rotate" && (s as any).id === rid,
+        (s) => actionRegistry.get(s.kind)?.isRotate && (s as any).id === rid,
       );
       return idx >= 0 ? idx : null;
     }
@@ -200,7 +201,7 @@
       const targetId = $selectedLineId || null;
       if (!targetId) return null;
       const idx = seq.findIndex(
-        (s) => s.kind === "path" && (s as any).lineId === targetId,
+        (s) => actionRegistry.get(s.kind)?.isPath && (s as any).lineId === targetId,
       );
       return idx >= 0 ? idx : null;
     }
@@ -309,7 +310,7 @@
     if ($selectedPointId && $selectedPointId.startsWith("wait-")) {
       const waitId = $selectedPointId.substring(5);
       const waitItem = sequence.find(
-        (s) => s.kind === "wait" && (s as any).id === waitId,
+        (s) => actionRegistry.get(s.kind)?.isWait && (s as any).id === waitId,
       ) as any;
 
       if (waitItem) {
@@ -419,7 +420,7 @@
     if (sel.startsWith("wait-")) {
       const waitId = sel.substring(5);
       const waitItem = $sequenceStore.find(
-        (s) => s.kind === "wait" && (s as any).id === waitId,
+        (s) => actionRegistry.get(s.kind)?.isWait && (s as any).id === waitId,
       ) as any;
       if (!waitItem) return;
 
@@ -427,7 +428,7 @@
       newWait.id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
       const existingWaitNames = sequence
-        .filter((s) => s.kind === "wait")
+        .filter((s) => actionRegistry.get(s.kind)?.isWait)
         .map((s) => (s as any).name || "");
       // Preserve empty name when duplicating unnamed waits
       if (waitItem.name && waitItem.name.trim() !== "") {
@@ -452,14 +453,14 @@
     if (sel.startsWith("rotate-")) {
       const rotateId = sel.substring(7);
       const rotateItem = $sequenceStore.find(
-        (s) => s.kind === "rotate" && (s as any).id === rotateId,
+        (s) => actionRegistry.get(s.kind)?.isRotate && (s as any).id === rotateId,
       ) as any;
       if (!rotateItem) return;
 
       const newRotate = _.cloneDeep(rotateItem);
       newRotate.id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
       const existingRotateNames = sequence
-        .filter((s) => s.kind === "rotate")
+        .filter((s) => actionRegistry.get(s.kind)?.isRotate)
         .map((s) => (s as any).name || "");
       // Preserve empty name when duplicating unnamed rotates
       if (rotateItem.name && rotateItem.name.trim() !== "") {
@@ -568,7 +569,7 @@
     if (sel.startsWith("wait-")) {
       const waitId = sel.substring(5);
       const waitItem = $sequenceStore.find(
-        (s) => s.kind === "wait" && (s as any).id === waitId,
+        (s) => actionRegistry.get(s.kind)?.isWait && (s as any).id === waitId,
       ) as any;
       if (waitItem) {
         clipboard = _.cloneDeep(waitItem);
@@ -579,7 +580,7 @@
     if (sel.startsWith("rotate-")) {
       const rotateId = sel.substring(7);
       const rotateItem = $sequenceStore.find(
-        (s) => s.kind === "rotate" && (s as any).id === rotateId,
+        (s) => actionRegistry.get(s.kind)?.isRotate && (s as any).id === rotateId,
       ) as any;
       if (rotateItem) {
         clipboard = _.cloneDeep(rotateItem);
@@ -615,15 +616,18 @@
     if (isUIElementFocused()) return;
     if (!clipboard) return;
 
+    const clipKind = (clipboard as any).kind;
+    const clipDef = clipKind ? actionRegistry.get(clipKind) : null;
+
     // Handle Wait
-    if ((clipboard as any).kind === "wait") {
+    if (clipDef?.isWait) {
       const waitItem = clipboard as SequenceItem;
       const newWait = _.cloneDeep(waitItem) as any;
       newWait.id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
       // Generate unique name
       const existingWaitNames = sequence
-        .filter((s) => s.kind === "wait")
+        .filter((s) => actionRegistry.get(s.kind)?.isWait)
         .map((s) => (s as any).name || "");
       if (newWait.name && newWait.name.trim() !== "") {
         newWait.name = generateName(newWait.name, existingWaitNames);
@@ -647,14 +651,14 @@
     }
 
     // Handle Rotate
-    if ((clipboard as any).kind === "rotate") {
+    if (clipDef?.isRotate) {
       const rotateItem = clipboard as SequenceItem;
       const newRotate = _.cloneDeep(rotateItem) as any;
       newRotate.id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
       // Generate unique name
       const existingRotateNames = sequence
-        .filter((s) => s.kind === "rotate")
+        .filter((s) => actionRegistry.get(s.kind)?.isRotate)
         .map((s) => (s as any).name || "");
       if (newRotate.name && newRotate.name.trim() !== "") {
         newRotate.name = generateName(newRotate.name, existingRotateNames);
@@ -695,7 +699,7 @@
       if (insertIdx !== null) {
         // Find path element at or before insertIdx
         for (let i = insertIdx; i >= 0; i--) {
-          if (sequence[i].kind === "path") {
+          if (actionRegistry.get(sequence[i].kind)?.isPath) {
             const lineId = (sequence[i] as any).lineId;
             const l = lines.find((line) => line.id === lineId);
             if (l) {
@@ -761,7 +765,7 @@
 
         let insertionLineIndex = -1;
         for (let i = insertIdx; i >= 0; i--) {
-          if (sequence[i].kind === "path") {
+          if (actionRegistry.get(sequence[i].kind)?.isPath) {
             const lid = (sequence[i] as any).lineId;
             insertionLineIndex = lines.findIndex((l) => l.id === lid);
             break;
@@ -820,12 +824,12 @@
     if (sel.startsWith("wait-")) {
       const waitId = sel.substring(5);
       const waitItem = $sequenceStore.find(
-        (s) => s.kind === "wait" && (s as any).id === waitId,
+        (s) => actionRegistry.get(s.kind)?.isWait && (s as any).id === waitId,
       ) as any;
       if (waitItem && waitItem.locked) return; // Don't delete locked waits
 
       sequenceStore.update((s) =>
-        s.filter((item) => !(item.kind === "wait" && item.id === waitId)),
+        s.filter((item) => !(actionRegistry.get(item.kind)?.isWait && item.id === waitId)),
       );
       selectedPointId.set(null);
       recordChange();
@@ -835,12 +839,12 @@
     if (sel.startsWith("rotate-")) {
       const rotateId = sel.substring(7);
       const rotateItem = $sequenceStore.find(
-        (s) => s.kind === "rotate" && (s as any).id === rotateId,
+        (s) => actionRegistry.get(s.kind)?.isRotate && (s as any).id === rotateId,
       ) as any;
       if (rotateItem && rotateItem.locked) return; // Don't delete locked rotates
 
       sequenceStore.update((s) =>
-        s.filter((item) => !(item.kind === "rotate" && item.id === rotateId)),
+        s.filter((item) => !(actionRegistry.get(item.kind)?.isRotate && item.id === rotateId)),
       );
       selectedPointId.set(null);
       recordChange();
@@ -866,7 +870,7 @@
         if (removedId) {
           sequenceStore.update((s) =>
             s.filter(
-              (item) => !(item.kind === "path" && item.lineId === removedId),
+              (item) => !(actionRegistry.get(item.kind)?.isPath && (item as any).lineId === removedId),
             ),
           );
         }
@@ -1037,8 +1041,9 @@
   function getSelectableItems() {
     const items: string[] = ["point-0-0"];
     sequence.forEach((item) => {
-      if (item.kind === "path") {
-        const lineIdx = lines.findIndex((l) => l.id === item.lineId);
+      const def = actionRegistry.get(item.kind);
+      if (def?.isPath) {
+        const lineIdx = lines.findIndex((l) => l.id === (item as any).lineId);
         if (lineIdx !== -1) {
           const line = lines[lineIdx];
           line.controlPoints.forEach((_, cpIdx) =>
@@ -1046,10 +1051,10 @@
           );
           items.push(`point-${lineIdx + 1}-0`);
         }
-      } else if (item.kind === "wait") {
-        items.push(`wait-${item.id}`);
-      } else if (item.kind === "rotate") {
-        items.push(`rotate-${item.id}`);
+      } else if (def?.isWait) {
+        items.push(`wait-${(item as any).id}`);
+      } else if (def?.isRotate) {
+        items.push(`rotate-${(item as any).id}`);
       }
     });
     lines.forEach((line, lineIdx) => {
@@ -1080,6 +1085,9 @@
       if (lineNum > 0) {
         const line = lines[lineNum - 1];
         if (line && line.id) {
+          // Assuming control tab can handle generic path scroll requests
+          // If not, we might need to check registry for path alias?
+          // For now "path" string is what ControlTab expects.
           controlTabRef.scrollToItem("path", line.id);
         }
       }
@@ -1129,16 +1137,18 @@
     const item = sequence[currentIdx];
     if (!item) return;
 
-    if (item.kind === "path") {
+    const def = actionRegistry.get(item.kind);
+
+    if (def?.isPath) {
       selectedLineId.set((item as any).lineId);
       const lineIdx = lines.findIndex((l) => l.id === (item as any).lineId);
       if (lineIdx !== -1) {
         selectedPointId.set(`point-${lineIdx + 1}-0`);
       }
-    } else if (item.kind === "wait") {
+    } else if (def?.isWait) {
       selectedPointId.set(`wait-${(item as any).id}`);
       selectedLineId.set(null);
-    } else if (item.kind === "rotate") {
+    } else if (def?.isRotate) {
       selectedPointId.set(`rotate-${(item as any).id}`);
       selectedLineId.set(null);
     }
@@ -1154,7 +1164,7 @@
     if (current.startsWith("wait-")) {
       const waitId = current.substring(5);
       const item = sequence.find(
-        (s) => s.kind === "wait" && s.id === waitId,
+        (s) => actionRegistry.get(s.kind)?.isWait && (s as any).id === waitId,
       ) as any;
       if (item) {
         if (item.locked) return; // Don't modify locked waits
@@ -1168,7 +1178,7 @@
     if (current.startsWith("rotate-")) {
       const rotateId = current.substring(7);
       const item = sequence.find(
-        (s) => s.kind === "rotate" && s.id === rotateId,
+        (s) => actionRegistry.get(s.kind)?.isRotate && (s as any).id === rotateId,
       ) as any;
       if (item) {
         if (item.locked) return; // Don't modify locked rotates
@@ -1352,7 +1362,7 @@
       const waitId = sel.substring(5);
       sequenceStore.update((seq) =>
         seq.map((s) => {
-          if (s.kind === "wait" && (s as any).id === waitId) {
+          if (actionRegistry.get(s.kind)?.isWait && (s as any).id === waitId) {
             return { ...s, locked: !(s as any).locked };
           }
           return s;
@@ -1366,7 +1376,7 @@
       const rotateId = sel.substring(7);
       sequenceStore.update((seq) =>
         seq.map((s) => {
-          if (s.kind === "rotate" && (s as any).id === rotateId) {
+          if (actionRegistry.get(s.kind)?.isRotate && (s as any).id === rotateId) {
             return { ...s, locked: !(s as any).locked };
           }
           return s;
@@ -1945,7 +1955,7 @@
   }));
 
   $: waitCommands = sequence
-    .filter((s) => s.kind === "wait")
+    .filter((s) => actionRegistry.get(s.kind)?.isWait)
     .map((s: any) => ({
       id: `cmd-wait-${s.id}`,
       label: s.name ? `Wait: ${s.name}` : "Wait",
@@ -1960,7 +1970,7 @@
     }));
 
   $: rotateCommands = sequence
-    .filter((s) => s.kind === "rotate")
+    .filter((s) => actionRegistry.get(s.kind)?.isRotate)
     .map((s: any) => ({
       id: `cmd-rotate-${s.id}`,
       label: s.name ? `Rotate: ${s.name}` : "Rotate",
@@ -1995,7 +2005,12 @@
     });
 
     sequence.forEach((s) => {
-      if (s.kind === "wait" || s.kind === "rotate") {
+      const def = actionRegistry.get(s.kind);
+      // Generalize to actions that support event markers?
+      // For now, Wait and Rotate support them. Path supports them but is handled above.
+      // If new actions support markers, they should be included.
+      // We can use a new flag `hasEventMarkers` or assume standard ones.
+      if (def?.isWait || def?.isRotate) {
         const item = s as any;
         if (item.eventMarkers) {
           item.eventMarkers.forEach((m: any) => {
@@ -2003,7 +2018,7 @@
               id: `cmd-event-${m.id}`,
               label: m.name
                 ? `Event: ${m.name}`
-                : `Event (${s.kind === "wait" ? "Wait" : "Rotate"})`,
+                : `Event (${def.label})`,
               category: "Event Marker",
               action: () => {
                 if (controlTabRef && controlTabRef.scrollToItem) {

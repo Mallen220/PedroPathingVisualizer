@@ -7,6 +7,7 @@ import { actionRegistry } from "./actionRegistry";
 import { WaitAction } from "./actions/WaitAction";
 import { RotateAction } from "./actions/RotateAction";
 import { MacroAction } from "./actions/MacroAction";
+import { PathAction } from "./actions/PathAction";
 
 // Registers built-in components and tabs. Safe to call multiple times; registries dedupe by id.
 export const registerCoreUI = () => {
@@ -18,6 +19,7 @@ export const registerCoreUI = () => {
   registerDefaultControlTabs();
 
   // Register Core Actions
+  actionRegistry.register(PathAction);
   actionRegistry.register(WaitAction);
   actionRegistry.register(RotateAction);
   actionRegistry.register(MacroAction);

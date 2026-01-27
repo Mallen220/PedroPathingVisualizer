@@ -9,6 +9,7 @@ import { calculateRotationTime, unwrapAngle } from "../../utils/timeCalculator";
 export const RotateAction: ActionDefinition = {
   kind: "rotate",
   label: "Rotate",
+  isRotate: true,
   component: RotateTableRow,
 
   renderField: (item: SequenceItem, context: FieldRenderContext) => {

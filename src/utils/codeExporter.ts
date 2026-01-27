@@ -4,7 +4,7 @@ import prettierJavaPlugin from "prettier-plugin-java";
 import type { Point, Line, BasePoint, SequenceItem } from "../types";
 import { getCurvePoint } from "./math";
 import pkg from "../../package.json";
-import { actionRegistry } from "../actionRegistry";
+import { actionRegistry } from "../lib/actionRegistry";
 
 /**
  * Generate Java code from path data

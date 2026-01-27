@@ -8,6 +8,7 @@ import { POINT_RADIUS } from "../../config";
 export const WaitAction: ActionDefinition = {
   kind: "wait",
   label: "Wait",
+  isWait: true,
   component: WaitTableRow,
 
   renderField: (item: SequenceItem, context: FieldRenderContext) => {

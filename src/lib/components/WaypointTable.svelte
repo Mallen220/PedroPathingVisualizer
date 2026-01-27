@@ -192,14 +192,14 @@
   }
 
   function updateWaitName(item: SequenceItem, name: string) {
-    if (item.kind === "wait") {
+    if (actionRegistry.get(item.kind)?.isWait) {
       sequence = handleWaitRename(sequence, item.id, name);
       recordChange();
     }
   }
 
   function updateRotateName(item: SequenceItem, name: string) {
-    if (item.kind === "rotate") {
+    if (actionRegistry.get(item.kind)?.isRotate) {
       sequence = handleRotateRename(sequence, item.id, name);
       recordChange();
     }
@@ -215,7 +215,7 @@
   }
 
   function updateRotateDegrees(item: SequenceItem, degrees: number) {
-    if (item.kind === "rotate") {
+    if (actionRegistry.get(item.kind)?.isRotate) {
       item.degrees = degrees;
       sequence = updateLinkedRotations(sequence, item.id);
       recordChange();
@@ -223,7 +223,7 @@
   }
 
   function updateWaitDuration(item: SequenceItem, duration: number) {
-    if (item.kind === "wait") {
+    if (actionRegistry.get(item.kind)?.isWait) {
       item.durationMs = duration;
       sequence = updateLinkedWaits(sequence, item.id);
       recordChange();
@@ -231,7 +231,7 @@
   }
 
   function updateMacroName(item: SequenceItem, name: string) {
-    if (item.kind === "macro") {
+    if (actionRegistry.get(item.kind)?.isMacro) {
       item.name = name;
       sequence = [...sequence]; // trigger reactivity
       recordChange();
@@ -251,8 +251,9 @@
   function findSequenceIndex(item: any) {
     if (!Array.isArray(sequence)) return -1;
     return sequence.findIndex((s) => {
-      if ((s as any).kind !== (item as any).kind) return false;
-      if ((s as any).kind === "path")
+      if (s.kind !== item.kind) return false;
+      const def = actionRegistry.get(s.kind);
+      if (def?.isPath)
         return (s as any).lineId === (item as any).lineId;
       return (s as any).id === (item as any).id;
     });
@@ -265,7 +266,7 @@
       const seqCopy = Array.isArray(sequence) ? [...sequence] : [];
       const pathIds = new Set(
         seqCopy
-          .filter((s) => (s as any).kind === "path")
+          .filter((s) => actionRegistry.get((s as any).kind)?.isPath)
           .map((s) => (s as any).lineId),
       );
       lines.forEach((l) => {
@@ -283,12 +284,12 @@
   $: debugLinesIds = Array.isArray(lines) ? lines.map((l) => l.id) : [];
   $: debugSequenceIds = Array.isArray(sequence)
     ? sequence.map((s) =>
-        s.kind === "path" ? (s as any).lineId : (s as any).id,
+        actionRegistry.get(s.kind)?.isPath ? (s as any).lineId : (s as any).id,
       )
     : [];
   $: debugDisplayIds = Array.isArray(displaySequence)
     ? displaySequence.map((d) =>
-        d.kind === "path" ? (d as any).lineId : (d as any).id,
+        actionRegistry.get(d.kind)?.isPath ? (d as any).lineId : (d as any).id,
       )
     : [];
   $: debugMissing = debugLinesIds.filter(
@@ -437,7 +438,7 @@
     const missing = lines.filter(
       (l) =>
         !l.isMacroElement &&
-        !sequence.some((s) => s.kind === "path" && (s as any).lineId === l.id),
+        !sequence.some((s) => actionRegistry.get(s.kind)?.isPath && (s as any).lineId === l.id),
     );
     if (missing.length) {
       console.warn(
@@ -468,7 +469,7 @@
 
     // Remove sequence entries that reference this line
     const newSeq = sequence.filter(
-      (item) => !(item.kind === "path" && item.lineId === lineId),
+      (item) => !(actionRegistry.get(item.kind)?.isPath && (item as any).lineId === lineId),
     );
     sequence = newSeq;
     syncLinesToSequence(newSeq);
@@ -494,8 +495,8 @@
     const item = sequence[index];
     if (!item) return;
 
-    if (item.kind === "path") {
-        deleteLine(item.lineId);
+    if (actionRegistry.get(item.kind)?.isPath) {
+        deleteLine((item as any).lineId);
         return;
     }
 
@@ -731,7 +732,7 @@
       label: "Delete",
       onClick: () => deleteSequenceItem(seqIndex),
       danger: true,
-      disabled: isLocked || (lines.length <= 1 && item.kind === "path"),
+      disabled: isLocked || (lines.length <= 1 && !!actionRegistry.get(item.kind)?.isPath),
     });
 
     contextMenuItems = items;
@@ -742,8 +743,9 @@
 
   function toggleLock(seqIndex: number) {
     const item = sequence[seqIndex];
-    if (item.kind === "path") {
-      const line = lines.find((l) => l.id === item.lineId);
+    const def = actionRegistry.get(item.kind);
+    if (def?.isPath) {
+      const line = lines.find((l) => l.id === (item as any).lineId);
       if (line) {
         line.locked = !line.locked;
         lines = [...lines]; // Trigger reactivity
@@ -764,7 +766,9 @@
     const item = sequence[seqIndex];
     if (!item) return;
 
-    if (item.kind === "wait") {
+    const def = actionRegistry.get(item.kind);
+
+    if (def?.isWait) {
       const newItem = structuredClone(item);
       newItem.id = makeId();
       newItem.locked = false; // unlock duplicate?
@@ -782,9 +786,9 @@
       newSeq.splice(seqIndex + 1, 0, newItem);
       sequence = newSeq;
       recordChange();
-    } else if (item.kind === "path") {
+    } else if (def?.isPath) {
       // Logic for duplicating path (similar to insertLineAfter but copying properties)
-      const line = lines.find((l) => l.id === item.lineId);
+      const line = lines.find((l) => l.id === (item as any).lineId);
       if (!line) return;
 
       const newLine = structuredClone(line);
@@ -947,7 +951,7 @@
 
     // Find the last path element before insertion point
     for (let i = index - 1; i >= 0; i--) {
-      if (sequence[i].kind === "path") {
+      if (actionRegistry.get(sequence[i].kind)?.isPath) {
         insertAfterLineId = (sequence[i] as any).lineId;
         const l = lines.find((x) => x.id === insertAfterLineId);
         if (l) {
@@ -1272,7 +1276,7 @@
         {#each displaySequence as item, seqIdx (item.kind === "path" ? item.lineId : item.id)}
           {@const seqIndex = findSequenceIndex(item)}
           {@const actionDef = actionRegistry.get(item.kind)}
-          {#if item.kind === "path"}
+          {#if actionDef?.isPath}
             {#each lines.filter((l) => l.id === item.lineId) as line (line.id)}
               {@const lineIdx = lines.findIndex((l) => l === line)}
               <!-- End Point -->
@@ -1568,10 +1572,11 @@
                 {draggingIndex}
                 onUpdate={(updatedItem) => {
                     sequence[seqIndex] = updatedItem;
-                    if (item.kind === 'wait') {
+                    const def = actionRegistry.get(item.kind);
+                    if (def?.isWait) {
                         // Handle linking for wait
                         sequence = updateLinkedWaits(sequence, item.id);
-                    } else if (item.kind === 'rotate') {
+                    } else if (def?.isRotate) {
                         // Handle linking for rotate
                         sequence = updateLinkedRotations(sequence, item.id);
                     }

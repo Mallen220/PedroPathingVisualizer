@@ -51,6 +51,12 @@ export interface ActionDefinition {
   icon?: string; // SVG string
   description?: string;
 
+  // Type Flags
+  isPath?: boolean;
+  isWait?: boolean;
+  isRotate?: boolean;
+  isMacro?: boolean;
+
   /**
    * Svelte component to render in the WaypointTable row.
    * Props passed: { item, index, isLocked, isSelected, isHovered, onUpdate, onDelete, onLock, ... }
