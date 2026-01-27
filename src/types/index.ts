@@ -147,6 +147,7 @@ export interface CustomFieldConfig {
   y: number;
   width: number;
   height: number;
+  opacity?: number;
 }
 
 export interface Settings {

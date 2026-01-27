@@ -2160,6 +2160,7 @@
               top: ${y(activeMap.y)}px;
               width: ${x(activeMap.x + activeMap.width) - x(activeMap.x)}px;
               height: ${y(activeMap.y - activeMap.height) - y(activeMap.y)}px;
+              opacity: ${activeMap.opacity ?? 1};
           `}
           draggable="false"
         />

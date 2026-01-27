@@ -13,6 +13,7 @@
   let step = 1; // 1: Upload, 2: Calibrate P1, 3: Calibrate P2, 4: Review
   let imageData: string | null = null;
   let mapName = "My Custom Field";
+  let opacity = 1.0;
 
   // Calibration points (Image Pixels)
   let p1: { x: number; y: number } | null = null;
@@ -36,9 +37,11 @@
     if (currentConfig) {
       imageData = currentConfig.imageData;
       mapName = currentConfig.name || "My Custom Field";
+      opacity = currentConfig.opacity ?? 1.0;
     } else {
       imageData = null;
       mapName = "My Custom Field";
+      opacity = 1.0;
     }
   } else if (!isOpen && wasOpen) {
     wasOpen = false;
@@ -151,6 +154,7 @@
       y,
       width: widthIn,
       height: heightIn,
+      opacity,
     };
   }
 
@@ -456,6 +460,22 @@
                           )}")
                         </p>
 
+                        <div class="mt-2">
+                          <label
+                            class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1"
+                          >
+                            Opacity: {Math.round(opacity * 100)}%
+                            <input
+                              type="range"
+                              min="0.1"
+                              max="1.0"
+                              step="0.05"
+                              bind:value={opacity}
+                              class="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-green-600 mt-1"
+                            />
+                          </label>
+                        </div>
+
                         <div
                           class="mt-4 p-2 bg-white dark:bg-neutral-800 rounded border border-neutral-200 dark:border-neutral-700"
                         >
@@ -473,12 +493,13 @@
                             <img
                               src={imageData}
                               alt="Preview"
-                              class="absolute max-w-none opacity-80"
+                              class="absolute max-w-none"
                               style={`
                                                     left: ${(res.x / 144) * 100}%;
                                                     top: ${(1 - res.y / 144) * 100}%;
                                                     width: ${(res.width / 144) * 100}%;
                                                     height: ${(res.height / 144) * 100}%;
+                                                    opacity: ${opacity};
                                                 `}
                             />
                           </div>
