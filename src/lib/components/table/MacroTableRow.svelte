@@ -52,6 +52,8 @@
       item.name = target.value;
       onUpdate(item);
   }
+
+  $: filePath = (item as any).filePath || "";
 </script>
 
 <tr
@@ -100,7 +102,7 @@
       <!-- Macro Icon -->
       <div
         class="absolute right-1 top-1/2 -translate-y-1/2 text-teal-500 flex items-center justify-center"
-        title={`Macro: ${(item as any).filePath}`}
+        title={`Macro: ${filePath}`}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +121,7 @@
   </td>
   <td
     class="px-3 py-2 text-neutral-400 text-xs italic truncate max-w-[100px]"
-    title={(item as any).filePath}
+    title={((item as any).filePath)}
   >
     {((item as any).filePath || "").split(/[/\\]/).pop()}
   </td>
