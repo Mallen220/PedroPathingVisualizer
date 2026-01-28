@@ -26,23 +26,23 @@ export interface CodeExportContext {
 }
 
 export interface JavaCodeResult {
-    code: string;
-    stepsUsed: number;
+  code: string;
+  stepsUsed: number;
 }
 
 export interface TimeCalculationContext {
-    currentTime: number;
-    currentHeading: number;
-    lastPoint: Point;
-    settings: any;
-    lines: Line[];
+  currentTime: number;
+  currentHeading: number;
+  lastPoint: Point;
+  settings: any;
+  lines: Line[];
 }
 
 export interface TimeCalculationResult {
-    events: TimelineEvent[];
-    duration: number;
-    endHeading?: number; // If changed
-    endPoint?: Point; // If changed
+  events: TimelineEvent[];
+  duration: number;
+  endHeading?: number; // If changed
+  endPoint?: Point; // If changed
 }
 
 export interface ActionDefinition {
@@ -50,6 +50,10 @@ export interface ActionDefinition {
   label: string;
   icon?: string; // SVG string
   description?: string;
+
+  // UI Configuration
+  buttonColor?: string; // e.g. "amber", "pink", "indigo"
+  buttonFilledIcon?: string; // Optional filled icon for buttons
 
   // Type Flags
   isPath?: boolean;
@@ -64,6 +68,17 @@ export interface ActionDefinition {
   component: any;
 
   /**
+   * Svelte component to render in the PathTab section view.
+   * Props passed: { [kind]: item, sequence, collapsed, onRemove, onInsertAfter, ... }
+   */
+  sectionComponent?: any;
+
+  /**
+   * Factory function to create a default instance of this action.
+   */
+  createDefault?: () => SequenceItem;
+
+  /**
    * Function to render the action on the field using Two.js.
    * This is called inside a reactive block in FieldRenderer.
    * It should return an array of Two.js objects (Groups, Shapes, etc.) to be added to the scene.
@@ -74,23 +89,34 @@ export interface ActionDefinition {
    * Generate Java code for the OpMode state machine approach.
    * Returns code and number of state steps used.
    */
-  toJavaCode?: (item: SequenceItem, context: CodeExportContext) => JavaCodeResult;
+  toJavaCode?: (
+    item: SequenceItem,
+    context: CodeExportContext,
+  ) => JavaCodeResult;
 
   /**
    * Generate Java code for the SequentialCommandGroup approach.
    * Returns a string command instantiation.
    */
-  toSequentialCommand?: (item: SequenceItem, context: CodeExportContext) => string;
+  toSequentialCommand?: (
+    item: SequenceItem,
+    context: CodeExportContext,
+  ) => string;
 
   /**
    * Calculate timeline events and duration for this action.
    * Used for time estimation and timeline visualization.
    */
-  calculateTime?: (item: SequenceItem, context: TimeCalculationContext) => TimeCalculationResult;
+  calculateTime?: (
+    item: SequenceItem,
+    context: TimeCalculationContext,
+  ) => TimeCalculationResult;
 }
 
 const createActionRegistry = () => {
-  const { subscribe, update, set } = writable<Record<string, ActionDefinition>>({});
+  const { subscribe, update, set } = writable<Record<string, ActionDefinition>>(
+    {},
+  );
 
   return {
     subscribe,
@@ -98,11 +124,11 @@ const createActionRegistry = () => {
       update((state) => ({ ...state, [action.kind]: action }));
     },
     unregister: (kind: string) => {
-        update((state) => {
-            const newState = { ...state };
-            delete newState[kind];
-            return newState;
-        });
+      update((state) => {
+        const newState = { ...state };
+        delete newState[kind];
+        return newState;
+      });
     },
     get: (kind: string): ActionDefinition | undefined => {
       const state = get({ subscribe });

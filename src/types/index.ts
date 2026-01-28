@@ -102,6 +102,18 @@ export type SequenceRotateItem = {
   _linkedName?: string; // Metadata for linked names
 };
 
+export type SequenceServoItem = {
+  kind: "servo";
+  id: string;
+  name: string;
+  port: string;
+  position: number;
+  durationMs: number;
+  locked?: boolean;
+  eventMarkers?: EventMarker[];
+  _linkedName?: string;
+};
+
 export interface Transformation {
   type: "translate" | "rotate" | "flip";
   // Translate
@@ -129,7 +141,8 @@ export type SequenceItem =
   | SequencePathItem
   | SequenceWaitItem
   | SequenceRotateItem
-  | SequenceMacroItem;
+  | SequenceMacroItem
+  | SequenceServoItem;
 
 export interface KeyBinding {
   id: string;

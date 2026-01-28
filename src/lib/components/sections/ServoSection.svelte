@@ -1,34 +1,33 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import { selectedPointId, selectedLineId } from "../../../stores";
-  import { slide } from "svelte/transition";
   import DeleteButtonWithConfirm from "../common/DeleteButtonWithConfirm.svelte";
-  import MacroTransformControls from "./MacroTransformControls.svelte";
-  import type { SequenceMacroItem, SequenceItem } from "../../../types/index";
+  import type { SequenceServoItem, SequenceItem } from "../../../types/index";
   import { actionRegistry } from "../../actionRegistry";
 
-  export let macro: SequenceMacroItem;
+  export let servo: SequenceServoItem;
   export let sequence: SequenceItem[];
 
-  // Collapsed state (for consistency, though macros might not have inner content to collapse yet)
+  // Collapsed state
   export let collapsed: boolean = false;
 
   export let onRemove: () => void;
-  // onInsertAfter was previously an exported prop but unused internally.
-  // If external code depends on its presence, export it as a const to avoid Svelte unused-export warning.
-  export const onInsertAfter: (() => void) | undefined = undefined;
-  // PathTab usually passes specific inserters.
-  export let onAddWaitAfter: () => void;
-  export let onAddPathAfter: () => void;
-  export let onAddRotateAfter: () => void;
+  // Generic add handler
   export let onAddAction: ((def: any) => void) | undefined = undefined;
+
+  // Specific handlers from parent loop if any (legacy compatibility)
+  export let onInsertAfter: (() => void) | undefined = undefined;
+  export let onAddPathAfter: (() => void) | undefined = undefined;
+  export let onAddWaitAfter: (() => void) | undefined = undefined;
+  export let onAddRotateAfter: (() => void) | undefined = undefined;
+
   export let onMoveUp: () => void;
   export let onMoveDown: () => void;
   export let canMoveUp: boolean = true;
   export let canMoveDown: boolean = true;
   export let recordChange: (() => void) | undefined = undefined;
 
-  $: isSelected = $selectedPointId === `macro-${macro.id}`;
+  $: isSelected = $selectedPointId === `servo-${servo.id}`;
 
   function toggleCollapsed() {
     collapsed = !collapsed;
@@ -36,15 +35,33 @@
 
   function handleNameInput(e: Event) {
     const input = e.target as HTMLInputElement;
-    macro.name = input.value;
-    sequence = [...sequence]; // trigger reactivity
-  }
-
-  function handleBlur() {
+    servo.name = input.value;
     if (recordChange) recordChange();
   }
 
-  let showTransforms = false;
+  function handlePortInput(e: Event) {
+    const input = e.target as HTMLInputElement;
+    servo.port = input.value;
+    if (recordChange) recordChange();
+  }
+
+  function handlePositionChange(e: Event) {
+    const target = e.currentTarget as HTMLInputElement;
+    const val = parseFloat(target.value);
+    if (!Number.isNaN(val)) {
+      servo.position = Math.max(0, Math.min(1, val)); // Clamp 0-1
+    }
+    if (recordChange) recordChange();
+  }
+
+  function handleDurationChange(e: Event) {
+    const target = e.currentTarget as HTMLInputElement;
+    const val = parseFloat(target.value);
+    if (!Number.isNaN(val) && val >= 0) {
+      servo.durationMs = val;
+    }
+    if (recordChange) recordChange();
+  }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -55,20 +72,20 @@
   aria-pressed={isSelected}
   class={`bg-white dark:bg-neutral-800 rounded-xl shadow-sm border transition-all duration-200 ${
     isSelected
-      ? "border-teal-400 ring-1 ring-teal-400/20"
+      ? "border-indigo-500 ring-1 ring-indigo-500/20"
       : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
   }`}
   on:click|stopPropagation={() => {
-    if (!macro.locked) {
-      selectedPointId.set(`macro-${macro.id}`);
+    if (!servo.locked) {
+      selectedPointId.set(`servo-${servo.id}`);
       selectedLineId.set(null);
     }
   }}
   on:keydown|stopPropagation={(e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (!macro.locked) {
-        selectedPointId.set(`macro-${macro.id}`);
+      if (!servo.locked) {
+        selectedPointId.set(`servo-${servo.id}`);
         selectedLineId.set(null);
       }
     }
@@ -81,8 +98,8 @@
       <button
         on:click|stopPropagation={toggleCollapsed}
         class="flex items-center gap-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 transition-colors px-1 py-1"
-        title="{collapsed ? 'Expand' : 'Collapse'} macro"
-        aria-label="{collapsed ? 'Expand' : 'Collapse'} macro"
+        title="{collapsed ? 'Expand' : 'Collapse'} servo"
+        aria-label="{collapsed ? 'Expand' : 'Collapse'} servo"
         aria-expanded={!collapsed}
       >
         <svg
@@ -102,22 +119,22 @@
           />
         </svg>
         <span
-          class="text-xs font-bold uppercase tracking-wider text-teal-500 whitespace-nowrap"
-          >Macro</span
+          class="text-xs font-bold uppercase tracking-wider text-indigo-500 whitespace-nowrap"
+          >Servo</span
         >
       </button>
 
       <div class="flex items-center gap-2 flex-1 min-w-0">
         <div class="relative flex-1 min-w-0">
           <input
-            value={macro.name}
-            placeholder="Macro Name"
-            aria-label="Macro name"
-            title="Edit macro name"
-            class="w-full pl-2 pr-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-md focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder-neutral-400 truncate"
-            disabled={macro.locked}
+            value={servo.name}
+            placeholder="Servo Action"
+            aria-label="Servo name"
+            title="Edit servo name"
+            class="w-full pl-2 pr-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder-neutral-400 truncate"
+            disabled={servo.locked}
             on:input={handleNameInput}
-            on:blur={handleBlur}
+            on:blur={() => recordChange && recordChange()}
             on:click|stopPropagation
           />
         </div>
@@ -127,20 +144,20 @@
     <!-- Right: Controls -->
     <div class="flex items-center gap-1">
       <button
-        title={macro.locked ? "Unlock Macro" : "Lock Macro"}
-        aria-label={macro.locked ? "Unlock Macro" : "Lock Macro"}
+        title={servo.locked ? "Unlock Servo" : "Lock Servo"}
+        aria-label={servo.locked ? "Unlock Servo" : "Lock Servo"}
         on:click|stopPropagation={() => {
-          macro.locked = !macro.locked;
+          servo.locked = !servo.locked;
           if (recordChange) recordChange();
         }}
         class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
       >
-        {#if macro.locked}
+        {#if servo.locked}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="currentColor"
-            class="size-4 text-teal-500"
+            class="size-4 text-amber-500"
           >
             <path
               fill-rule="evenodd"
@@ -160,7 +177,7 @@
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+              d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25 2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
             />
           </svg>
         {/if}
@@ -173,9 +190,9 @@
       >
         <button
           on:click|stopPropagation={() => {
-            if (!macro.locked && canMoveUp && onMoveUp) onMoveUp();
+            if (!servo.locked && canMoveUp && onMoveUp) onMoveUp();
           }}
-          disabled={!canMoveUp || macro.locked}
+          disabled={!canMoveUp || servo.locked}
           class="p-1 rounded-md hover:bg-white dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm hover:shadow"
           title="Move Up"
           aria-label="Move Up"
@@ -195,9 +212,9 @@
         </button>
         <button
           on:click|stopPropagation={() => {
-            if (!macro.locked && canMoveDown && onMoveDown) onMoveDown();
+            if (!servo.locked && canMoveDown && onMoveDown) onMoveDown();
           }}
-          disabled={!canMoveDown || macro.locked}
+          disabled={!canMoveDown || servo.locked}
           class="p-1 rounded-md hover:bg-white dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm hover:shadow"
           title="Move Down"
           aria-label="Move Down"
@@ -219,76 +236,107 @@
 
       <DeleteButtonWithConfirm
         on:click={() => {
-          if (!macro.locked && onRemove) onRemove();
+          if (!servo.locked && onRemove) onRemove();
         }}
-        disabled={macro.locked}
-        title="Remove Macro"
+        disabled={servo.locked}
+        title="Remove Servo Action"
       />
     </div>
   </div>
 
   {#if !collapsed}
     <div class="px-3 pb-3 space-y-4">
-      <!-- File Path Display -->
-      <div class="space-y-1">
-        <div
-          class="text-xs font-semibold text-neutral-500 uppercase tracking-wide"
-        >
-          File Path
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Port -->
+        <div class="space-y-2">
+          <label
+            for="servo-port-{servo.id}"
+            class="text-xs font-semibold text-neutral-500 uppercase tracking-wide block"
+          >
+            Port Name
+          </label>
+          <input
+            id="servo-port-{servo.id}"
+            class="w-full px-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+            value={servo.port}
+            on:input={handlePortInput}
+            placeholder="clawServo"
+            on:click|stopPropagation
+            disabled={servo.locked}
+          />
         </div>
-        <div
-          class="text-xs text-neutral-700 dark:text-neutral-300 break-all bg-neutral-100 dark:bg-neutral-900/50 p-2 rounded border border-neutral-200 dark:border-neutral-700/50"
-        >
-          {macro.filePath}
+
+        <!-- Position -->
+        <div class="space-y-2">
+          <label
+            for="servo-pos-{servo.id}"
+            class="text-xs font-semibold text-neutral-500 uppercase tracking-wide block"
+          >
+            Position (0-1)
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              type="range"
+              class="flex-1 accent-indigo-500"
+              min="0"
+              max="1"
+              step="0.01"
+              value={servo.position}
+              on:input={handlePositionChange}
+              on:click|stopPropagation
+              disabled={servo.locked}
+            />
+            <input
+              id="servo-pos-{servo.id}"
+              class="w-16 px-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+              type="number"
+              min="0"
+              max="1"
+              step="0.01"
+              value={servo.position}
+              on:change={handlePositionChange}
+              on:click|stopPropagation
+              disabled={servo.locked}
+            />
+          </div>
         </div>
       </div>
 
-      <div class="pt-1">
-        <button
-          on:click|stopPropagation={() => (showTransforms = !showTransforms)}
-          disabled={macro.locked}
-          class={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors w-full justify-center border disabled:opacity-50 ${
-            showTransforms
-              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300"
-              : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
-          }`}
+      <!-- Duration Input -->
+      <div class="space-y-2">
+        <label
+          for="servo-duration-{servo.id}"
+          class="text-xs font-semibold text-neutral-500 uppercase tracking-wide block"
         >
+          Duration (ms) <span class="text-neutral-400 font-normal normal-case"
+            >(optional delay)</span
+          >
+        </label>
+        <div class="relative">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="size-3.5 transition-transform duration-200 {showTransforms
-              ? 'rotate-180'
-              : ''}"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400"
           >
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z"
+              clip-rule="evenodd"
             />
           </svg>
-          <div class="flex items-center gap-1.5">
-            <span>Transform Geometry</span>
-            {#if macro.transformations && macro.transformations.length > 0}
-              <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 rounded-full text-[10px]"
-              >
-                {macro.transformations.length}
-              </span>
-            {/if}
-          </div>
-        </button>
-
-        {#if showTransforms}
-          <div transition:slide={{ duration: 200 }} class="mt-2">
-            <MacroTransformControls
-              bind:macro
-              onUpdate={() => recordChange && recordChange()}
-            />
-          </div>
-        {/if}
+          <input
+            id="servo-duration-{servo.id}"
+            class="w-full pl-9 pr-2 py-1.5 text-sm bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+            type="number"
+            min="0"
+            step="50"
+            value={servo.durationMs}
+            on:change={handleDurationChange}
+            on:click|stopPropagation
+            disabled={servo.locked}
+          />
+        </div>
       </div>
 
       <!-- Action Bar -->
@@ -298,16 +346,16 @@
         <span class="text-xs font-medium text-neutral-400 mr-auto"
           >Insert after:</span
         >
-
         {#each Object.values($actionRegistry) as def (def.kind)}
           {#if def.createDefault || def.isPath}
             {@const color = def.buttonColor || "gray"}
             <button
               on:click|stopPropagation={() => {
                 if (onAddAction) onAddAction(def);
-                else if (def.isPath) onAddPathAfter();
-                else if (def.isWait) onAddWaitAfter();
-                else if (def.isRotate) onAddRotateAfter();
+                // Fallbacks if handler not provided (legacy)
+                else if (def.isPath && onAddPathAfter) onAddPathAfter();
+                else if (def.isWait && onAddWaitAfter) onAddWaitAfter();
+                else if (def.isRotate && onAddRotateAfter) onAddRotateAfter();
               }}
               class={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-${color}-50 dark:bg-${color}-900/20 text-${color}-600 dark:text-${color}-400 hover:bg-${color}-100 dark:hover:bg-${color}-900/30 transition-colors border border-${color}-200 dark:border-${color}-800/30`}
               title={`Add ${def.label} After`}

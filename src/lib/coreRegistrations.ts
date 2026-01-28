@@ -8,6 +8,7 @@ import { WaitAction } from "./actions/WaitAction";
 import { RotateAction } from "./actions/RotateAction";
 import { MacroAction } from "./actions/MacroAction";
 import { PathAction } from "./actions/PathAction";
+import { ServoAction } from "./actions/ServoAction";
 
 // Registers built-in components and tabs. Safe to call multiple times; registries dedupe by id.
 export const registerCoreUI = () => {
@@ -23,4 +24,5 @@ export const registerCoreUI = () => {
   actionRegistry.register(WaitAction);
   actionRegistry.register(RotateAction);
   actionRegistry.register(MacroAction);
+  actionRegistry.register(ServoAction);
 };

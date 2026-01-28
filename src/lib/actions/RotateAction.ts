@@ -1,20 +1,44 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import Two from "two.js";
-import type { ActionDefinition, FieldRenderContext, CodeExportContext, JavaCodeResult, TimeCalculationContext, TimeCalculationResult } from "../actionRegistry";
+import type {
+  ActionDefinition,
+  FieldRenderContext,
+  CodeExportContext,
+  JavaCodeResult,
+  TimeCalculationContext,
+  TimeCalculationResult,
+} from "../actionRegistry";
 import RotateTableRow from "../components/table/RotateTableRow.svelte";
+import RotateSection from "../components/sections/RotateSection.svelte";
 import type { SequenceItem, SequenceRotateItem } from "../../types";
 import { POINT_RADIUS } from "../../config";
 import { calculateRotationTime, unwrapAngle } from "../../utils/timeCalculator";
+import { makeId } from "../../utils/nameGenerator";
+
+// Tailwind Safelist for dynamic classes:
+// bg-pink-500 hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-500 focus:ring-pink-200 dark:focus:ring-pink-500
+// bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 hover:bg-pink-100 dark:hover:bg-pink-900/30 border-pink-200 dark:border-pink-800/30
 
 export const RotateAction: ActionDefinition = {
   kind: "rotate",
   label: "Rotate",
+  buttonColor: "pink",
   isRotate: true,
   component: RotateTableRow,
+  sectionComponent: RotateSection,
+
+  createDefault: () => ({
+    kind: "rotate",
+    id: makeId(),
+    name: "",
+    degrees: 0,
+    locked: false,
+  }),
 
   renderField: (item: SequenceItem, context: FieldRenderContext) => {
     const rotateItem = item as SequenceRotateItem;
-    const { timePrediction, x, y, uiLength, hoveredId, selectedPointId } = context;
+    const { timePrediction, x, y, uiLength, hoveredId, selectedPointId } =
+      context;
 
     if (!timePrediction || !timePrediction.timeline) return [];
 
@@ -24,7 +48,8 @@ export const RotateAction: ActionDefinition = {
     timePrediction.timeline.forEach((ev: any) => {
       // Check if this timeline event corresponds to our rotate item
       // Note: Rotate events appear as type "wait" with waitId matching the rotate ID in timeline generation currently
-      if (ev.type !== "wait" || ev.waitId !== rotateItem.id || !ev.atPoint) return;
+      if (ev.type !== "wait" || ev.waitId !== rotateItem.id || !ev.atPoint)
+        return;
 
       // Only render if there are event markers on this rotate
       if (rotateItem.eventMarkers && rotateItem.eventMarkers.length > 0) {
@@ -87,7 +112,10 @@ export const RotateAction: ActionDefinition = {
     return elements;
   },
 
-  toJavaCode: (item: SequenceItem, context: CodeExportContext): JavaCodeResult => {
+  toJavaCode: (
+    item: SequenceItem,
+    context: CodeExportContext,
+  ): JavaCodeResult => {
     const rotateItem = item as SequenceRotateItem;
     const degrees = rotateItem.degrees || 0;
     const radians = (degrees * Math.PI) / 180;
@@ -108,7 +136,10 @@ export const RotateAction: ActionDefinition = {
     return { code, stepsUsed: 2 };
   },
 
-  toSequentialCommand: (item: SequenceItem, context: CodeExportContext): string => {
+  toSequentialCommand: (
+    item: SequenceItem,
+    context: CodeExportContext,
+  ): string => {
     const rotateItem = item as SequenceRotateItem;
     const degrees = rotateItem.degrees || 0;
     const radians = (degrees * Math.PI) / 180;
@@ -117,15 +148,19 @@ export const RotateAction: ActionDefinition = {
     // Define classes based on library
     const InstantCmdClass = "InstantCommand";
     const WaitUntilCmdClass = isNextFTC ? "WaitUntil" : "WaitUntilCommand";
-    const ParallelRaceClass = isNextFTC ? "ParallelRaceGroup" : "ParallelRaceGroup";
-    const SequentialGroupClass = isNextFTC ? "SequentialGroup" : "SequentialCommandGroup";
+    const ParallelRaceClass = isNextFTC
+      ? "ParallelRaceGroup"
+      : "ParallelRaceGroup";
+    const SequentialGroupClass = isNextFTC
+      ? "SequentialGroup"
+      : "SequentialCommandGroup";
 
     const markers: any[] = Array.isArray(rotateItem.eventMarkers)
-        ? [...rotateItem.eventMarkers]
-        : [];
+      ? [...rotateItem.eventMarkers]
+      : [];
 
     if (markers.length === 0) {
-        return `new ${InstantCmdClass}(() -> follower.turnTo(${radians.toFixed(3)})),
+      return `new ${InstantCmdClass}(() -> follower.turnTo(${radians.toFixed(3)})),
                 new ${WaitUntilCmdClass}(() -> !follower.isTurning())`;
     }
 
@@ -138,7 +173,7 @@ export const RotateAction: ActionDefinition = {
 
     // Register remaining markers
     for (let i = 1; i < markers.length; i++) {
-        turnCommand += `
+      turnCommand += `
                         progressTracker.registerEvent("${markers[i].name}", ${markers[i].position.toFixed(3)});`;
     }
     turnCommand += `
@@ -149,8 +184,8 @@ export const RotateAction: ActionDefinition = {
                     new ${SequentialGroupClass}(`;
 
     markers.forEach((marker, idx) => {
-        if (idx > 0) eventSequence += `,`;
-        eventSequence += `
+      if (idx > 0) eventSequence += `,`;
+      eventSequence += `
                         new ${WaitUntilCmdClass}(() -> progressTracker.shouldTriggerEvent("${marker.name}")),
                         new ${InstantCmdClass}(() -> progressTracker.executeEvent("${marker.name}"))`;
     });
@@ -166,7 +201,10 @@ export const RotateAction: ActionDefinition = {
                 ${eventSequence}`;
   },
 
-  calculateTime: (item: SequenceItem, context: TimeCalculationContext): TimeCalculationResult => {
+  calculateTime: (
+    item: SequenceItem,
+    context: TimeCalculationContext,
+  ): TimeCalculationResult => {
     const rotateItem = item as SequenceRotateItem;
     const { currentTime, currentHeading, lastPoint, settings } = context;
 
@@ -176,25 +214,25 @@ export const RotateAction: ActionDefinition = {
     const rotTime = calculateRotationTime(diff, settings);
 
     if (rotTime <= 0) {
-        return { events: [], duration: 0, endHeading: targetHeading };
+      return { events: [], duration: 0, endHeading: targetHeading };
     }
 
     const event = {
-        type: "wait" as const, // Reuse wait type for stationary actions
-        name: rotateItem.name,
-        duration: rotTime,
-        startTime: currentTime,
-        endTime: currentTime + rotTime,
-        waitId: rotateItem.id,
-        startHeading: currentHeading,
-        targetHeading: targetHeading,
-        atPoint: lastPoint,
+      type: "wait" as const, // Reuse wait type for stationary actions
+      name: rotateItem.name,
+      duration: rotTime,
+      startTime: currentTime,
+      endTime: currentTime + rotTime,
+      waitId: rotateItem.id,
+      startHeading: currentHeading,
+      targetHeading: targetHeading,
+      atPoint: lastPoint,
     };
 
     return {
-        events: [event],
-        duration: rotTime,
-        endHeading: targetHeading
+      events: [event],
+      duration: rotTime,
+      endHeading: targetHeading,
     };
-  }
+  },
 };
