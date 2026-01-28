@@ -27,27 +27,60 @@
 
 **Pedro Pathing Visualizer** is a powerful desktop application built with Electron and Svelte, designed to revolutionize how FIRST Robotics Competition teams plan their autonomous routines. Unlike web-based alternatives, this tool runs natively on your machine, offering superior performance, local file management, and deep integration with your development workflow.
 
-## ✨ Features
+## 🌟 Unmatched Features
 
-Experience a comprehensive suite of tools designed for precision and efficiency:
+Pedro Pathing Visualizer isn't just a port of the web tool—it's a complete reimagining of what path planning should be. Here's why you should make the switch:
 
-- **🎨 Visual Path Editing**: Intuitive drag-and-drop interface for creating complex Bezier curves, straight lines, and path chains.
-- **🤖 Advanced Simulation**: Real-time robot physics simulation featuring accurate kinematics, velocity constraints, and acceleration profiles.
-- **⚠️ Obstacle & Collision Detection**: Define custom field obstacles (polygons) and get immediate feedback on potential collisions during path planning.
-- **🔄 Sequence Editor**: Build full autonomous routines by sequencing paths, adding wait times, and triggering event markers.
-- **💾 Local File Management**: Robust system for saving, loading, and organizing `.pp` project files directly on your file system.
-- **📤 Powerful Export Options**:
-  - **Java Code**: Generate full OpModes for the Pedro Pathing library.
-  - **APNG & GIF Export**: Share your path animations with the team using high-quality exported visualizer recordings.
-  - **JSON Export**: Raw data export for custom parsers.
-- **⚡ Productivity Tools**:
-  - **Onion Skinning**: Visualize previous path states for precise adjustments.
-  - **Undo/Redo**: Full history support for mistake-free editing.
-  - **Multi-Window Support**: Open multiple project windows simultaneously.
-- **📏 Precision Tools**: Integrated Ruler, Protractor, and customizable Grid snapping (1" - 24") for exact field positioning.
-- **🛠️ Customization**: Full support for custom field maps, robot sizing, color themes, and adjustable safe margins.
-- **📦 Cross-Platform**: Native, optimized applications for macOS, Windows, and Linux.
-- **♾️ And so, so much more!** Check back often for updates and new features.
+### 🚀 **Next-Level Performance & Workflow**
+- **Native Desktop Experience**: Built with Electron for blazing fast performance. Works offline, supports multiple windows, and integrates with your OS.
+- **Local File System**: Open and save `.pp` files directly on your computer. No more uploading/downloading or losing work to browser cache clears.
+- **Git Integration**: See your file status (Modified, Staged, Untracked) instantly. Version control your paths alongside your robot code.
+- **Auto-Save & History**: Never lose progress with robust Auto-Save and full Undo/Redo support.
+
+### 📊 **Professional Analysis & Simulation**
+- **Telemetry Overlay**: Import real robot log data to see exactly how your path performed on the field compared to the plan.
+- **Advanced Statistics**: View Velocity Graphs, Acceleration profiles, and Timing breakdowns.
+- **Heatmaps**: Visualize robot velocity along the path with color-coded gradients to spot bottlenecks.
+- **Physics-Based Simulation**: Real-time kinematics simulation with accurate velocity constraints and acceleration profiles.
+
+### 🛠️ **Powerful Planning Tools**
+- **File Macros**: Reuse successful path sequences! Drag and drop other `.pp` files to use them as sub-routines (macros) with support for transformations (mirror/reverse).
+- **Smart Validators**:
+  - **Collision Detection**: Real-time feedback on Obstacles and Keep-In Zones.
+  - **Continuous Validation**: Option to check your path's safety in real-time as you edit.
+  - **Diff View**: Visually compare your current changes against the saved version.
+  - **Onion Skinning**: See previous path states to make precise adjustments.
+- **Path Optimizer**: Single-click optimization to refine your paths for maximum speed while respecting field boundaries and obstacles.
+- **Custom Field Maps**: Import any field image with the built-in Calibration Wizard.
+
+### ⚡ **Efficiency Boosters**
+- **Interactive Onboarding**: New to the app? The built-in interactive tutorial will guide you through your first path.
+- **Robot Profile Manager**: Manage multiple robot configurations with unique dimensions and constraints, and switch between them instantly.
+- **Command Palette**: Press `Cmd+K` (or `Ctrl+K`) to instantly search for paths, settings, or commands.
+- **Plugin System**: Extend functionality with community plugins or build your own to add custom tabs and tools.
+- **Presentation Mode**: One-click cleaner interface for demonstrating paths to judges or teammates.
+- **Export Power**:
+  - **Java Code**: Generates `PedroPathingPlus` compliant code.
+  - **Visuals**: Export high-quality **APNG** and **GIF** animations of your paths.
+
+### ✨ **Stunning UI & UX Overhaul**
+We've polished every pixel to make path planning a joy.
+- **Modern Clean Interface**: A complete visual refresh with standardized color-coding (Green for Paths, Amber for Waits, Pink for Rotates) makes complex routines easy to read at a glance.
+- **Responsive Design**: Whether you're on a laptop or a massive monitor, the UI scales perfectly. Mobile-friendly resizing means it even works on smaller screens if you need to check a path on the go.
+- **Intuitive Dialogs**: Redesigned settings and file managers that are easier to navigate and nicer to look at.
+
+### ⚙️ **Under-the-Hood Engineering**
+It's not just about looks—the engine is brand new.
+- **Performance**: Major backend refactoring and optimized field rendering logic mean the app runs smoother, even with complex paths and heavy telemetry data.
+- **Readability**: The codebase has been cleaned up and modernized, making it easier for contributors to add features (and for the app to run without hiccups).
+- **Stability**: Automated testing and continuous validation ensure that the app is reliable when you need it most—at the competition.
+
+### 🎨 **Fully Customizable**
+- **Theming**: Light Mode, Dark Mode, and custom theme plugins.
+- **Keybindings**: Every action is remappable. Custom profiles supported.
+- **Font Sizing**: Adjustable font sizes to suit your preference and screen resolution.
+
+Oh, and so so many little improvements not even included yet! Check back often for a growing list of upgrades!
 
 ## 📥 Installation
 
