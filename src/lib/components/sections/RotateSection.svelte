@@ -65,7 +65,7 @@
         sequence = updateLinkedRotations(sequence, rotate.id);
       }
     }
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Update Rotate Degrees");
   }
 </script>
 

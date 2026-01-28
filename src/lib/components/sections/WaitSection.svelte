@@ -70,7 +70,7 @@
     if (linked) {
       sequence = updateLinkedWaits(sequence, wait.id);
     }
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Update Wait Duration");
   }
 </script>
 

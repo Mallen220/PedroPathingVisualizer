@@ -1016,7 +1016,7 @@
         v.x = Number(v.x.toFixed(3));
         v.y = Number(v.y.toFixed(3));
         shapesStore.set(shapes);
-        recordChange();
+        recordChange("Move Obstacle Vertex (Keyboard)");
       }
     } else if (currentSel.startsWith("event-")) {
       const parts = currentSel.split("-");
@@ -1029,7 +1029,7 @@
         newPos = Math.max(0, Math.min(1, newPos));
         line.eventMarkers[evIdx].position = newPos;
         linesStore.set(lines);
-        recordChange();
+        recordChange("Move Event Marker (Keyboard)");
       }
     }
   }
@@ -1161,7 +1161,7 @@
         item.durationMs = Math.max(0, item.durationMs + delta * 100);
         // Update linked waits so waits that share a name keep the same duration
         sequenceStore.set(updateLinkedWaits(sequence, item.id));
-        recordChange();
+        recordChange("Adjust Wait Duration");
       }
       return;
     }
@@ -1175,7 +1175,7 @@
         const step = 5;
         item.degrees = Number((item.degrees + delta * step).toFixed(2));
         sequenceStore.set(updateLinkedRotations(sequence, item.id));
-        recordChange();
+        recordChange("Adjust Rotation Degrees");
       }
       return;
     }
@@ -1191,7 +1191,7 @@
         newPos = Math.max(0, Math.min(1, newPos));
         line.eventMarkers[evIdx].position = newPos;
         linesStore.set(lines);
-        recordChange();
+        recordChange("Adjust Event Position");
       }
       return;
     }
@@ -1206,7 +1206,7 @@
         newPos = Math.max(0, Math.min(1, newPos));
         line.eventMarkers[lastIdx].position = newPos;
         linesStore.set(lines);
-        recordChange();
+        recordChange("Adjust Event Position");
       }
     }
   }
@@ -1260,7 +1260,7 @@
           degrees: undefined,
         });
       }
-      recordChange();
+      recordChange(`Set Start Heading ${next}`);
       return;
     }
 
@@ -1305,7 +1305,7 @@
         };
       }
       linesStore.set(lines);
-      recordChange();
+      recordChange(`Set Path Heading ${next}`);
     }
   }
 
@@ -1325,7 +1325,7 @@
           ...startPoint,
           reverse: !startPoint.reverse,
         });
-        recordChange();
+        recordChange("Toggle Reverse Start (Keyboard)");
       }
       return;
     }
@@ -1338,7 +1338,7 @@
       if (line.endPoint.heading === "tangential") {
         line.endPoint.reverse = !line.endPoint.reverse;
         linesStore.set(lines);
-        recordChange();
+        recordChange("Toggle Reverse Path");
       }
     }
   }
@@ -1358,7 +1358,7 @@
           return s;
         }),
       );
-      recordChange();
+      recordChange("Toggle Lock Wait (Keyboard)");
       return;
     }
 
@@ -1372,7 +1372,7 @@
           return s;
         }),
       );
-      recordChange();
+      recordChange("Toggle Lock Rotate (Keyboard)");
       return;
     }
 
@@ -1382,7 +1382,7 @@
 
       if (lineNum === 0) {
         startPointStore.update((p) => ({ ...p, locked: !p.locked }));
-        recordChange();
+        recordChange("Toggle Lock Start Point");
         return;
       }
 
@@ -1397,7 +1397,7 @@
         }
         return newLines;
       });
-      recordChange();
+      recordChange("Toggle Lock Path");
       return;
     }
 
@@ -1413,7 +1413,7 @@
         }
         return newLines;
       });
-      recordChange();
+      recordChange("Toggle Lock Path");
     }
   }
 
@@ -1481,7 +1481,7 @@
         x: snap(p.x),
         y: snap(p.y),
       }));
-      recordChange();
+      recordChange("Snap Start Point");
       return;
     }
 
@@ -1496,7 +1496,7 @@
         newLines[lineIdx].endPoint.y = snap(newLines[lineIdx].endPoint.y);
         return newLines;
       });
-      recordChange();
+      recordChange("Snap Path Endpoint");
     } else {
       const cpIdx = ptIdx - 1;
       if (line.controlPoints[cpIdx]) {
@@ -1510,7 +1510,7 @@
           );
           return newLines;
         });
-        recordChange();
+        recordChange("Snap Control Point");
       }
     }
   }
@@ -1519,7 +1519,7 @@
     if (startPoint.locked) return;
     const def = getDefaultStartPoint();
     startPointStore.set(def);
-    recordChange();
+    recordChange("Reset Start Point");
   }
 
   function panToStart() {
@@ -1819,7 +1819,7 @@
     },
     clearObstacles: () => {
       shapesStore.set([]);
-      recordChange();
+      recordChange("Clear Obstacles");
     },
     snapSelection: () => snapSelection(),
     resetStartPoint: () => resetStartPoint(),

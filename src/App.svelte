@@ -618,7 +618,7 @@
   }
 
   function onRecordChange() {
-    recordChange();
+    recordChange("Update Field");
   }
 
   function recordChange(description: string = "Change") {

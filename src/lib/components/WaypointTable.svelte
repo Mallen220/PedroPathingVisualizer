@@ -467,7 +467,7 @@
         ),
       ];
       repairedOnce = true;
-      if (recordChange) recordChange();
+      if (recordChange) recordChange("Repair Sequence");
     }
   }
 
@@ -554,7 +554,7 @@
     ) {
       (item as any).locked = !(item.locked ?? false);
       sequence = [...sequence];
-      if (recordChange) recordChange();
+      if (recordChange) recordChange(`Toggle Lock for ${(item as any).name || item.kind}`);
     }
   }
 
@@ -659,7 +659,7 @@
           label: startPoint.locked ? "Unlock Start Point" : "Lock Start Point",
           onClick: () => {
             startPoint.locked = !startPoint.locked;
-            if (recordChange) recordChange();
+            if (recordChange) recordChange("Toggle Lock Start Point");
           },
         },
         { separator: true },
@@ -1059,7 +1059,7 @@
     sequence = newSeq;
 
     syncLinesToSequence(newSeq);
-    recordChange();
+    recordChange("Reorder Sequence");
   }
 </script>
 
@@ -1453,7 +1453,7 @@
                     on:click|stopPropagation={() => {
                       line.locked = !line.locked;
                       lines = [...lines];
-                      if (recordChange) recordChange();
+                      if (recordChange) recordChange("Toggle Lock Path");
                     }}
                     class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
                     aria-pressed={line.locked}

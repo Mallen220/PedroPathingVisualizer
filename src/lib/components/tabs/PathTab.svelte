@@ -523,7 +523,7 @@
     sequence = [wait, ...sequence];
     selectedPointId.set(`wait-${(wait as any).id}`);
     selectedLineId.set(null);
-    recordChange();
+    recordChange("Add Wait at Start");
   }
 
   export function addRotateAtStart() {
@@ -537,7 +537,7 @@
     sequence = [rotate, ...sequence];
     selectedPointId.set(`rotate-${(rotate as any).id}`);
     selectedLineId.set(null);
-    recordChange();
+    recordChange("Add Rotate at Start");
   }
 
   export function addPathAtStart() {
@@ -574,7 +574,7 @@
       ...collapsedEventMarkers,
     ];
     selectedLineId.set(newLine.id!);
-    recordChange();
+    recordChange("Add Path at Start");
   }
 
   function insertWaitAfter(seqIndex: number) {
