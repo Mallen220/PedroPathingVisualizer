@@ -539,7 +539,7 @@
       // Insert into sequence
       // We need to find where the original line was in the sequence
       const seqIdx = sequence.findIndex(
-        (s) => s.kind === "path" && s.lineId === originalLine.id,
+        (s) => actionRegistry.get(s.kind)?.isPath && (s as any).lineId === originalLine.id,
       );
       if (seqIdx !== -1) {
         sequenceStore.update((s) => {

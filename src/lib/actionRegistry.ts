@@ -45,17 +45,38 @@ export interface TimeCalculationResult {
     endPoint?: Point; // If changed
 }
 
+export interface InsertionContext {
+    index: number;
+    sequence: SequenceItem[];
+    lines: Line[];
+    startPoint: Point;
+    triggerReactivity: () => void; // Call to update stores/UI
+}
+
 export interface ActionDefinition {
   kind: string;
   label: string;
   icon?: string; // SVG string
   description?: string;
 
+  // UI Configuration
+  color?: string; // Tailwind class or hex color
+  showInToolbar?: boolean;
+  button?: {
+      label: string;
+      icon?: string; // SVG string
+  };
+
   // Type Flags
   isPath?: boolean;
   isWait?: boolean;
   isRotate?: boolean;
   isMacro?: boolean;
+
+  /**
+   * Handler for inserting a new item of this type.
+   */
+  onInsert?: (context: InsertionContext) => void;
 
   /**
    * Svelte component to render in the WaypointTable row.
@@ -107,6 +128,10 @@ const createActionRegistry = () => {
     get: (kind: string): ActionDefinition | undefined => {
       const state = get({ subscribe });
       return state[kind];
+    },
+    getAll: (): ActionDefinition[] => {
+        const state = get({ subscribe });
+        return Object.values(state);
     },
     reset: () => set({}),
   };

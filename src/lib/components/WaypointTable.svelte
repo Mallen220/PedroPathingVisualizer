@@ -878,41 +878,27 @@
     }
   }
 
-  function insertWait(index: number) {
-    const newWait: SequenceItem = {
-      kind: "wait",
-      id: makeId(),
-      name: "",
-      durationMs: 1000,
-      locked: false,
-    };
-
-    // Name intentionally left empty for new waypoints
-
-    const newSeq = [...sequence];
-    newSeq.splice(index, 0, newWait);
-    sequence = newSeq;
-    syncLinesToSequence(newSeq);
-    recordChange();
+  function insertAction(kind: string, index: number) {
+      const def = actionRegistry.get(kind);
+      if (def && def.onInsert) {
+          def.onInsert({
+              index,
+              sequence,
+              lines,
+              startPoint,
+              triggerReactivity: () => {
+                  sequence = [...sequence];
+                  lines = renumberDefaultPathNames([...lines]);
+                  recordChange();
+              }
+          });
+      }
   }
 
-  function insertRotate(index: number) {
-    const newRotate: SequenceItem = {
-      kind: "rotate",
-      id: makeId(),
-      name: "",
-      degrees: 0,
-      locked: false,
-    };
-
-    // Name intentionally left empty for new waypoints
-
-    const newSeq = [...sequence];
-    newSeq.splice(index, 0, newRotate);
-    sequence = newSeq;
-    syncLinesToSequence(newSeq);
-    recordChange();
-  }
+  // Wrappers for context menu compatibility (if needed) or can be replaced directly
+  function insertWait(index: number) { insertAction("wait", index); }
+  function insertRotate(index: number) { insertAction("rotate", index); }
+  function insertPath(index: number) { insertAction("path", index); }
 
   function insertMacro(index: number, filePath: string) {
     // Extract name from path
@@ -938,66 +924,6 @@
     loadMacro(filePath);
   }
 
-  function insertPath(index: number) {
-    // Logic similar to insertLineAfter in ControlTab
-    // We need to find where to insert in `lines` array.
-    // If index > 0, find the item at index-1.
-    // If it's a path, insert after that line.
-    // If it's a wait, keep going back until we find a path or start point.
-
-    let insertAfterLineId: string | null = null;
-    let refPoint = startPoint;
-    let heading = "tangential";
-
-    // Find the last path element before insertion point
-    for (let i = index - 1; i >= 0; i--) {
-      if (actionRegistry.get(sequence[i].kind)?.isPath) {
-        insertAfterLineId = (sequence[i] as any).lineId;
-        const l = lines.find((x) => x.id === insertAfterLineId);
-        if (l) {
-          refPoint = l.endPoint;
-          heading = l.endPoint.heading;
-        }
-        break;
-      }
-    }
-
-    // Create new line
-    const newLine: Line = {
-      id: makeId(),
-      name: "",
-      endPoint: {
-        x: Math.max(0, Math.min(144, refPoint.x + 10)), // simple offset
-        y: Math.max(0, Math.min(144, refPoint.y + 10)),
-        heading: "tangential", // default
-        reverse: false,
-      },
-      controlPoints: [],
-      color: getRandomColor(),
-      waitBeforeMs: 0,
-      waitAfterMs: 0,
-      waitBeforeName: "",
-      waitAfterName: "",
-      eventMarkers: [],
-    };
-
-    // If we found a reference line, we insert after it in `lines`.
-    // If not (inserting at start), insert at 0.
-    let lineInsertIdx = 0;
-    if (insertAfterLineId) {
-      const idx = lines.findIndex((l) => l.id === insertAfterLineId);
-      if (idx !== -1) lineInsertIdx = idx + 1;
-    }
-
-    lines.splice(lineInsertIdx, 0, newLine);
-    lines = renumberDefaultPathNames([...lines]);
-
-    const newSeq = [...sequence];
-    newSeq.splice(index, 0, { kind: "path", lineId: newLine.id! });
-    sequence = newSeq;
-
-    recordChange();
-  }
 
   function moveSequenceItem(seqIndex: number, delta: number) {
     const targetIndex = seqIndex + delta;
@@ -1648,72 +1574,19 @@
 
     <!-- Persistent Add Buttons -->
     <div class="flex gap-2 flex-shrink-0">
-      <button
-        on:click={() => insertPath(sequence.length)}
-        class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
-        aria-label="Add new path segment"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="2"
-          stroke="currentColor"
-          class="size-3"
+      {#each actionRegistry.getAll().filter(a => a.showInToolbar) as action}
+        <button
+          on:click={() => insertAction(action.kind, sequence.length)}
+          class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 opacity-90 hover:opacity-100"
+          style="background-color: {action.color}; --tw-ring-color: {action.color};"
+          aria-label={action.button?.label || action.label}
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 4.5v15m7.5-7.5h-15"
-          />
-        </svg>
-        Add Path
-      </button>
-
-      <button
-        on:click={() => insertWait(sequence.length)}
-        class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-amber-500 dark:bg-amber-600 rounded-md shadow-sm hover:bg-amber-600 dark:hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500"
-        aria-label="Add wait command"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          class="size-3"
-        >
-          <circle cx="12" cy="12" r="9" />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 7v5l3 2"
-          />
-        </svg>
-        Add Wait
-      </button>
-
-      <button
-        on:click={() => insertRotate(sequence.length)}
-        class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-pink-500 dark:bg-pink-600 rounded-md shadow-sm hover:bg-pink-600 dark:hover:bg-pink-500 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-500"
-        aria-label="Add rotate command"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          class="size-3"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-          />
-        </svg>
-        Add Rotate
-      </button>
+          {#if action.button?.icon}
+            {@html action.button.icon}
+          {/if}
+          {action.button?.label || action.label}
+        </button>
+      {/each}
     </div>
   </div>
 </div>

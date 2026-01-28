@@ -1,16 +1,36 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 import Two from "two.js";
-import type { ActionDefinition, FieldRenderContext, CodeExportContext, JavaCodeResult, TimeCalculationContext, TimeCalculationResult } from "../actionRegistry";
+import type { ActionDefinition, FieldRenderContext, CodeExportContext, JavaCodeResult, TimeCalculationContext, TimeCalculationResult, InsertionContext } from "../actionRegistry";
 import RotateTableRow from "../components/table/RotateTableRow.svelte";
 import type { SequenceItem, SequenceRotateItem } from "../../types";
 import { POINT_RADIUS } from "../../config";
 import { calculateRotationTime, unwrapAngle } from "../../utils/timeCalculator";
+import { makeId } from "../../utils/nameGenerator";
 
 export const RotateAction: ActionDefinition = {
   kind: "rotate",
   label: "Rotate",
   isRotate: true,
+  color: "#ec4899", // Pink-500
+  showInToolbar: true,
+  button: {
+      label: "Add Rotate",
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-3"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>`
+  },
   component: RotateTableRow,
+
+  onInsert: (ctx: InsertionContext) => {
+      const newRotate: SequenceItem = {
+          kind: "rotate",
+          id: makeId(),
+          name: "",
+          degrees: 0,
+          locked: false,
+      };
+
+      ctx.sequence.splice(ctx.index, 0, newRotate);
+      ctx.triggerReactivity();
+  },
 
   renderField: (item: SequenceItem, context: FieldRenderContext) => {
     const rotateItem = item as SequenceRotateItem;
