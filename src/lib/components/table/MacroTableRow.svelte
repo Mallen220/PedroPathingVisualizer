@@ -1,10 +1,10 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
-  import type { SequenceItem } from "../../../types";
+  import type { SequenceMacroItem, SequenceItem } from "../../../types";
   import TrashIcon from "../icons/TrashIcon.svelte";
   import { focusRequest } from "../../../stores";
 
-  export let item: SequenceItem;
+  export let item: SequenceMacroItem;
   export let index: number;
   export let isLocked: boolean = false;
 
@@ -14,7 +14,7 @@
   export let draggingIndex: number | null = null;
 
   // Interaction callbacks
-  export let onUpdate: (item: SequenceItem) => void;
+  export let onUpdate: (item: SequenceMacroItem) => void;
   export let onLock: () => void;
   export let onDelete: () => void;
   export let onDragStart: (e: DragEvent) => void;

@@ -747,6 +747,11 @@
     }
   }
 
+  // Small helper to wrap handlers and avoid inline typed parameters in markup
+  function addActionAfterFor(idx: number, def: any) {
+    handleAddActionAfter(idx, def);
+  }
+
   // Helper for button classes
   function getButtonColorClass(color: string) {
     return getButtonFilledClass(color);
@@ -839,11 +844,9 @@
             }
             onRemove={() => removeLine(lines.findIndex((l) => l.id === ln.id))}
             onInsertAfter={() => insertLineAfter(sIdx)}
-            onAddWaitAfter={() =>
-              handleAddActionAfter(sIdx, $actionRegistry["wait"])}
-            onAddRotateAfter={() =>
-              handleAddActionAfter(sIdx, $actionRegistry["rotate"])}
-            onAddAction={(d) => handleAddActionAfter(sIdx, d)}
+            onAddWaitAfter={() => handleAddActionAfter(sIdx, $actionRegistry["wait"])}
+            onAddRotateAfter={() => handleAddActionAfter(sIdx, $actionRegistry["rotate"])}
+            onAddAction={addActionAfterFor.bind(null, sIdx)}
             onMoveUp={() => moveSequenceItem(sIdx, -1)}
             onMoveDown={() => moveSequenceItem(sIdx, 1)}
             canMoveUp={sIdx !== 0}
@@ -869,7 +872,7 @@
             handleAddActionAfter(sIdx, $actionRegistry["wait"])}
           onAddRotateAfter={() =>
             handleAddActionAfter(sIdx, $actionRegistry["rotate"])}
-          onAddAction={(d) => handleAddActionAfter(sIdx, d)}
+          onAddAction={addActionAfterFor.bind(null, sIdx)}
           onMoveUp={() => moveSequenceItem(sIdx, -1)}
           onMoveDown={() => moveSequenceItem(sIdx, 1)}
           canMoveUp={sIdx !== 0}

@@ -12,7 +12,7 @@ import { actionRegistry } from "../lib/actionRegistry";
 
 const AUTO_GENERATED_FILE_WARNING_MESSAGE: string = `
 /* ============================================================= *
- *           Pedro Pathing Visualizer — Auto-Generated           *
+ *        Pedro Pathing Plus Visualizer — Auto-Generated         *
  *                                                               *
  *  Version: ${pkg.version}.                                              *
  *  Copyright (c) ${new Date().getFullYear()} Matthew Allen                             *

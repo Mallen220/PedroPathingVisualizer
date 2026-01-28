@@ -7,6 +7,7 @@ import type {
   JavaCodeResult,
   TimeCalculationContext,
   TimeCalculationResult,
+  InsertionContext,
 } from "../actionRegistry";
 import RotateTableRow from "../components/table/RotateTableRow.svelte";
 import RotateSection from "../components/sections/RotateSection.svelte";

@@ -7,6 +7,7 @@ import type {
   JavaCodeResult,
   TimeCalculationContext,
   TimeCalculationResult,
+  InsertionContext,
 } from "../actionRegistry";
 import WaitTableRow from "../components/table/WaitTableRow.svelte";
 import WaitSection from "../components/sections/WaitSection.svelte";

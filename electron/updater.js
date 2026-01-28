@@ -104,7 +104,7 @@ class AppUpdater {
       const result = dialog.showMessageBoxSync(this.mainWindow, {
         type: "info",
         title: "Update Available",
-        message: `A new version of Pedro Pathing Visualizer is available!`,
+        message: `A new version of Pedro Pathing Plus Visualizer is available!`,
         detail: `Current version: ${this.currentVersion}\nLatest version: ${releaseData.tag_name}\n\n\nWould you like to download the update?`,
         buttons: [
           "Download and Install",

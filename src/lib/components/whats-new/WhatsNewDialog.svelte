@@ -783,7 +783,7 @@
             <div
               class="mt-12 text-center text-sm text-neutral-400 dark:text-neutral-600"
             >
-              Pedro Pathing Visualizer v{appVersion}
+              Pedro Pathing Plus Visualizer v{appVersion}
             </div>
           </div>
         {:else if activeTab === "home" && currentView === "release-list"}

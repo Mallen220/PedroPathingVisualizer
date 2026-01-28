@@ -204,7 +204,7 @@
     <div class="flex flex-col">
       <span
         class="font-bold text-lg leading-tight tracking-tight text-neutral-900 dark:text-neutral-100"
-        >Pedro Pathing Visualizer</span
+        >Pedro Pathing Plus Visualizer</span
       >
       {#if $currentFilePath}
         <div

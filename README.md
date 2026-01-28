@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="public/icon.png" alt="Pedro Pathing Visualizer Logo" width="120" height="120">
-  <h1 align="center">Pedro Pathing Visualizer</h1>
+  <img src="public/icon.png" alt="Pedro Pathing Plus Visualizer Logo" width="120" height="120">
+  <h1 align="center">Pedro Pathing Plus Visualizer</h1>
   <p align="center">
     <strong>The modern, intuitive path planner for FIRST Robotics Competition.</strong>
   </p>
@@ -25,11 +25,11 @@
 
 ## 🚀 Overview
 
-**Pedro Pathing Visualizer** is a powerful desktop application built with Electron and Svelte, designed to revolutionize how FIRST Robotics Competition teams plan their autonomous routines. Unlike web-based alternatives, this tool runs natively on your machine, offering superior performance, local file management, and deep integration with your development workflow.
+**Pedro Pathing Plus Visualizer** is a powerful desktop application built with Electron and Svelte, designed to revolutionize how FIRST Robotics Competition teams plan their autonomous routines. Unlike web-based alternatives, this tool runs natively on your machine, offering superior performance, local file management, and deep integration with your development workflow.
 
 ## 🌟 Unmatched Features
 
-Pedro Pathing Visualizer isn't just a port of the web tool—it's a complete reimagining of what path planning should be. Here's why you should make the switch:
+Pedro Pathing Plus Visualizer isn't just a port of the web tool—it's a complete reimagining of what path planning should be. Here's why you should make the switch:
 
 ### 🚀 **Next-Level Performance & Workflow**
 - **Native Desktop Experience**: Built with Electron for blazing fast performance. Works offline, supports multiple windows, and integrates with your OS.
@@ -101,7 +101,7 @@ _Enter your password when prompted to complete installation._
 2.  Mount the DMG and drag the app to your Applications folder.
 3.  **Important**: Run the following command in Terminal to clear the quarantine attribute (prevents "App is damaged" errors):
     ```bash
-    sudo xattr -rd com.apple.quarantine "/Applications/Pedro Pathing Visualizer.app"
+    sudo xattr -rd com.apple.quarantine "/Applications/Pedro Pathing Plus Visualizer.app"
     ```
 4.  Launch the application.
 
@@ -139,7 +139,7 @@ chmod +x Pedro*.AppImage
 
 ## 🗂️ File Management
 
-One of the critical advantages of Pedro Pathing Visualizer over web-based tools is its **Local File Management system**.
+One of the critical advantages of Pedro Pathing Plus Visualizer over web-based tools is its **Local File Management system**.
 
 - **Security & Persistence**: Your paths are saved as actual files (`.pp`) on your hard drive, not in a temporary browser cache that can be accidentally cleared.
 - **Version Control**: You can easily commit your path files to Git alongside your robot code, ensuring your team always has the latest versions.
@@ -179,7 +179,7 @@ The visualizer provides flexible export capabilities to suit your team's workflo
 - **"App is damaged" / Can't Open**:
   Run the quarantine fix command:
   ```bash
-  sudo xattr -rd com.apple.quarantine "/Applications/Pedro Pathing Visualizer.app"
+  sudo xattr -rd com.apple.quarantine "/Applications/Pedro Pathing Plus Visualizer.app"
   ```
 - **Gatekeeper**: If the app is blocked, go to _System Settings > Privacy & Security_ and click "Open Anyway".
 

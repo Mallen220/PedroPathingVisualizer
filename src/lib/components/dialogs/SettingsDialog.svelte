@@ -1569,7 +1569,7 @@
                 {/if}
 
                 <SettingsItem
-                  label="Pedro Pathing Visualizer"
+                  label="Pedro Pathing Plus Visualizer"
                   description={`Version ${appVersion}`}
                   {searchQuery}
                   section
@@ -1583,7 +1583,7 @@
                     <h3
                       class="text-xl font-bold text-neutral-900 dark:text-white"
                     >
-                      Pedro Pathing Visualizer
+                      Pedro Pathing Plus Visualizer
                     </h3>
                     <p
                       class="text-sm text-neutral-500 dark:text-neutral-400 mb-6"

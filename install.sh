@@ -19,7 +19,7 @@ print_logo() {
     echo -e "${PURPLE}"
     echo '╔══════════════════════════════════════════════════════════════╗'
     echo '║                                                              ║'
-    echo '║     Pedro Pathing Visualizer                                 ║'
+    echo '║     Pedro Pathing Plus Visualizer                            ║'
     echo '║                     Installation                             ║'
     echo '║                                                              ║'
     echo '╚══════════════════════════════════════════════════════════════╝'
@@ -238,13 +238,13 @@ patch_deb_desktop_file() {
     
     # Look for the desktop file installed by the deb
     # usually in /usr/share/applications/pedro-pathing-visualizer.desktop
-    DESKTOP_FILE=$(grep -l "Pedro Pathing Visualizer" /usr/share/applications/*.desktop 2>/dev/null | head -n 1)
+    DESKTOP_FILE=$(grep -l -E "Pedro Pathing Visualizer|Pedro Pathing Plus Visualizer" /usr/share/applications/*.desktop 2>/dev/null | head -n 1)
     
     if [ -f "$DESKTOP_FILE" ]; then
         print_status "Found desktop file at $DESKTOP_FILE"
         
         # Read the current Exec line
-        # e.g., Exec=/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer %U
+        # e.g., Exec=/opt/Pedro Pathing Plus Visualizer/pedro-pathing-visualizer %U
         current_exec=$(grep "^Exec=" "$DESKTOP_FILE" | cut -d= -f2-)
         
         # Check if already patched with --no-sandbox
@@ -257,12 +257,12 @@ patch_deb_desktop_file() {
             # A simple heuristic: everything before " %U" or just the whole line if no args.
             # But the issue is specifically spaces in the path not being quoted.
             
-            # Since we know the install path is likely "/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer"
+            # Since we know the install path is likely "/opt/Pedro Pathing Plus Visualizer/pedro-pathing-visualizer"
             # We can try to construct a safe Exec string.
             
             # Let's rely on finding the 'pedro-pathing-visualizer' binary path.
-            # If the current line is: /opt/Pedro Pathing Visualizer/pedro-pathing-visualizer %U
-            # We want: "/opt/Pedro Pathing Visualizer/pedro-pathing-visualizer" --no-sandbox %U
+            # If the current line is: /opt/Pedro Pathing Plus Visualizer/pedro-pathing-visualizer %U
+            # We want: "/opt/Pedro Pathing Plus Visualizer/pedro-pathing-visualizer" --no-sandbox %U
             
             # Strip existing arguments like %U
             clean_path=$(echo "$current_exec" | sed 's/ %U//g' | sed 's/ --no-sandbox//g')
@@ -376,6 +376,11 @@ install_mac() {
         print_status "Removing old version..."
         sudo rm -rf "/Applications/Pedro Pathing Visualizer.app"
     fi
+    # Also remove prior installs that used the new product name (if present)
+    if [ -d "/Applications/Pedro Pathing Plus Visualizer.app" ]; then
+        print_status "Removing prior install (Plus naming)..."
+        sudo rm -rf "/Applications/Pedro Pathing Plus Visualizer.app"
+    fi
 
     print_status "Copying new version..."
     cp -R "$APP_SOURCE" "/Applications/"
@@ -383,8 +388,10 @@ install_mac() {
     rm "$DMG_PATH"
     rm -rf "$TEMP_MOUNT"
 
-    # Fix permissions
-    sudo xattr -rd com.apple.quarantine "/Applications/Pedro Pathing Visualizer.app" 2>/dev/null
+    # Fix permissions: use the actual copied app bundle name (safer than a hardcoded path)
+    APP_BASENAME=$(basename "$APP_SOURCE")
+    sudo xattr -rd com.apple.quarantine "/Applications/$APP_BASENAME" 2>/dev/null
+    print_status "Installation Complete! Look in your Applications folder."
     
     print_status "Installation Complete! Look in your Applications folder."
 }
@@ -460,7 +467,7 @@ install_linux() {
             print_info "Creating desktop entry..."
             cat > "$HOME/.local/share/applications/pedro-visualizer.desktop" << EOL
 [Desktop Entry]
-Name=Pedro Pathing Visualizer
+Name=Pedro Pathing Plus Visualizer
 Exec="$APP_PATH" --no-sandbox
 Icon=pedro-pathing-visualizer
 Type=Application

@@ -43,7 +43,7 @@ jobs:
           cat > base_notes.md << 'EOF'
           ## 🚀 Quick Update
 
-          Refer to the README installation section for instructions on installing or updating Pedro Pathing Visualizer. Below is a condensed version of the instructions for quick reference.
+          Refer to the README installation section for instructions on installing or updating Pedro Pathing Plus Visualizer. Below is a condensed version of the instructions for quick reference.
 
           This repo is regularly updated with new features and bug fixes but tested primarily on macOS. Should an issue arise, please report it via the GitHub Issues page and revert to the previous stable version if needed.
 
@@ -95,7 +95,7 @@ jobs:
           set -e
 
           VERSION="${TAG_NAME#v}"
-          TITLE="Pedro Pathing Visualizer ${VERSION}"
+          TITLE="Pedro Pathing Plus Visualizer ${VERSION}"
 
           # Check for existing release
           RELEASE_JSON=$(gh release view "$TAG_NAME" --json isDraft,uploadUrl 2>/dev/null || true)

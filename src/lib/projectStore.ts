@@ -296,7 +296,7 @@ export async function loadProjectData(data: any, projectFilePath?: string) {
 
   // Also apply name stripping to sequence items (waits)
   const processedSeq = seqCandidate.map((s) => {
-    if (actionRegistry.get(s.kind)?.isWait) {
+    if (s.kind === "wait") {
       const newWait = { ...s };
       const baseName = (newWait as any)._linkedName ?? newWait.name;
       newWait.name = stripSuffix(baseName);
@@ -318,7 +318,7 @@ export async function loadProjectData(data: any, projectFilePath?: string) {
   const api = (window as any).electronAPI;
   const promises: Promise<void>[] = [];
   for (const item of sanitized) {
-    if (actionRegistry.get(item.kind)?.isMacro) {
+    if (item.kind === "macro") {
       if (projectFilePath && api && api.resolvePath) {
         promises.push(
           (async () => {

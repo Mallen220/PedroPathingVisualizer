@@ -827,14 +827,14 @@
     if (sel.startsWith("wait-")) {
       const waitId = sel.substring(5);
       const waitItem = $sequenceStore.find(
-        (s) => actionRegistry.get(s.kind)?.isWait && (s as any).id === waitId,
+        (s) => s.kind === "wait" && (s as any).id === waitId,
       ) as any;
       if (waitItem && waitItem.locked) return; // Don't delete locked waits
 
       sequenceStore.update((s) =>
         s.filter(
           (item) =>
-            !(actionRegistry.get(item.kind)?.isWait && item.id === waitId),
+            !(item.kind === "wait" && item.id === waitId),
         ),
       );
       selectedPointId.set(null);
@@ -845,15 +845,14 @@
     if (sel.startsWith("rotate-")) {
       const rotateId = sel.substring(7);
       const rotateItem = $sequenceStore.find(
-        (s) =>
-          actionRegistry.get(s.kind)?.isRotate && (s as any).id === rotateId,
+        (s) => s.kind === "rotate" && (s as any).id === rotateId,
       ) as any;
       if (rotateItem && rotateItem.locked) return; // Don't delete locked rotates
 
       sequenceStore.update((s) =>
         s.filter(
           (item) =>
-            !(actionRegistry.get(item.kind)?.isRotate && item.id === rotateId),
+            !(item.kind === "rotate" && item.id === rotateId),
         ),
       );
       selectedPointId.set(null);

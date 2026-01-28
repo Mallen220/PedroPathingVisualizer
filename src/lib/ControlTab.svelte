@@ -290,10 +290,10 @@ import { actionRegistry } from "./actionRegistry";
         const def = seqItem ? actionRegistry.get(seqItem.kind) : null;
         if (
           seqItem &&
-          (def?.isWait || def?.isRotate) &&
+          (seqItem.kind === "wait" || seqItem.kind === "rotate") &&
           seqItem.eventMarkers
         ) {
-          seqItem.eventMarkers.forEach((m) => {
+          seqItem.eventMarkers.forEach((m: any) => {
             const timeOffset = ev.duration * m.position;
             const absTime = ev.startTime + timeOffset;
             items.push({

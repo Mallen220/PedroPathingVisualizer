@@ -62,6 +62,15 @@ export interface ActionDefinition {
   // UI Configuration
   buttonColor?: string; // e.g. "amber", "pink", "indigo"
   buttonFilledIcon?: string; // Optional filled icon for buttons
+  // Optional raw color hex for renderers and other quick references
+  color?: string;
+
+  // Toolbar/Button affordances
+  showInToolbar?: boolean;
+  button?: {
+    label?: string;
+    icon?: string;
+  };
 
   // Type Flags
   isPath?: boolean;

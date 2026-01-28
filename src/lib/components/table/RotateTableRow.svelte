@@ -1,11 +1,11 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
-  import type { SequenceItem } from "../../../types";
+  import type { SequenceRotateItem, SequenceItem } from "../../../types";
   import TrashIcon from "../icons/TrashIcon.svelte";
   import { isRotateLinked } from "../../../utils/pointLinking";
   import { focusRequest } from "../../../stores";
 
-  export let item: SequenceItem;
+  export let item: SequenceRotateItem;
   export let index: number;
   export let isLocked: boolean = false;
 
@@ -15,7 +15,7 @@
   export let draggingIndex: number | null = null;
 
   // Interaction callbacks
-  export let onUpdate: (item: SequenceItem) => void;
+  export let onUpdate: (item: SequenceRotateItem) => void;
   export let onLock: () => void;
   export let onDelete: () => void;
   export let onDragStart: (e: DragEvent) => void;
@@ -24,7 +24,7 @@
 
   export let sequence: SequenceItem[] = [];
 
-  $: rotateItem = item as any; // Cast for template usage
+  $: rotateItem = item; // Cast for template usage
 
   function focusOnRequest(
     node: HTMLElement,

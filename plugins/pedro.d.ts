@@ -1,7 +1,7 @@
 // Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 
 /**
- * Type definitions for Pedro Pathing Visualizer Plugins.
+ * Type definitions for Pedro Pathing Plus Visualizer Plugins.
  * These types are automatically available in your .ts plugins.
  *
  * AUTO-GENERATED - DO NOT EDIT MANUALLY
@@ -198,6 +198,12 @@ interface Settings {
   gitIntegration?: boolean; // Enable/Disable Git integration
   obstaclePresets?: ObstaclePreset[]; // User-saved obstacle presets
   showDebugSequence?: boolean; // Developer/debugging aids
+  // Auto Export Settings
+  autoExportCode?: boolean;
+  autoExportPath?: string;
+  autoExportFormat?: "java" | "sequential" | "points" | "json";
+  autoExportTargetLibrary?: "SolversLib" | "NextFTC";
+  autoExportFullClass?: boolean;
 }
 
 interface RobotProfile {

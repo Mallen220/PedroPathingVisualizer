@@ -46,12 +46,12 @@ async function checkGitHubAuth() {
 
 async function createGitHubRelease(version) {
   const tag = `v${version}`;
-  const title = `Pedro Pathing Visualizer ${version}`;
+  const title = `Pedro Pathing Plus Visualizer ${version}`;
 
   // NOTE CONTENT IS UNCHANGED
   let notes = `## 🚀 Quick Update
 
-Refer to the README installation section for instructions on installing or updating Pedro Pathing Visualizer. Below is a condensed version of the instructions for quick reference. 
+Refer to the README installation section for instructions on installing or updating Pedro Pathing Plus Visualizer. Below is a condensed version of the instructions for quick reference. 
 
 This repo is regularly updated with new features and bug fixes but tested primarily on macOS. Should an issue arise, please report it via the GitHub Issues page and revert to the previous stable version if needed.
 
@@ -108,7 +108,7 @@ Download and install via the  \`.exe\` installer below.
 }
 
 async function main() {
-  console.log("Pedro Pathing Visualizer Release Process");
+  console.log("Pedro Pathing Plus Visualizer Release Process");
   console.log("======================================\n");
 
   const rl = readline.createInterface({

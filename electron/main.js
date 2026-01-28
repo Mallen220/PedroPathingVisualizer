@@ -266,7 +266,7 @@ const createWindow = async () => {
   let newWindow = new BrowserWindow({
     width: 1360,
     height: 800,
-    title: "Pedro Pathing Visualizer",
+    title: "Pedro Pathing Plus Visualizer",
     webPreferences: {
       nodeIntegration: false, // Security: Sandbox the web code
       contextIsolation: true, // Security: Sandbox the web code
