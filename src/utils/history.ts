@@ -17,6 +17,11 @@ export type HistoryItem = {
   timestamp: number;
 };
 
+export type HistoryStoreItem = {
+  item: HistoryItem;
+  future: boolean;
+};
+
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
@@ -29,14 +34,35 @@ export function createHistory(maxSize = 200) {
   // Create writable stores to trigger reactivity
   const canUndoStore = writable(false);
   const canRedoStore = writable(false);
-  const historyStore = writable<HistoryItem[]>([]);
+  const historyStore = writable<HistoryStoreItem[]>([]);
 
   function updateStores() {
     canUndoStore.set(undoStack.length > 1);
     canRedoStore.set(redoStack.length > 0);
-    // Reverse for UI (newest first) or keep as is?
-    // The UI can reverse it. Expose raw stack.
-    historyStore.set(undoStack);
+
+    // Construct history list: Newest First
+    // redoStack contains future items. Top of stack is nearest future.
+    // If we undo A->B->C. undo=[A, B], redo=[C].
+    // If we undo B->A. undo=[A], redo=[C, B].
+    // We want to show C (newest), B, A (oldest).
+    // redoStack is [C, B]. So we take it as is.
+    // undoStack is [A]. We reverse it (though with 1 item it's same).
+    // If undoStack was [A, B], we want B then A. So reverse.
+
+    const futureItems = redoStack.map((item) => ({
+      item,
+      future: true,
+    }));
+
+    const pastItems = undoStack
+      .slice()
+      .reverse()
+      .map((item) => ({
+        item,
+        future: false,
+      }));
+
+    historyStore.set([...futureItems, ...pastItems]);
   }
 
   function hash(state: AppState): string {
@@ -120,10 +146,11 @@ export function createHistory(maxSize = 200) {
       let safety = redoStack.length + 1;
       while (
         safety-- > 0 &&
-        canRedo() &&
-        undoStack[undoStack.length - 1].id !== id
+        canRedo()
       ) {
         redo();
+        // Check if we reached the desired state (it is now at top of undoStack)
+        if (undoStack[undoStack.length - 1].id === id) break;
       }
       return peek();
     }

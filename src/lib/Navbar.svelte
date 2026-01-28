@@ -463,22 +463,23 @@
                   No history yet
                 </div>
               {:else}
-                {#each [...$historyStore].reverse() as item, i}
+                {#each $historyStore as entry, i}
                   <button
                     on:click={() => {
-                      history.restore(item.id);
+                      history.restore(entry.item.id);
                       historyOpen = false;
                     }}
-                    class="w-full text-left px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 flex items-center justify-between group {i ===
-                    0
-                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-medium'
-                      : 'text-neutral-700 dark:text-neutral-200'}"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 flex items-center justify-between group {entry.future
+                      ? 'opacity-50 hover:opacity-100 text-neutral-600 dark:text-neutral-400'
+                      : i === 0 && !entry.future // First non-future item is "Current"
+                        ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-medium'
+                        : 'text-neutral-700 dark:text-neutral-200'}"
                   >
-                    <span class="truncate">{item.description}</span>
+                    <span class="truncate">{entry.item.description}</span>
                     <span
                       class="text-xs text-neutral-400 dark:text-neutral-500 ml-2"
                     >
-                      {new Date(item.timestamp).toLocaleTimeString([], {
+                      {new Date(entry.item.timestamp).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",
