@@ -314,13 +314,11 @@
         </button>
       </div>
 
-      {#if lines.length > 1}
-        <DeleteButtonWithConfirm
-          on:click={() => !line.locked && onRemove && onRemove()}
-          disabled={line.locked}
-          title="Delete Path"
-        />
-      {/if}
+      <DeleteButtonWithConfirm
+        on:click={() => !line.locked && onRemove && onRemove()}
+        disabled={line.locked}
+        title="Delete Path"
+      />
     </div>
   </div>
 

@@ -347,7 +347,6 @@
   }
 
   function removeLine(idx: number) {
-    if (lines.length <= 1) return;
     if (lines[idx]?.locked) return;
 
     const removedId = lines[idx]?.id;
@@ -832,6 +831,80 @@
           />
         </svg>
       </div>
+      <div
+        slot="action"
+        class="flex flex-row justify-center items-center gap-3 pt-2"
+      >
+        <button
+          on:click={addLine}
+          title={`Add Path${getShortcutFromSettings(settings, "add-path")}`}
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
+          aria-label="Add new path segment"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="size-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+          Add Path
+        </button>
+
+        <button
+          on:click={addWait}
+          title={`Add Wait${getShortcutFromSettings(settings, "add-wait")}`}
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 dark:bg-amber-600 rounded-md shadow-sm hover:bg-amber-600 dark:hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500"
+          aria-label="Add wait command"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="size-4"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 7v5l3 2"
+            />
+          </svg>
+          Add Wait
+        </button>
+
+        <button
+          on:click={addRotate}
+          title={`Add Rotate${getShortcutFromSettings(settings, "add-rotate")}`}
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-pink-500 dark:bg-pink-600 rounded-md shadow-sm hover:bg-pink-600 dark:hover:bg-pink-500 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-500"
+          aria-label="Add rotate command"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="size-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+            />
+          </svg>
+          Add Rotate
+        </button>
+      </div>
     </EmptyState>
   {/if}
 
@@ -957,73 +1030,79 @@
     </div>
   {/each}
   <!-- Add Buttons at end of list -->
-  <div class="flex flex-row justify-center items-center gap-3 pt-4">
-    <button
-      on:click={addLine}
-      title={`Add Path${getShortcutFromSettings(settings, "add-path")}`}
-      class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
-      aria-label="Add new path segment"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width="2"
-        stroke="currentColor"
-        class="size-4"
+  {#if sequence.length > 0}
+    <div class="flex flex-row justify-center items-center gap-3 pt-4">
+      <button
+        on:click={addLine}
+        title={`Add Path${getShortcutFromSettings(settings, "add-path")}`}
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 dark:bg-green-700 rounded-md shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
+        aria-label="Add new path segment"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M12 4.5v15m7.5-7.5h-15"
-        />
-      </svg>
-      Add Path
-    </button>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+          class="size-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4.5v15m7.5-7.5h-15"
+          />
+        </svg>
+        Add Path
+      </button>
 
-    <button
-      on:click={addWait}
-      title={`Add Wait${getShortcutFromSettings(settings, "add-wait")}`}
-      class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 dark:bg-amber-600 rounded-md shadow-sm hover:bg-amber-600 dark:hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500"
-      aria-label="Add wait command"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        class="size-4"
+      <button
+        on:click={addWait}
+        title={`Add Wait${getShortcutFromSettings(settings, "add-wait")}`}
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 dark:bg-amber-600 rounded-md shadow-sm hover:bg-amber-600 dark:hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500"
+        aria-label="Add wait command"
       >
-        <circle cx="12" cy="12" r="9" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2" />
-      </svg>
-      Add Wait
-    </button>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="size-4"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 7v5l3 2"
+          />
+        </svg>
+        Add Wait
+      </button>
 
-    <button
-      on:click={addRotate}
-      title={`Add Rotate${getShortcutFromSettings(settings, "add-rotate")}`}
-      class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-pink-500 dark:bg-pink-600 rounded-md shadow-sm hover:bg-pink-600 dark:hover:bg-pink-500 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-500"
-      aria-label="Add rotate command"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        class="size-4"
+      <button
+        on:click={addRotate}
+        title={`Add Rotate${getShortcutFromSettings(settings, "add-rotate")}`}
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-pink-500 dark:bg-pink-600 rounded-md shadow-sm hover:bg-pink-600 dark:hover:bg-pink-500 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-500"
+        aria-label="Add rotate command"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-        />
-      </svg>
-      Add Rotate
-    </button>
-  </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="size-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+          />
+        </svg>
+        Add Rotate
+      </button>
+    </div>
+  {/if}
 </div>
 
 <svelte:window on:dragover={handleWindowDragOver} on:drop={handleWindowDrop} />

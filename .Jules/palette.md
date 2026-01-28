@@ -12,3 +12,8 @@ Action: Before optimizing empty states, verify they are actually reachable in th
 
 Learning: Removing default outlines (`focus:outline-none`) on range inputs (`<input type="range">`) to achieve a custom look creates a significant accessibility barrier. Keyboard users cannot see the focus state on the slider thumb.
 Action: Always add explicit `focus-visible` styles (e.g., `focus-visible:ring`) to the slider or its container when removing default outlines.
+
+## 2026-01-28 - Actionable Empty State Implementation
+
+Learning: Successfully implemented actionable empty states in `PathTab` by allowing the last path segment to be deleted. This reveals the empty state which now contains primary actions ("Add Path", "Add Wait", "Add Rotate") directly, guiding the user on how to proceed.
+Action: When designing list views, ensure the "zero items" state is reachable and provides a clear path to adding the first item, rather than forcing a default item that cannot be removed.
