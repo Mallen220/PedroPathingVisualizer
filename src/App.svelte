@@ -1492,6 +1492,8 @@
         {recordChange}
         {canUndo}
         {canRedo}
+        {historyStore}
+        onJumpTo={handleJumpTo}
         on:previewOptimizedLines={handleNavbarPreviewChange}
       />
     </div>
@@ -1618,8 +1620,6 @@
         bind:activeTab={activeControlTab}
         onPreviewChange={handlePreviewChange}
         totalSeconds={effectiveDuration * 1000}
-        {historyStore}
-        onJumpTo={handleJumpTo}
       />
     </div>
   </div>

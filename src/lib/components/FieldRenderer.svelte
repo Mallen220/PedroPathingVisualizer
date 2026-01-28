@@ -1975,7 +1975,30 @@
 
     two.renderer.domElement.addEventListener("mouseup", () => {
       if (isDown) {
-        onRecordChange("Move Point (Field)"); // Notify parent of change
+        // Generate a context-aware description
+        let desc = "Moved Item";
+        if (currentElem?.startsWith("point-")) {
+          const parts = currentElem.split("-");
+          const lineNum = Number(parts[1]);
+          const pointIdx = Number(parts[2]);
+          if (lineNum === 0 && pointIdx === 0) {
+            desc = "Moved Start Point";
+          } else if (lineNum > 0) {
+            const line = lines[lineNum - 1];
+            const name = line.name || `Path ${lineNum}`;
+            if (pointIdx === 0) {
+              desc = `Moved ${name} Endpoint`;
+            } else {
+              desc = `Moved ${name} Control Point ${pointIdx}`;
+            }
+          }
+        } else if (currentElem?.startsWith("obstacle-")) {
+          desc = "Moved Obstacle Vertex";
+        } else if (currentElem?.startsWith("event-")) {
+          desc = "Moved Event Marker";
+        }
+
+        onRecordChange(desc);
       }
       isDown = false;
       isPanning = false;
@@ -2034,7 +2057,7 @@
       const newIdx = $linesStore.length - 1;
       selectedPointId.set(`point-${newIdx + 1}-0`);
 
-      onRecordChange("Add Path (Field)");
+      onRecordChange("Add Path");
     });
   });
 

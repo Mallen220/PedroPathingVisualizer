@@ -46,23 +46,23 @@ def verify_history_panel():
         try:
             # Need to wait for rendering
             time.sleep(1)
-            page.get_by_role("button", name="Add Path").click()
+            page.get_by_role("button", name="Add Path after start").click()
             time.sleep(0.5)
             print("Clicking Add Wait...")
-            page.get_by_role("button", name="Add Wait").click()
+            page.get_by_role("button", name="Add Wait after start").click()
             time.sleep(0.5)
         except Exception as e:
             print(f"Failed to click buttons: {e}")
             page.screenshot(path="debug_click_fail.png")
 
-        # Switch to History Tab
-        print("Switching to History Tab...")
+        # Open History Dropdown
+        print("Opening History Dropdown...")
         try:
-            page.get_by_role("tab", name="History").click()
-            time.sleep(1) # Wait for tab switch
+            page.get_by_role("button", name="History").click()
+            time.sleep(1) # Wait for dropdown animation
         except Exception as e:
-            print(f"Failed to switch tab: {e}")
-            page.screenshot(path="debug_tab_fail.png")
+            print(f"Failed to open history dropdown: {e}")
+            page.screenshot(path="debug_dropdown_fail.png")
             return
 
         # Take screenshot

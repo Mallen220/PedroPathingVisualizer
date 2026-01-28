@@ -169,7 +169,24 @@
     // Trigger reactivity for lines/startPoint
     lines = lines;
     startPoint = startPoint;
-    recordChange("Update Point (Table)");
+
+    let desc = "Update Point";
+    if (lineId) {
+      const line = lines.find((l) => l.id === lineId);
+      if (line) {
+        // Check if it's endpoint or control point
+        if (line.endPoint === point) {
+          desc = `Update ${line.name || "Path"} ${field.toUpperCase()}`;
+        } else {
+          const cpIdx = line.controlPoints.indexOf(point as any);
+          desc = `Update ${line.name || "Path"} CP${cpIdx + 1} ${field.toUpperCase()}`;
+        }
+      }
+    } else if (point === startPoint) {
+      desc = `Update Start Point ${field.toUpperCase()}`;
+    }
+
+    recordChange(desc);
   }
 
   function handleInput(
@@ -187,20 +204,20 @@
 
   function updateLineName(lineId: string, name: string) {
     lines = handleWaypointRename(lines, lineId, name);
-    recordChange("Rename Path");
+    recordChange(`Rename Path to "${name}"`);
   }
 
   function updateWaitName(item: SequenceItem, name: string) {
     if (item.kind === "wait") {
       sequence = handleWaitRename(sequence, item.id, name);
-      recordChange("Rename Wait");
+      recordChange(`Rename Wait to "${name}"`);
     }
   }
 
   function updateRotateName(item: SequenceItem, name: string) {
     if (item.kind === "rotate") {
       sequence = handleRotateRename(sequence, item.id, name);
-      recordChange("Rename Rotate");
+      recordChange(`Rename Rotate to "${name}"`);
     }
   }
 
@@ -209,7 +226,7 @@
     if (line) {
       line.color = color;
       lines = lines; // Trigger reactivity
-      recordChange("Change Path Color");
+      recordChange(`Change Color of ${line.name || "Path"}`);
     }
   }
 
@@ -217,7 +234,7 @@
     if (item.kind === "rotate") {
       item.degrees = degrees;
       sequence = updateLinkedRotations(sequence, item.id);
-      recordChange();
+      recordChange(`Update ${item.name || "Rotate"} Degrees`);
     }
   }
 
@@ -225,7 +242,7 @@
     if (item.kind === "wait") {
       item.durationMs = duration;
       sequence = updateLinkedWaits(sequence, item.id);
-      recordChange();
+      recordChange(`Update ${item.name || "Wait"} Duration`);
     }
   }
 
@@ -233,7 +250,7 @@
     if (item.kind === "macro") {
       item.name = name;
       sequence = [...sequence]; // trigger reactivity
-      recordChange();
+      recordChange(`Rename Macro to "${name}"`);
     }
   }
 
@@ -476,7 +493,7 @@
     selectedLineId.set(null);
     selectedPointId.set(null);
 
-    if (recordChange) recordChange();
+    if (recordChange) recordChange(`Delete ${lines.find(l => l.id === lineId)?.name || "Path"}`);
   }
 
   function deleteControlPoint(line: Line, cpIndex: number) {
@@ -484,7 +501,7 @@
     if (cpIndex >= 0 && cpIndex < line.controlPoints.length) {
       line.controlPoints.splice(cpIndex, 1);
       lines = [...lines];
-      if (recordChange) recordChange();
+      if (recordChange) recordChange(`Delete Control Point from ${line.name || "Path"}`);
       selectedPointId.set(null);
     }
   }
@@ -494,10 +511,11 @@
     if (!item) return;
     if (item.kind === "wait" && item.locked) return;
 
+    const name = (item as any).name || "Wait";
     sequence.splice(index, 1);
     sequence = [...sequence];
     syncLinesToSequence(sequence);
-    if (recordChange) recordChange();
+    if (recordChange) recordChange(`Delete ${name}`);
     selectedPointId.set(null);
   }
 
@@ -506,10 +524,11 @@
     if (!item) return;
     if (item.kind === "rotate" && item.locked) return;
 
+    const name = (item as any).name || "Rotate";
     sequence.splice(index, 1);
     sequence = [...sequence];
     syncLinesToSequence(sequence);
-    if (recordChange) recordChange();
+    if (recordChange) recordChange(`Delete ${name}`);
     selectedPointId.set(null);
   }
 
@@ -518,10 +537,11 @@
     if (!item) return;
     if (item.kind === "macro" && item.locked) return;
 
+    const name = (item as any).name || "Macro";
     sequence.splice(index, 1);
     sequence = [...sequence];
     syncLinesToSequence(sequence);
-    if (recordChange) recordChange();
+    if (recordChange) recordChange(`Delete ${name}`);
     selectedPointId.set(null);
   }
 
@@ -776,7 +796,7 @@
       };
       sequence = newSeq;
     }
-    if (recordChange) recordChange();
+    if (recordChange) recordChange(`Toggle Lock for ${(item as any).name || item.kind}`);
   }
 
   function duplicateItem(seqIndex: number) {
@@ -800,7 +820,7 @@
       const newSeq = [...sequence];
       newSeq.splice(seqIndex + 1, 0, newItem);
       sequence = newSeq;
-      recordChange();
+      recordChange(`Duplicate ${item.name || "Wait"}`);
     } else if (item.kind === "path") {
       // Logic for duplicating path (similar to insertLineAfter but copying properties)
       const line = lines.find((l) => l.id === item.lineId);
@@ -889,7 +909,7 @@
       sequence = newSeq;
 
       lines = renumberDefaultPathNames(lines);
-      recordChange();
+      recordChange(`Duplicate ${line.name || "Path"}`);
     }
   }
 
@@ -908,7 +928,7 @@
     newSeq.splice(index, 0, newWait);
     sequence = newSeq;
     syncLinesToSequence(newSeq);
-    recordChange();
+    recordChange("Insert Wait");
   }
 
   function insertRotate(index: number) {
@@ -926,7 +946,7 @@
     newSeq.splice(index, 0, newRotate);
     sequence = newSeq;
     syncLinesToSequence(newSeq);
-    recordChange();
+    recordChange("Insert Rotate");
   }
 
   function insertMacro(index: number, filePath: string) {
@@ -947,7 +967,7 @@
     newSeq.splice(index, 0, newMacro);
     sequence = newSeq;
     syncLinesToSequence(newSeq);
-    recordChange();
+    recordChange(`Insert Macro ${baseName}`);
 
     // Trigger load
     loadMacro(filePath);
@@ -1011,7 +1031,7 @@
     newSeq.splice(index, 0, { kind: "path", lineId: newLine.id! });
     sequence = newSeq;
 
-    recordChange();
+    recordChange("Insert Path");
   }
 
   function moveSequenceItem(seqIndex: number, delta: number) {
