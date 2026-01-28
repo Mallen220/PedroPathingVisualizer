@@ -24,7 +24,7 @@
   export let onMoveDown: () => void;
   export let canMoveUp: boolean = true;
   export let canMoveDown: boolean = true;
-  export let recordChange: (() => void) | undefined = undefined;
+  export let recordChange: ((description?: string) => void) | undefined = undefined;
 
   $: isSelected = $selectedPointId === `macro-${macro.id}`;
 
@@ -39,7 +39,7 @@
   }
 
   function handleBlur() {
-    if (recordChange) recordChange();
+    if (recordChange) recordChange(`Update Macro ${macro.name || "Name"}`);
   }
 
   let showTransforms = false;
@@ -129,7 +129,7 @@
         aria-label={macro.locked ? "Unlock Macro" : "Lock Macro"}
         on:click|stopPropagation={() => {
           macro.locked = !macro.locked;
-          if (recordChange) recordChange();
+          if (recordChange) recordChange("Update Macro Event");
         }}
         class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
       >
@@ -283,7 +283,7 @@
           <div transition:slide={{ duration: 200 }} class="mt-2">
             <MacroTransformControls
               bind:macro
-              onUpdate={() => recordChange && recordChange()}
+              onUpdate={() => recordChange && recordChange("Update Macro Parameter")}
             />
           </div>
         {/if}

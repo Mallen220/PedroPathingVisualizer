@@ -36,7 +36,7 @@ export function resetPath() {
  * @param recordChange Callback to record the change in history
  */
 export async function handleResetPathWithConfirmation(
-  recordChange?: () => void,
+  recordChange?: (description?: string) => void,
 ) {
   // Autosave on Close Logic
   const settings = get(settingsStore);
@@ -86,6 +86,6 @@ export async function handleResetPathWithConfirmation(
 
   if (confirm(message)) {
     resetPath();
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Reset Project");
   }
 }

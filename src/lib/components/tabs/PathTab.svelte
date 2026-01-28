@@ -102,7 +102,7 @@
         ),
       ];
       repairedSequenceOnce = true;
-      recordChange?.();
+      recordChange?.("Repair Sequence");
     }
   }
 
@@ -215,7 +215,7 @@
       );
       sequence = newSequence;
       syncLinesToSequence(newSequence);
-      recordChange?.();
+      recordChange?.("Reorder Sequence");
     } else if (isMacroDrop) {
       const filePath = e.dataTransfer?.getData("application/x-pedro-macro");
       if (filePath) {
@@ -257,7 +257,7 @@
 
     collapsedSections.macros[macroId] = false;
     collapsedSections = { ...collapsedSections };
-    recordChange?.();
+    recordChange?.(`Add Macro ${name}`);
   }
 
   function handleDragEnd() {
@@ -365,7 +365,7 @@
     collapsedSections.lines.splice(idx, 1);
     collapsedSections.controlPoints.splice(idx, 1);
     collapsedEventMarkers.splice(idx, 1);
-    recordChange();
+    recordChange("Delete Path");
   }
 
   function addLine() {
@@ -392,7 +392,7 @@
     selectedLineId.set(newLine.id!);
     const newIndex = lines.findIndex((l) => l.id === newLine.id!);
     selectedPointId.set(`point-${newIndex + 1}-0`);
-    recordChange();
+    recordChange("Add Path");
   }
 
   function collapseAll() {
@@ -495,7 +495,7 @@
     sequence = [...sequence, wait];
     selectedPointId.set(`wait-${(wait as any).id}`);
     selectedLineId.set(null);
-    recordChange();
+    recordChange("Add Wait");
   }
 
   function addRotate() {
@@ -509,7 +509,7 @@
     sequence = [...sequence, rotate];
     selectedPointId.set(`rotate-${(rotate as any).id}`);
     selectedLineId.set(null);
-    recordChange();
+    recordChange("Add Rotate");
   }
 
   export function addWaitAtStart() {
@@ -633,7 +633,7 @@
 
     collapsedSections = { ...collapsedSections };
     collapsedEventMarkers = [...collapsedEventMarkers];
-    recordChange();
+    recordChange("Insert Path");
   }
 
   function syncLinesToSequence(newSeq: SequenceItem[]) {
@@ -704,7 +704,7 @@
     sequence = newSeq;
 
     syncLinesToSequence(newSeq);
-    recordChange?.();
+    recordChange?.("Reorder Sequence");
   }
 
   function isItemLocked(item: SequenceItem, lines: Line[]): boolean {
@@ -888,7 +888,7 @@
             const newSeq = [...sequence];
             newSeq.splice(sIdx, 1);
             sequence = newSeq;
-            recordChange?.();
+            recordChange?.("Delete Rotate");
           }}
           onInsertAfter={() => insertRotateAfter(sIdx)}
           onAddPathAfter={() => insertPathAfter(sIdx)}
@@ -908,7 +908,7 @@
             const newSeq = [...sequence];
             newSeq.splice(sIdx, 1);
             sequence = newSeq;
-            recordChange?.();
+            recordChange?.("Delete Macro");
           }}
           onInsertAfter={() => {
             // Not implemented for Macro currently in UI buttons, but interface requires it
@@ -931,7 +931,7 @@
             const newSeq = [...sequence];
             newSeq.splice(sIdx, 1);
             sequence = newSeq;
-            recordChange?.();
+            recordChange?.("Delete Wait");
           }}
           onInsertAfter={() => {
             const newSeq = [...sequence];
@@ -943,7 +943,7 @@
               locked: false,
             });
             sequence = newSeq;
-            recordChange?.();
+            recordChange?.("Insert Wait");
           }}
           onAddPathAfter={() => insertPathAfter(sIdx)}
           onAddRotateAfter={() => insertRotateAfter(sIdx)}

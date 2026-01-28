@@ -28,7 +28,7 @@
   export let onInsertAfter: () => void;
   export let onAddWaitAfter: () => void;
   export let onAddRotateAfter: () => void;
-  export let recordChange: () => void;
+  export let recordChange: (description?: string) => void;
   export let onMoveUp: () => void;
   export let onMoveDown: () => void;
   export let canMoveUp: boolean = true;
@@ -179,7 +179,7 @@
             class:text-green-500={hoveredLinkId === line.id}
             disabled={line.locked}
             on:input={handleNameInput}
-            on:blur={() => recordChange && recordChange()}
+            on:blur={() => recordChange && recordChange(`Rename Path to "${line.name}"`)}
             on:click|stopPropagation
           />
           {#if line.id && isLineLinked(lines, line.id)}
@@ -396,7 +396,7 @@
             on:change={() => (lines = [...lines])}
             on:commit={() => {
               lines = [...lines];
-              recordChange();
+              recordChange("Change Path Color");
             }}
           />
         </div>

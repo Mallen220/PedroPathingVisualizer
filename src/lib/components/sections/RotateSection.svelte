@@ -24,7 +24,7 @@
   export let onMoveDown: () => void;
   export let canMoveUp: boolean = true;
   export let canMoveDown: boolean = true;
-  export let recordChange: (() => void) | undefined = undefined;
+  export let recordChange: ((description?: string) => void) | undefined = undefined;
 
   $: isSelected = $selectedPointId === `rotate-${rotate.id}`;
   $: linked = isRotateLinked(sequence, rotate.id);
@@ -52,7 +52,8 @@
   }
 
   function handleBlur() {
-    if (recordChange) recordChange();
+    if (recordChange) recordChange(`Update Rotate ${rotate.name || "Name"}`);
+    if (recordChange) recordChange(`Update Rotate Degrees`);
   }
 
   function handleDegreesChange(e: Event) {
@@ -182,7 +183,7 @@
       <button
         on:click|stopPropagation={() => {
           rotate.locked = !rotate.locked;
-          if (recordChange) recordChange();
+          if (recordChange) recordChange("Update Rotate Event");
         }}
         class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
         title={rotate.locked ? "Unlock Rotate" : "Lock Rotate"}
