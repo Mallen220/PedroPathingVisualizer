@@ -64,10 +64,29 @@ Pedro Pathing Visualizer isn't just a port of the web tool—it's a complete rei
   - **Java Code**: Generates `PedroPathingPlus` compliant code.
   - **Visuals**: Export high-quality **APNG** and **GIF** animations of your paths.
 
+### ✨ **Stunning UI & UX Overhaul**
+We've polished every pixel to make path planning a joy.
+- **Modern Clean Interface**: A complete visual refresh with standardized color-coding (Green for Paths, Amber for Waits, Pink for Rotates) makes complex routines easy to read at a glance.
+- **Responsive Design**: Whether you're on a laptop or a massive monitor, the UI scales perfectly. Mobile-friendly resizing means it even works on smaller screens if you need to check a path on the go.
+- **Intuitive Dialogs**: Redesigned settings and file managers that are easier to navigate and nicer to look at.
+
+### ⚙️ **Under-the-Hood Engineering**
+It's not just about looks—the engine is brand new.
+- **Performance**: Major backend refactoring and optimized field rendering logic mean the app runs smoother, even with complex paths and heavy telemetry data.
+- **Readability**: The codebase has been cleaned up and modernized, making it easier for contributors to add features (and for the app to run without hiccups).
+- **Stability**: Automated testing and continuous validation ensure that the app is reliable when you need it most—at the competition.
+
+### 💎 **Feature Highlights**
+- **Keep-In Zones**: The opposite of obstacles! Define the safe zone for your robot, and the validator will yell at you if you stray outside. Perfect for keeping your robot within field perimeters.
+- **Global Event Markers**: No more hunting for where you put that event. The new Global Event Manager gives you a unified view of every trigger in your routine, making complex sequencing a breeze.
+- **Waypoint Table**:
+  - **Why it's cool**: Sometimes drag-and-drop isn't enough. The Waypoint Table lets you dial in coordinates to the thousandth of an inch.
+  - **Features**: Sticky headers, right-click context menus for power actions, and instant feedback. It turns path planning into precision engineering.
+
 ### 🎨 **Fully Customizable**
 - **Theming**: Light Mode, Dark Mode, and custom theme plugins.
 - **Keybindings**: Every action is remappable. Custom profiles supported.
-- **Responsive UI**: Adjustable font sizes and flexible layouts to suit any screen.
+- **Font Sizing**: Adjustable font sizes to suit your preference and screen resolution.
 
 ## 📥 Installation
 
