@@ -73,7 +73,7 @@
   } from "./utils";
   import { validatePath } from "./utils/validation";
   import { loadSettings, saveSettings } from "./utils/settingsPersistence";
-  import { createHistory, type AppState } from "./utils/history";
+  import { createHistory, type AppState, type HistoryItem } from "./utils/history";
   import {
     saveProject,
     saveFileAs,
@@ -562,11 +562,33 @@
   $: robotLength = settings?.rLength || DEFAULT_ROBOT_LENGTH;
   $: robotWidth = settings?.rWidth || DEFAULT_ROBOT_WIDTH;
 
+  let isLoaded = false;
+  let lastSavedState: string = "";
+
+  function getAppState(): AppState {
+    return {
+      startPoint: get(startPointStore),
+      lines: get(linesStore),
+      shapes: get(shapesStore),
+      sequence: get(sequenceStore),
+      settings: get(settingsStore),
+    };
+  }
+
+  function getCurrentState(): string {
+    return JSON.stringify(getAppState());
+  }
+
   // --- History ---
-  const history = createHistory();
+  const history = createHistory(getAppState());
   const { canUndoStore, canRedoStore } = history;
   $: canUndo = $canUndoStore;
   $: canRedo = $canRedoStore;
+
+  function jumpToState(item: HistoryItem) {
+    history.jumpTo(item);
+    applyState(JSON.parse(item.state));
+  }
 
   // Continuous validation when path/settings change
   $: {
@@ -599,31 +621,14 @@
     }
   }
 
-  let isLoaded = false;
-  let lastSavedState: string = "";
-
-  function getAppState(): AppState {
-    return {
-      startPoint: get(startPointStore),
-      lines: get(linesStore),
-      shapes: get(shapesStore),
-      sequence: get(sequenceStore),
-      settings: get(settingsStore),
-    };
+  function onRecordChange(desc?: string) {
+    recordChange(desc);
   }
 
-  function getCurrentState(): string {
-    return JSON.stringify(getAppState());
-  }
-
-  function onRecordChange() {
-    recordChange();
-  }
-
-  function recordChange() {
+  function recordChange(desc: string = "Change") {
     refreshMacros();
     previewOptimizedLines = null;
-    history.record(getAppState());
+    history.add(getAppState(), desc);
     if (isLoaded) isUnsaved.set(true);
 
     // Autosave on change
@@ -664,20 +669,18 @@
     }
   }
 
-  function undoAction() {
-    const prev = history.undo();
-    if (prev) {
-      startPointStore.set(prev.startPoint);
-      linesStore.set(prev.lines);
-      shapesStore.set(prev.shapes);
-      sequenceStore.set(prev.sequence);
+  function applyState(state: AppState) {
+    if (state) {
+      startPointStore.set(state.startPoint);
+      linesStore.set(state.lines);
+      shapesStore.set(state.shapes);
+      sequenceStore.set(state.sequence);
 
-      // Check for macros that need reloading (e.g. after undoing a reset)
+      // Check for macros that need reloading
       const currentMacros = get(macrosStore);
-      if (prev.sequence) {
-        prev.sequence.forEach((item) => {
+      if (state.sequence) {
+        state.sequence.forEach((item) => {
           if (item.kind === "macro") {
-            // If missing from cache, trigger load
             if (!currentMacros.has(item.filePath)) {
               loadMacro(item.filePath);
             }
@@ -685,57 +688,38 @@
         });
       }
 
-      // Preserve the current onion layer visibility when undoing so that
-      // toggling onion layers isn't overwritten by history operations.
+      // Preserve onion layer visibility
       const currentShowOnion = get(settingsStore).showOnionLayers;
       const preservedShowOnion =
         typeof currentShowOnion === "boolean"
           ? currentShowOnion
-          : prev.settings?.showOnionLayers;
+          : state.settings?.showOnionLayers;
       settingsStore.set({
-        ...prev.settings,
+        ...state.settings,
         showOnionLayers: preservedShowOnion,
       });
 
       const currentState = getCurrentState();
       isUnsaved.set(currentState !== lastSavedState);
-      // FieldRenderer will update reactively via stores
+    }
+  }
+
+  function undoAction() {
+    history.undo();
+    // After undo, the new current state is the last item in undoStack
+    const h = get(history);
+    if (h.undoStack.length > 0) {
+        const current = h.undoStack[h.undoStack.length - 1];
+        applyState(JSON.parse(current.state));
     }
   }
 
   function redoAction() {
-    const next = history.redo();
-    if (next) {
-      startPointStore.set(next.startPoint);
-      linesStore.set(next.lines);
-      shapesStore.set(next.shapes);
-      sequenceStore.set(next.sequence);
-
-      // Check for macros that need reloading
-      const currentMacros = get(macrosStore);
-      if (next.sequence) {
-        next.sequence.forEach((item) => {
-          if (item.kind === "macro") {
-            if (!currentMacros.has(item.filePath)) {
-              loadMacro(item.filePath);
-            }
-          }
-        });
-      }
-
-      // Preserve onion layer visibility when redoing as well.
-      const currentShowOnion = get(settingsStore).showOnionLayers;
-      const preservedShowOnion =
-        typeof currentShowOnion === "boolean"
-          ? currentShowOnion
-          : next.settings?.showOnionLayers;
-      settingsStore.set({
-        ...next.settings,
-        showOnionLayers: preservedShowOnion,
-      });
-
-      const currentState = getCurrentState();
-      isUnsaved.set(currentState !== lastSavedState);
+    history.redo();
+    const h = get(history);
+    if (h.undoStack.length > 0) {
+        const current = h.undoStack[h.undoStack.length - 1];
+        applyState(JSON.parse(current.state));
     }
   }
 
@@ -1454,6 +1438,8 @@
         {recordChange}
         {canUndo}
         {canRedo}
+        historyStore={history}
+        {jumpToState}
         on:previewOptimizedLines={handleNavbarPreviewChange}
       />
     </div>

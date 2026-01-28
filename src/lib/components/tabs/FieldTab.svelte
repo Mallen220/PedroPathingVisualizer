@@ -24,7 +24,7 @@
   export let sequence: SequenceItem[];
   export let shapes: Shape[];
   export let settings: Settings;
-  export let recordChange: () => void;
+  export let recordChange: (desc?: string) => void;
   export let onPreviewChange: ((lines: Line[] | null) => void) | null = null;
   export let isActive: boolean = false;
 
@@ -70,7 +70,7 @@
 
   function handleOptimizationApply(newLines: Line[]) {
     lines = newLines;
-    recordChange?.();
+    recordChange?.("Apply Optimization");
   }
 
   // Exported methods for ControlTab to call
@@ -192,5 +192,6 @@
     bind:collapsedObstacles={collapsedSections.obstacles}
     bind:collapsed={collapsedSections.obstaclesSection}
     {isActive}
+    {recordChange}
   />
 </div>

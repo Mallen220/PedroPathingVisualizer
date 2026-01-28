@@ -1,6 +1,8 @@
 <!-- Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0. -->
 <script lang="ts">
   import type { Point, Line, Shape, Settings, SequenceItem } from "../types";
+  import type { HistoryItem } from "../utils/history";
+  import type { Readable } from "svelte/store";
   import { onMount, onDestroy } from "svelte";
   import {
     showRuler,
@@ -44,9 +46,14 @@
   export let exportGif: () => any;
   export let undoAction: () => any;
   export let redoAction: () => any;
-  export const recordChange: () => any = () => {};
+  export const recordChange: (desc?: string) => any = () => {};
   export let canUndo: boolean;
   export let canRedo: boolean;
+  export let historyStore: Readable<{
+    undoStack: HistoryItem[];
+    redoStack: HistoryItem[];
+  }>;
+  export let jumpToState: (item: HistoryItem) => void;
 
   let shortcutsOpen = false;
   let exportMenuOpen = false;
@@ -56,6 +63,17 @@
   let saveButtonRef: HTMLElement;
   let exportMenuRef: HTMLElement;
   let exportButtonRef: HTMLElement;
+
+  let historyDropdownOpen = false;
+  let historyDropdownRef: HTMLElement;
+  let historyButtonRef: HTMLElement;
+
+  // Compute history items for dropdown (Newest Top)
+  $: historyItems = (() => {
+    if (!$historyStore) return [];
+    const { undoStack, redoStack } = $historyStore;
+    return [...redoStack, ...[...undoStack].reverse()];
+  })();
 
   let selectedGridSize = 12;
   const gridSizeOptions = [1, 3, 6, 12, 24];
@@ -117,6 +135,16 @@
     }
 
     if (
+      historyDropdownOpen &&
+      historyDropdownRef &&
+      !historyDropdownRef.contains(event.target as Node) &&
+      historyButtonRef &&
+      !historyButtonRef.contains(event.target as Node)
+    ) {
+      historyDropdownOpen = false;
+    }
+
+    if (
       exportMenuOpen &&
       exportMenuRef &&
       !exportMenuRef.contains(event.target as Node) &&
@@ -141,6 +169,9 @@
   function handleKeyDown(event: KeyboardEvent) {
     if (saveDropdownOpen && event.key === "Escape") {
       saveDropdownOpen = false;
+    }
+    if (historyDropdownOpen && event.key === "Escape") {
+      historyDropdownOpen = false;
     }
     if (exportMenuOpen && event.key === "Escape") {
       exportMenuOpen = false;
@@ -395,6 +426,83 @@
           />
         </svg>
       </button>
+    </div>
+
+    <!-- History Dropdown -->
+    <div class="relative">
+      <button
+        bind:this={historyButtonRef}
+        on:click={() => (historyDropdownOpen = !historyDropdownOpen)}
+        class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
+        title="History"
+        aria-label="History"
+        aria-haspopup="true"
+        aria-expanded={historyDropdownOpen}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+          class="size-5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
+        </svg>
+      </button>
+
+      {#if historyDropdownOpen}
+        <div
+          bind:this={historyDropdownRef}
+          on:click|stopPropagation
+          on:keydown|stopPropagation
+          use:menuNavigation
+          on:close={() => (historyDropdownOpen = false)}
+          role="menu"
+          tabindex="0"
+          class="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-800 rounded-lg shadow-xl py-1 z-50 border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in-95 duration-100 max-h-[60vh] overflow-y-auto"
+        >
+          <div
+            class="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-700/50"
+          >
+            History
+          </div>
+          {#each historyItems as item}
+            {@const isCurrent =
+              $historyStore.undoStack.length > 0 &&
+              $historyStore.undoStack[$historyStore.undoStack.length - 1].id ===
+                item.id}
+            {@const isFuture = $historyStore.redoStack.some(
+              (i) => i.id === item.id,
+            )}
+            <button
+              on:click={() => {
+                jumpToState(item);
+                historyDropdownOpen = false;
+              }}
+              class="w-full text-left px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 flex items-center justify-between group {isCurrent
+                ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-medium'
+                : 'text-neutral-700 dark:text-neutral-200'} {isFuture
+                ? 'text-neutral-400 dark:text-neutral-500'
+                : ''}"
+            >
+              <span class="truncate">{item.description || "Unknown Action"}</span>
+              {#if isCurrent}
+                <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+              {/if}
+            </button>
+          {/each}
+          {#if historyItems.length === 0}
+            <div class="px-4 py-3 text-sm text-neutral-500 text-center">
+              No history yet
+            </div>
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <div

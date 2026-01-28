@@ -1,96 +1,137 @@
-// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
+import { writable, derived, type Writable } from "svelte/store";
 import type { Point, Line, Shape, SequenceItem, Settings } from "../types";
-import { writable } from "svelte/store";
 
-export type AppState = {
+export interface HistoryItem {
+  id: string;
+  state: string;
+  description: string;
+  timestamp: number;
+}
+
+export interface History {
+  undoStack: HistoryItem[];
+  redoStack: HistoryItem[];
+}
+
+export interface AppState {
   startPoint: Point;
   lines: Line[];
   shapes: Shape[];
   sequence: SequenceItem[];
   settings: Settings;
-};
-
-function deepClone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
 }
 
-export function createHistory(maxSize = 200) {
-  let undoStack: AppState[] = [];
-  let redoStack: AppState[] = [];
-  let lastHash = "";
+export function createHistory(initialState: any) {
+  const store = writable<History>({
+    undoStack: [
+      {
+        id: crypto.randomUUID(),
+        state: JSON.stringify(initialState),
+        description: "Initial State",
+        timestamp: Date.now(),
+      },
+    ],
+    redoStack: [],
+  });
 
-  // Create writable stores to trigger reactivity
-  const canUndoStore = writable(false);
-  const canRedoStore = writable(false);
+  const { subscribe, update, set } = store;
 
-  function updateStores() {
-    canUndoStore.set(undoStack.length > 1);
-    canRedoStore.set(redoStack.length > 0);
-  }
-
-  function hash(state: AppState): string {
-    // Stable hash via JSON string; sufficient for change detection here
-    return JSON.stringify(state);
-  }
-
-  function record(state: AppState) {
-    const snapshot = deepClone(state);
-    const currentHash = hash(snapshot);
-    if (currentHash === lastHash) {
-      // No meaningful change
-      return;
-    }
-    undoStack.push(snapshot);
-    lastHash = currentHash;
-    // Cap stack size
-    if (undoStack.length > maxSize) {
-      undoStack.shift();
-    }
-    // Clear redo on new action
-    redoStack = [];
-    updateStores();
-  }
-
-  function canUndo() {
-    return undoStack.length > 1; // keep initial state; require at least one prior state
-  }
-
-  function canRedo() {
-    return redoStack.length > 0;
-  }
-
-  function undo(): AppState | null {
-    if (!canUndo()) return null;
-    const current = undoStack.pop()!; // current state to redo
-    const prev = undoStack[undoStack.length - 1];
-    redoStack.push(current);
-    lastHash = hash(prev);
-    updateStores();
-    return deepClone(prev);
-  }
-
-  function redo(): AppState | null {
-    if (!canRedo()) return null;
-    const next = redoStack.pop()!;
-    undoStack.push(next);
-    lastHash = hash(next);
-    updateStores();
-    return deepClone(next);
-  }
-
-  function peek(): AppState | null {
-    if (undoStack.length === 0) return null;
-    return deepClone(undoStack[undoStack.length - 1]);
-  }
+  const canUndoStore = derived(store, ($history) => $history.undoStack.length > 1);
+  const canRedoStore = derived(store, ($history) => $history.redoStack.length > 0);
 
   return {
-    record,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    peek,
+    subscribe,
     canUndoStore,
     canRedoStore,
+    add: (state: any, description: string = "Change") =>
+      update((h) => {
+        const newItem: HistoryItem = {
+          id: crypto.randomUUID(),
+          state: JSON.stringify(state),
+          description,
+          timestamp: Date.now(),
+        };
+        return {
+          undoStack: [...h.undoStack, newItem],
+          redoStack: [],
+        };
+      }),
+    undo: () =>
+      update((h) => {
+        if (h.undoStack.length <= 1) return h;
+        const current = h.undoStack[h.undoStack.length - 1];
+        const previous = h.undoStack[h.undoStack.length - 2];
+        return {
+          undoStack: h.undoStack.slice(0, -1),
+          redoStack: [current, ...h.redoStack],
+        };
+      }),
+    redo: () =>
+      update((h) => {
+        if (h.redoStack.length === 0) return h;
+        const next = h.redoStack[0];
+        return {
+          undoStack: [...h.undoStack, next],
+          redoStack: h.redoStack.slice(1),
+        };
+      }),
+    jumpTo: (targetItem: HistoryItem) =>
+      update((h) => {
+        // Check if item is in undoStack (past/current)
+        const undoIndex = h.undoStack.findIndex((i) => i.id === targetItem.id);
+        if (undoIndex !== -1) {
+          // If it's the current state (last in undoStack), do nothing
+          if (undoIndex === h.undoStack.length - 1) return h;
+
+          // We are moving back in time.
+          // Items after undoIndex move to redoStack.
+          // Example: Undo [A, B, C, D]. Jump to B (index 1).
+          // New Undo: [A, B]
+          // Items to move: [C, D]. They should be pushed to Redo.
+          // Redo needs to be [D, C, ...oldRedo] so that Redo() pops D then C.
+          // h.undoStack.slice(undoIndex + 1) gives [C, D].
+          // To put them on Redo stack correctly:
+          // We want Redo Stack to be [C, D].
+          // Because popping from Redo gives the *next* state.
+          // From B, next is C. So C should be top of Redo.
+          // [C, D] is correct order for [top, bottom] if Redo() pops from [0].
+          const toMove = h.undoStack.slice(undoIndex + 1);
+          return {
+            undoStack: h.undoStack.slice(0, undoIndex + 1),
+            redoStack: [...toMove, ...h.redoStack],
+          };
+        }
+
+        // Check if item is in redoStack (future)
+        const redoIndex = h.redoStack.findIndex((i) => i.id === targetItem.id);
+        if (redoIndex !== -1) {
+          // We are moving forward in time.
+          // Items up to and including redoIndex move to undoStack.
+          // Example: Redo [C, D]. Jump to D (index 1).
+          // We need to redo C, then redo D.
+          // Items to move: [C, D].
+          // New Undo: [...oldUndo, C, D].
+          // New Redo: what's left after D.
+          const toMove = h.redoStack.slice(0, redoIndex + 1);
+          return {
+            undoStack: [...h.undoStack, ...toMove],
+            redoStack: h.redoStack.slice(redoIndex + 1),
+          };
+        }
+
+        return h;
+      }),
+    reset: (state: any) =>
+      set({
+        undoStack: [
+          {
+            id: crypto.randomUUID(),
+            state: JSON.stringify(state),
+            description: "Initial State",
+            timestamp: Date.now(),
+          },
+        ],
+        redoStack: [],
+      }),
   };
 }

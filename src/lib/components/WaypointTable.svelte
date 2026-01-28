@@ -52,7 +52,7 @@
   export let startPoint: Point;
   export let lines: Line[];
   export let sequence: SequenceItem[];
-  export let recordChange: () => void;
+  export let recordChange: (desc?: string) => void;
   // Handler passed from parent to toggle optimization dialog
   export let onToggleOptimization: () => void;
   export let onValidate: (() => void) | null = null;
@@ -171,7 +171,7 @@
     // Trigger reactivity for lines/startPoint
     lines = lines;
     startPoint = startPoint;
-    recordChange();
+    recordChange("Move Point");
   }
 
   function handleInput(
@@ -189,20 +189,20 @@
 
   function updateLineName(lineId: string, name: string) {
     lines = handleWaypointRename(lines, lineId, name);
-    recordChange();
+    recordChange("Rename Path");
   }
 
   function updateWaitName(item: SequenceItem, name: string) {
     if (actionRegistry.get(item.kind)?.isWait) {
       sequence = handleWaitRename(sequence, item.id, name);
-      recordChange();
+      recordChange("Rename Wait");
     }
   }
 
   function updateRotateName(item: SequenceItem, name: string) {
     if (actionRegistry.get(item.kind)?.isRotate) {
       sequence = handleRotateRename(sequence, item.id, name);
-      recordChange();
+      recordChange("Rename Rotate");
     }
   }
 
@@ -211,7 +211,7 @@
     if (line) {
       line.color = color;
       lines = lines; // Trigger reactivity
-      recordChange();
+      recordChange("Change Path Color");
     }
   }
 
@@ -219,7 +219,7 @@
     if (actionRegistry.get(item.kind)?.isRotate) {
       item.degrees = degrees;
       sequence = updateLinkedRotations(sequence, item.id);
-      recordChange();
+      recordChange("Modify Rotation");
     }
   }
 
@@ -227,7 +227,7 @@
     if (actionRegistry.get(item.kind)?.isWait) {
       item.durationMs = duration;
       sequence = updateLinkedWaits(sequence, item.id);
-      recordChange();
+      recordChange("Modify Wait Duration");
     }
   }
 
@@ -235,7 +235,7 @@
     if (actionRegistry.get(item.kind)?.isMacro) {
       item.name = name;
       sequence = [...sequence]; // trigger reactivity
-      recordChange();
+      recordChange("Rename Macro");
     }
   }
 
@@ -397,7 +397,7 @@
     );
     sequence = newSequence;
     syncLinesToSequence(newSequence);
-    recordChange();
+    recordChange("Reorder Sequence");
 
     handleDragEnd();
   }
@@ -455,7 +455,7 @@
         ),
       ];
       repairedOnce = true;
-      if (recordChange) recordChange();
+      if (recordChange) recordChange("Repair Sequence");
     }
   }
 
@@ -485,7 +485,7 @@
     selectedLineId.set(null);
     selectedPointId.set(null);
 
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Delete Path");
   }
 
   function deleteControlPoint(line: Line, cpIndex: number) {
@@ -493,7 +493,7 @@
     if (cpIndex >= 0 && cpIndex < line.controlPoints.length) {
       line.controlPoints.splice(cpIndex, 1);
       lines = [...lines];
-      if (recordChange) recordChange();
+      if (recordChange) recordChange("Remove Control Point");
       selectedPointId.set(null);
     }
   }
@@ -512,7 +512,7 @@
     sequence.splice(index, 1);
     sequence = [...sequence];
     syncLinesToSequence(sequence);
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Delete Sequence Item");
     selectedPointId.set(null);
   }
 
@@ -536,7 +536,7 @@
     ) {
       (item as any).locked = !(item.locked ?? false);
       sequence = [...sequence];
-      if (recordChange) recordChange();
+      if (recordChange) recordChange("Toggle Lock");
     }
   }
 
@@ -641,7 +641,7 @@
           label: startPoint.locked ? "Unlock Start Point" : "Lock Start Point",
           onClick: () => {
             startPoint.locked = !startPoint.locked;
-            if (recordChange) recordChange();
+            if (recordChange) recordChange("Toggle Lock");
           },
         },
         { separator: true },
@@ -774,7 +774,7 @@
       };
       sequence = newSeq;
     }
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Toggle Lock");
   }
 
   function duplicateItem(seqIndex: number) {
@@ -800,7 +800,7 @@
       const newSeq = [...sequence];
       newSeq.splice(seqIndex + 1, 0, newItem);
       sequence = newSeq;
-      recordChange();
+      recordChange("Duplicate");
     } else if (def?.isPath) {
       // Logic for duplicating path (similar to insertLineAfter but copying properties)
       const line = lines.find((l) => l.id === (item as any).lineId);
@@ -889,7 +889,7 @@
       sequence = newSeq;
 
       lines = renumberDefaultPathNames(lines);
-      recordChange();
+      recordChange("Duplicate");
     }
   }
 
@@ -904,7 +904,7 @@
               triggerReactivity: () => {
                   sequence = [...sequence];
                   lines = renumberDefaultPathNames([...lines]);
-                  recordChange();
+                  recordChange("Add " + def.label);
               }
           });
       }
@@ -972,7 +972,7 @@
     newSeq.splice(index, 0, { kind: "path", lineId: newLine.id! });
     sequence = newSeq;
 
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Add Path");
   }
 
   function handleAddAction(def: any) {
@@ -984,7 +984,7 @@
       syncLinesToSequence(newSeq);
       if (def.isWait) sequence = updateLinkedWaits(sequence, newItem.id);
       if (def.isRotate) sequence = updateLinkedRotations(sequence, newItem.id);
-      recordChange();
+      recordChange("Add " + def.label);
     }
   }
 
@@ -1010,7 +1010,7 @@
     newSeq.splice(index, 0, newMacro);
     sequence = newSeq;
     syncLinesToSequence(newSeq);
-    recordChange();
+    recordChange("Add Macro");
 
     // Trigger load
     loadMacro(filePath);
@@ -1042,7 +1042,7 @@
     sequence = newSeq;
 
     syncLinesToSequence(newSeq);
-    recordChange();
+    recordChange("Move Sequence Item");
   }
 </script>
 
@@ -1437,7 +1437,7 @@
                     on:click|stopPropagation={() => {
                       line.locked = !line.locked;
                       lines = [...lines];
-                      if (recordChange) recordChange();
+                      if (recordChange) recordChange("Toggle Lock");
                     }}
                     class="inline-flex items-center justify-center h-6 w-6 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
                     aria-pressed={line.locked}
@@ -1598,7 +1598,7 @@
                   // Handle linking for rotate
                   sequence = updateLinkedRotations(sequence, item.id);
                 }
-                recordChange();
+                recordChange("Modify " + def?.label);
               }}
               onLock={() => toggleWaitLock(seqIndex)}
               onDelete={() => deleteSequenceItem(seqIndex)}

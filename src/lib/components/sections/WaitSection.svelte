@@ -30,7 +30,7 @@
   export let onMoveDown: () => void;
   export let canMoveUp: boolean = true;
   export let canMoveDown: boolean = true;
-  export let recordChange: (() => void) | undefined = undefined;
+  export let recordChange: ((desc?: string) => void) | undefined = undefined;
 
   $: isSelected = $selectedPointId === `wait-${wait.id}`;
   $: linked = isWaitLinked(sequence, wait.id);
@@ -58,7 +58,7 @@
   }
 
   function handleBlur() {
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Rename Wait");
   }
 
   function handleDurationChange(e: Event) {
@@ -72,7 +72,7 @@
     if (linked) {
       sequence = updateLinkedWaits(sequence, wait.id);
     }
-    if (recordChange) recordChange();
+    if (recordChange) recordChange("Modify Wait Duration");
   }
 </script>
 
@@ -192,7 +192,7 @@
         aria-label={wait.locked ? "Unlock Wait" : "Lock Wait"}
         on:click|stopPropagation={() => {
           wait.locked = !wait.locked;
-          if (recordChange) recordChange();
+          if (recordChange) recordChange("Toggle Lock");
         }}
         class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
       >

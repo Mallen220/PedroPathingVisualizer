@@ -19,6 +19,7 @@
   export let collapsedObstacles: boolean[];
   export let collapsed: boolean = false;
   export let isActive: boolean = true;
+  export let recordChange: ((desc?: string) => void) | undefined = undefined;
 
   let selectedPresetId: string = "";
   let showSaveDialog = false;
@@ -89,6 +90,7 @@
     shapes = JSON.parse(JSON.stringify(preset.shapes)); // Deep copy
     // Reset collapsed states
     collapsedObstacles = new Array(shapes.length).fill(false);
+    if (recordChange) recordChange("Load Obstacle Preset");
   }
 
   function deletePreset() {
@@ -112,6 +114,7 @@
     collapsedObstacles = [...collapsedObstacles, false];
     // Expand the section if it was collapsed
     if (collapsed) collapsed = false;
+    if (recordChange) recordChange("Add Obstacle");
   }
 
   // React to external additions to shapes (e.g. from keybindings)
@@ -310,6 +313,7 @@
                   on:click={() => {
                     shape.visible = !(shape.visible !== false);
                     shapes = [...shapes];
+                    if (recordChange) recordChange("Toggle Visibility");
                   }}
                   class="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
                 >
@@ -361,6 +365,7 @@
                   on:click={() => {
                     shape.locked = !(shape.locked ?? false);
                     shapes = [...shapes];
+                    if (recordChange) recordChange("Toggle Lock");
                   }}
                   class="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
                 >
@@ -402,6 +407,7 @@
                     // Also remove the collapsed state for this obstacle
                     collapsedObstacles.splice(shapeIdx, 1);
                     collapsedObstacles = [...collapsedObstacles];
+                    if (recordChange) recordChange("Remove Obstacle");
                   }}
                   class="text-neutral-400 hover:text-red-500 transition-colors p-1 disabled:opacity-50 disabled:hover:text-neutral-400"
                   disabled={shape.locked ?? false}
@@ -441,6 +447,7 @@
                             id: `obstacle-${shapeIdx}-${vertexIdx}`,
                             field: "x",
                           }}
+                          on:change={() => recordChange && recordChange("Modify Obstacle")}
                         />
                       </div>
                       <div class="flex items-center gap-1">
@@ -461,6 +468,7 @@
                             id: `obstacle-${shapeIdx}-${vertexIdx}`,
                             field: "y",
                           }}
+                          on:change={() => recordChange && recordChange("Modify Obstacle")}
                         />
                       </div>
                       <!-- {#if $snapToGrid && $showGrid}
@@ -478,6 +486,7 @@
                             const newVertex = { ...vertex };
                             shape.vertices.splice(vertexIdx + 1, 0, newVertex);
                             shape.vertices = shape.vertices;
+                            if (recordChange) recordChange("Add Obstacle Vertex");
                           }}
                           disabled={shape.locked ?? false}
                         >
@@ -503,6 +512,7 @@
                             on:click={() => {
                               shape.vertices.splice(vertexIdx, 1);
                               shape.vertices = shape.vertices;
+                              if (recordChange) recordChange("Remove Obstacle Vertex");
                             }}
                             disabled={shape.locked ?? false}
                           >

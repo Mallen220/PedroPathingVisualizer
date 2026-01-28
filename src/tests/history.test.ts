@@ -19,18 +19,18 @@ describe("createHistory", () => {
   let history: ReturnType<typeof createHistory>;
 
   beforeEach(() => {
-    history = createHistory(5); // Small max size for testing
+    history = createHistory(defaultState);
   });
 
-  it("initializes with empty stacks", () => {
-    expect(history.canUndo()).toBe(false);
-    expect(history.canRedo()).toBe(false);
-    expect(get(history.canUndoStore)).toBe(false);
+  it("initializes with empty stacks (except initial state)", () => {
+    const h = get(history);
+    expect(h.undoStack.length).toBe(1); // Initial state
+    expect(h.redoStack.length).toBe(0);
+    expect(get(history.canUndoStore)).toBe(false); // Length <= 1
     expect(get(history.canRedoStore)).toBe(false);
-    expect(history.peek()).toBeNull();
   });
 
-  it("records a state", () => {
+  it("adds a state", () => {
     const state1 = {
       ...defaultState,
       startPoint: {
@@ -40,58 +40,14 @@ describe("createHistory", () => {
         reverse: false,
       } as Point,
     };
-    history.record(state1);
+    history.add(state1, "State 1");
 
-    expect(history.canUndo()).toBe(false); // Only 1 state, need > 1 to undo
-    expect(history.peek()).toEqual(state1);
-
-    // Record another
-    const state2 = {
-      ...defaultState,
-      startPoint: {
-        x: 20,
-        y: 20,
-        heading: "tangential",
-        reverse: false,
-      } as Point,
-    };
-    history.record(state2);
-
-    expect(history.canUndo()).toBe(true);
-    expect(history.peek()).toEqual(state2);
+    const h = get(history);
+    expect(h.undoStack.length).toBe(2);
     expect(get(history.canUndoStore)).toBe(true);
-  });
 
-  it("ignores duplicate states", () => {
-    const state1 = {
-      ...defaultState,
-      startPoint: {
-        x: 10,
-        y: 10,
-        heading: "tangential",
-        reverse: false,
-      } as Point,
-    };
-    history.record(state1);
-    history.record(state1); // Duplicate
-
-    // Let's verify by adding a distinct state, then duplicate
-    const state2 = {
-      ...defaultState,
-      startPoint: {
-        x: 20,
-        y: 20,
-        heading: "tangential",
-        reverse: false,
-      } as Point,
-    };
-    history.record(state2);
-    history.record(state2);
-
-    expect(history.canUndo()).toBe(true);
-    history.undo();
-    // If duplicate was ignored, we should be back at state1
-    expect(history.peek()).toEqual(state1);
+    const current = JSON.parse(h.undoStack[h.undoStack.length - 1].state);
+    expect(current.startPoint.x).toBe(10);
   });
 
   it("undo restores previous state", () => {
@@ -114,14 +70,20 @@ describe("createHistory", () => {
       } as Point,
     };
 
-    history.record(state1);
-    history.record(state2);
+    history.add(state1, "State 1");
+    history.add(state2, "State 2");
 
-    const restored = history.undo();
-    expect(restored).toEqual(state1);
-    expect(history.peek()).toEqual(state1);
-    expect(history.canUndo()).toBe(false); // Back to 1 state
-    expect(history.canRedo()).toBe(true);
+    history.undo();
+
+    const h = get(history);
+    // Undo stack should have [initial, state1]
+    // Redo stack should have [state2]
+    expect(h.undoStack.length).toBe(2);
+    expect(h.redoStack.length).toBe(1);
+
+    const current = JSON.parse(h.undoStack[h.undoStack.length - 1].state);
+    expect(current.startPoint.x).toBe(10);
+
     expect(get(history.canRedoStore)).toBe(true);
   });
 
@@ -145,109 +107,39 @@ describe("createHistory", () => {
       } as Point,
     };
 
-    history.record(state1);
-    history.record(state2);
+    history.add(state1);
+    history.add(state2);
     history.undo();
 
-    const redoState = history.redo();
-    expect(redoState).toEqual(state2);
-    expect(history.peek()).toEqual(state2);
-    expect(history.canRedo()).toBe(false);
+    history.redo();
+
+    const h = get(history);
+    expect(h.undoStack.length).toBe(3);
+    const current = JSON.parse(h.undoStack[h.undoStack.length - 1].state);
+    expect(current.startPoint.x).toBe(20);
+    expect(get(history.canRedoStore)).toBe(false);
   });
 
   it("clears redo stack on new record", () => {
-    const state1 = {
-      ...defaultState,
-      startPoint: {
-        x: 10,
-        y: 10,
-        heading: "tangential",
-        reverse: false,
-      } as Point,
-    };
-    const state2 = {
-      ...defaultState,
-      startPoint: {
-        x: 20,
-        y: 20,
-        heading: "tangential",
-        reverse: false,
-      } as Point,
-    };
-    const state3 = {
-      ...defaultState,
-      startPoint: {
-        x: 30,
-        y: 30,
-        heading: "tangential",
-        reverse: false,
-      } as Point,
-    };
+    const state1 = { ...defaultState, startPoint: { ...defaultState.startPoint, x: 10 } };
+    const state2 = { ...defaultState, startPoint: { ...defaultState.startPoint, x: 20 } };
+    const state3 = { ...defaultState, startPoint: { ...defaultState.startPoint, x: 30 } };
 
-    history.record(state1);
-    history.record(state2);
+    history.add(state1);
+    history.add(state2);
     history.undo(); // Back to state1, redo stack has state2
 
-    expect(history.canRedo()).toBe(true);
+    expect(get(history.canRedoStore)).toBe(true);
 
-    history.record(state3); // Should clear redo stack
+    history.add(state3); // Should clear redo stack
 
-    expect(history.canRedo()).toBe(false);
     expect(get(history.canRedoStore)).toBe(false);
-
-    // Undo should go to state1
-    expect(history.undo()).toEqual(state1);
+    const h = get(history);
+    const current = JSON.parse(h.undoStack[h.undoStack.length - 1].state);
+    expect(current.startPoint.x).toBe(30);
   });
 
-  it("respects max size", () => {
-    // History initialized with size 5
-    // Add 6 states
-    for (let i = 0; i < 6; i++) {
-      history.record({
-        ...defaultState,
-        startPoint: {
-          x: i,
-          y: 0,
-          heading: "tangential",
-          reverse: false,
-        } as Point,
-      });
-    }
-
-    // Stack should have 5 items: 1, 2, 3, 4, 5. (0 was shifted out)
-    // canUndo() checks if length > 1.
-
-    // Let's undo 4 times to get to the bottom
-    // 5 -> 4
-    expect(history.undo()).toEqual({
-      ...defaultState,
-      startPoint: { x: 4, y: 0, heading: "tangential", reverse: false },
-    });
-    // 4 -> 3
-    expect(history.undo()).toEqual({
-      ...defaultState,
-      startPoint: { x: 3, y: 0, heading: "tangential", reverse: false },
-    });
-    // 3 -> 2
-    expect(history.undo()).toEqual({
-      ...defaultState,
-      startPoint: { x: 2, y: 0, heading: "tangential", reverse: false },
-    });
-    // 2 -> 1
-    expect(history.undo()).toEqual({
-      ...defaultState,
-      startPoint: { x: 1, y: 0, heading: "tangential", reverse: false },
-    });
-
-    // Now at state 1. Stack has [state1]. length is 1. canUndo should be false.
-    expect(history.canUndo()).toBe(false);
-    expect(history.peek()).toEqual({
-      ...defaultState,
-      startPoint: { x: 1, y: 0, heading: "tangential", reverse: false },
-    });
-  });
-
-  it("deep clones state on record and return", () => {
+  it("stores states as strings (deep copy behavior)", () => {
     const mutableState = {
       ...defaultState,
       startPoint: {
@@ -257,18 +149,14 @@ describe("createHistory", () => {
         reverse: false,
       } as Point,
     };
-    history.record(mutableState);
+    history.add(mutableState);
 
     // Modify original object
     mutableState.startPoint.x = 999;
 
     // History should not be affected
-    expect(history.peek()?.startPoint.x).toBe(10);
-
-    // Modify returned object
-    const retrieved = history.peek()!;
-    retrieved.startPoint.x = 888;
-
-    expect(history.peek()?.startPoint.x).toBe(10);
+    const h = get(history);
+    const stored = JSON.parse(h.undoStack[h.undoStack.length - 1].state);
+    expect(stored.startPoint.x).toBe(10);
   });
 });

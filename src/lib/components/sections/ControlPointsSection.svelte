@@ -20,7 +20,7 @@
   export let line: Line;
   export let lineIdx: number;
   export let collapsed: boolean;
-  export let recordChange: () => void;
+  export let recordChange: (desc?: string) => void;
 
   $: snapToGridTitle =
     $snapToGrid && $showGrid ? `Snapping to ${$gridSize} grid` : "No snapping";
@@ -110,7 +110,7 @@
     );
 
     line.controlPoints = newPoints;
-    recordChange();
+    recordChange("Reorder Control Points");
 
     handleDragEnd();
   }
@@ -131,7 +131,7 @@
     newPoints[targetIndex] = temp;
 
     line.controlPoints = newPoints;
-    recordChange();
+    recordChange("Move Control Point");
   }
 </script>
 
@@ -175,7 +175,7 @@
             y: _.random(36, 108),
           },
         ];
-        recordChange();
+        recordChange("Add Control Point");
       }}
       class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded transition-colors"
       title="Add Control Point"
@@ -312,7 +312,7 @@
                   let _pts = line.controlPoints;
                   _pts.splice(idx, 1);
                   line.controlPoints = _pts;
-                  recordChange();
+                  recordChange("Remove Control Point");
                 }}
                 disabled={line.locked}
                 title="Remove Control Point"
