@@ -18,6 +18,7 @@
   import { tooltipPortal } from "../../actions/portal";
   import { onMount, onDestroy } from "svelte";
   import { actionRegistry } from "../../actionRegistry";
+  import { getSmallButtonClass } from "../../../utils/buttonStyles";
 
   export let line: Line;
   export let idx: number;
@@ -429,7 +430,7 @@
                 else if (def.isWait) onAddWaitAfter();
                 else if (def.isRotate) onAddRotateAfter();
               }}
-              class={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-${color}-50 dark:bg-${color}-900/20 text-${color}-600 dark:text-${color}-400 hover:bg-${color}-100 dark:hover:bg-${color}-900/30 transition-colors border border-${color}-200 dark:border-${color}-800/30`}
+              class={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium ${getSmallButtonClass(color)}`}
               title={`Add ${def.label} After`}
             >
               <svg

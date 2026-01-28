@@ -36,6 +36,7 @@
   import { loadMacro } from "../../../lib/projectStore";
   import { getShortcutFromSettings } from "../../../utils";
   import { actionRegistry } from "../../actionRegistry";
+  import { getButtonFilledClass } from "../../../utils/buttonStyles";
   import {
     updateLinkedWaits,
     updateLinkedRotations,
@@ -748,9 +749,7 @@
 
   // Helper for button classes
   function getButtonColorClass(color: string) {
-    if (color === "green")
-      return "bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 focus:ring-green-300 dark:focus:ring-green-700";
-    return `bg-${color}-500 dark:bg-${color}-600 hover:bg-${color}-600 dark:hover:bg-${color}-500 focus:ring-${color}-200 dark:focus:ring-${color}-500`;
+    return getButtonFilledClass(color);
   }
 </script>
 

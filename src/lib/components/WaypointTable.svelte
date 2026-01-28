@@ -47,6 +47,7 @@
   } from "../../utils/pointLinking";
   import { getRandomColor } from "../../utils/draw";
   import { actionRegistry } from "../actionRegistry";
+  import { getButtonFilledClass, getSmallButtonClass } from "../../utils/buttonStyles";
 
   export let startPoint: Point;
   export let lines: Line[];
@@ -909,29 +910,70 @@
       }
   }
 
+  // Generic wrappers for inserting common actions. These delegate to the action registry
+  // so each action's onInsert handler performs the correct mutation and reactivity.
+  function insertWait(index: number) {
+    insertAction("wait", index);
+  }
+
   function insertRotate(index: number) {
-    const newRotate: SequenceItem = {
-      kind: "rotate",
+    insertAction("rotate", index);
+  }
+
+  function insertPath(index: number) {
+    const def = actionRegistry.get("path");
+    if (def && def.onInsert) {
+      insertAction("path", index);
+      return;
+    }
+
+    // Fallback if the action isn't registered yet — replicate PathAction insertion logic locally
+    let insertAfterLineId: string | null = null;
+    let refPoint = startPoint;
+
+    for (let i = index - 1; i >= 0; i--) {
+      if (sequence[i].kind === "path") {
+        insertAfterLineId = (sequence[i] as any).lineId;
+        const l = lines.find((x) => x.id === insertAfterLineId);
+        if (l) refPoint = l.endPoint;
+        break;
+      }
+    }
+
+    const newLine: Line = {
       id: makeId(),
       name: "",
-      degrees: 0,
-      locked: false,
+      endPoint: {
+        x: Math.max(0, Math.min(144, (refPoint.x || 0) + 10)),
+        y: Math.max(0, Math.min(144, (refPoint.y || 0) + 10)),
+        heading: "tangential",
+        reverse: false,
+      },
+      controlPoints: [],
+      color: getRandomColor(),
+      eventMarkers: [],
+      waitBeforeMs: 0,
+      waitAfterMs: 0,
+      waitBeforeName: "",
+      waitAfterName: "",
     };
 
-    // Name intentionally left empty for new waypoints
+    // Compute insertion index in lines
+    let lineInsertIdx = 0;
+    if (insertAfterLineId) {
+      const idx = lines.findIndex((l) => l.id === insertAfterLineId);
+      if (idx !== -1) lineInsertIdx = idx + 1;
+    }
+
+    lines.splice(lineInsertIdx, 0, newLine);
+    lines = renumberDefaultPathNames(lines);
 
     const newSeq = [...sequence];
-    newSeq.splice(index, 0, newRotate);
+    newSeq.splice(index, 0, { kind: "path", lineId: newLine.id! });
     sequence = newSeq;
-    syncLinesToSequence(newSeq);
-    if (def.isWait) sequence = updateLinkedWaits(sequence, newItem.id);
-    if (def.isRotate) sequence = updateLinkedRotations(sequence, newItem.id);
-    recordChange();
+
+    if (recordChange) recordChange();
   }
-  // Wrappers for context menu compatibility (if needed) or can be replaced directly
-  function insertWait(index: number) { insertAction("wait", index); }
-  function insertRotate(index: number) { insertAction("rotate", index); }
-  function insertPath(index: number) { insertAction("path", index); }
 
   function handleAddAction(def: any) {
     if (def.createDefault) {
@@ -947,9 +989,7 @@
   }
 
   function getButtonColorClass(color: string) {
-    if (color === "green")
-      return "bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 focus:ring-green-300 dark:focus:ring-green-700";
-    return `bg-${color}-500 dark:bg-${color}-600 hover:bg-${color}-600 dark:hover:bg-${color}-500 focus:ring-${color}-200 dark:focus:ring-${color}-500`;
+    return getButtonFilledClass(color);
   }
 
   function insertMacro(index: number, filePath: string) {
