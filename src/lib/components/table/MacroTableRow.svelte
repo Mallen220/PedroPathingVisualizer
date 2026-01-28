@@ -50,6 +50,8 @@
     item.name = target.value;
     onUpdate(item);
   }
+
+  $: filePath = (item as any).filePath || "";
 </script>
 
 <tr

@@ -49,6 +49,7 @@
   import { calculatePathTime, getShortcutFromSettings } from "../utils";
   import { tabRegistry, timelineTransformerRegistry } from "./registries";
   import { diffMode } from "./diffStore";
+import { actionRegistry } from "./actionRegistry";
 
   export let percent: number;
   export let playing: boolean;
@@ -211,15 +212,20 @@
         const durPct = toPct(ev.duration);
         let isRotate = false;
         let explicit = undefined as boolean | undefined;
+        let itemName = ev.name || "Wait";
+
         if (ev.waitId) {
           const seqItem = sequence.find((s) => (s as any).id === ev.waitId);
           if (seqItem) {
-            if (seqItem.kind === "rotate") {
+            const def = actionRegistry.get(seqItem.kind);
+            if (def?.isRotate) {
               isRotate = true;
               explicit = true;
-            } else if (seqItem.kind === "wait") {
+              itemName = "Rotate";
+            } else if (def?.isWait) {
               isRotate = false;
               explicit = true;
+              itemName = "Wait";
             }
           }
         }
@@ -229,13 +235,14 @@
         ) {
           isRotate = true;
           explicit = false;
+          itemName = "Rotate";
         }
 
         items.push({
           type: isRotate ? "rotate" : "wait",
           percent: startPct,
           durationPercent: durPct,
-          name: ev.name || (isRotate ? "Rotate" : "Wait"),
+          name: ev.name || itemName,
           explicit: isRotate ? explicit : explicit,
         });
       } else if (ev.type === "macro") {
@@ -280,9 +287,10 @@
     timeline.forEach((ev) => {
       if (ev.type === "wait" && ev.waitId) {
         const seqItem = sequence.find((s) => (s as any).id === ev.waitId);
+        const def = seqItem ? actionRegistry.get(seqItem.kind) : null;
         if (
           seqItem &&
-          (seqItem.kind === "wait" || seqItem.kind === "rotate") &&
+          (def?.isWait || def?.isRotate) &&
           seqItem.eventMarkers
         ) {
           seqItem.eventMarkers.forEach((m) => {

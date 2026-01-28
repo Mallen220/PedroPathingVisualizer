@@ -892,22 +892,21 @@
     }
   }
 
-  function insertWait(index: number) {
-    const newWait: SequenceItem = {
-      kind: "wait",
-      id: makeId(),
-      name: "",
-      durationMs: 1000,
-      locked: false,
-    };
-
-    // Name intentionally left empty for new waypoints
-
-    const newSeq = [...sequence];
-    newSeq.splice(index, 0, newWait);
-    sequence = newSeq;
-    syncLinesToSequence(newSeq);
-    recordChange();
+  function insertAction(kind: string, index: number) {
+      const def = actionRegistry.get(kind);
+      if (def && def.onInsert) {
+          def.onInsert({
+              index,
+              sequence,
+              lines,
+              startPoint,
+              triggerReactivity: () => {
+                  sequence = [...sequence];
+                  lines = renumberDefaultPathNames([...lines]);
+                  recordChange();
+              }
+          });
+      }
   }
 
   function insertRotate(index: number) {
@@ -929,6 +928,10 @@
     if (def.isRotate) sequence = updateLinkedRotations(sequence, newItem.id);
     recordChange();
   }
+  // Wrappers for context menu compatibility (if needed) or can be replaced directly
+  function insertWait(index: number) { insertAction("wait", index); }
+  function insertRotate(index: number) { insertAction("rotate", index); }
+  function insertPath(index: number) { insertAction("path", index); }
 
   function handleAddAction(def: any) {
     if (def.createDefault) {
@@ -973,66 +976,6 @@
     loadMacro(filePath);
   }
 
-  function insertPath(index: number) {
-    // Logic similar to insertLineAfter in ControlTab
-    // We need to find where to insert in `lines` array.
-    // If index > 0, find the item at index-1.
-    // If it's a path, insert after that line.
-    // If it's a wait, keep going back until we find a path or start point.
-
-    let insertAfterLineId: string | null = null;
-    let refPoint = startPoint;
-    let heading = "tangential";
-
-    // Find the last path element before insertion point
-    for (let i = index - 1; i >= 0; i--) {
-      if (actionRegistry.get(sequence[i].kind)?.isPath) {
-        insertAfterLineId = (sequence[i] as any).lineId;
-        const l = lines.find((x) => x.id === insertAfterLineId);
-        if (l) {
-          refPoint = l.endPoint;
-          heading = l.endPoint.heading;
-        }
-        break;
-      }
-    }
-
-    // Create new line
-    const newLine: Line = {
-      id: makeId(),
-      name: "",
-      endPoint: {
-        x: Math.max(0, Math.min(144, refPoint.x + 10)), // simple offset
-        y: Math.max(0, Math.min(144, refPoint.y + 10)),
-        heading: "tangential", // default
-        reverse: false,
-      },
-      controlPoints: [],
-      color: getRandomColor(),
-      waitBeforeMs: 0,
-      waitAfterMs: 0,
-      waitBeforeName: "",
-      waitAfterName: "",
-      eventMarkers: [],
-    };
-
-    // If we found a reference line, we insert after it in `lines`.
-    // If not (inserting at start), insert at 0.
-    let lineInsertIdx = 0;
-    if (insertAfterLineId) {
-      const idx = lines.findIndex((l) => l.id === insertAfterLineId);
-      if (idx !== -1) lineInsertIdx = idx + 1;
-    }
-
-    lines.splice(lineInsertIdx, 0, newLine);
-    lines = renumberDefaultPathNames([...lines]);
-
-    const newSeq = [...sequence];
-    newSeq.splice(index, 0, { kind: "path", lineId: newLine.id! });
-    sequence = newSeq;
-
-    recordChange();
-  }
 
   function moveSequenceItem(seqIndex: number, delta: number) {
     const targetIndex = seqIndex + delta;

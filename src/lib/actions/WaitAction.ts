@@ -14,15 +14,17 @@ import type { SequenceItem, SequenceWaitItem } from "../../types";
 import { POINT_RADIUS } from "../../config";
 import { makeId } from "../../utils/nameGenerator";
 
-// Tailwind Safelist for dynamic classes:
-// bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 focus:ring-amber-200 dark:focus:ring-amber-500
-// bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800/30
-
 export const WaitAction: ActionDefinition = {
   kind: "wait",
   label: "Wait",
   buttonColor: "amber",
   isWait: true,
+  color: "#f59e0b", // Amber-500
+  showInToolbar: true,
+  button: {
+      label: "Add Wait",
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-3"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2" /></svg>`
+  },
   component: WaitTableRow,
   sectionComponent: WaitSection,
 
@@ -33,6 +35,22 @@ export const WaitAction: ActionDefinition = {
     durationMs: 1000,
     locked: false,
   }),
+
+  onInsert: (ctx: InsertionContext) => {
+      const newWait: SequenceItem = {
+          kind: "wait",
+          id: makeId(),
+          name: "",
+          durationMs: 1000,
+          locked: false,
+      };
+
+      ctx.sequence.splice(ctx.index, 0, newWait);
+      // Wait doesn't modify lines, but we need to trigger reactivity
+      // In WaypointTable we called syncLinesToSequence, but wait doesn't affect lines order usually.
+      // Just calling the trigger is enough.
+      ctx.triggerReactivity();
+  },
 
   renderField: (item: SequenceItem, context: FieldRenderContext) => {
     const waitItem = item as SequenceWaitItem;
