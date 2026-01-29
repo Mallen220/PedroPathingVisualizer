@@ -831,6 +831,21 @@ ipcMain.handle("directory:get-saved-directory", async () => {
   return settings.autoPathsDirectory || "";
 });
 
+// Generic directory selection dialog (no side effects)
+ipcMain.handle("dialog:select-directory", async (event, defaultPath) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const options = {
+    properties: ["openDirectory"],
+    title: "Select Directory",
+  };
+  if (defaultPath) {
+    options.defaultPath = defaultPath;
+  }
+  const result = await dialog.showOpenDialog(win, options);
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+});
+
 // Handle app close approval from renderer
 ipcMain.handle("app-close-approved", (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);

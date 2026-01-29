@@ -17,6 +17,7 @@
     showPluginManager,
     showShortcuts,
     startTutorial,
+    currentFilePath,
   } from "../../../stores";
 
   export let isOpen = false;
@@ -400,6 +401,75 @@
       label: m.name || "Custom Field",
     })),
   ];
+
+  function isPathAbsolute(path: string): boolean {
+    if (!path) return false;
+    if (path.startsWith("/")) return true;
+    if (/^[a-zA-Z]:[\\\/]/.test(path)) return true;
+    if (path.startsWith("\\\\")) return true;
+    return false;
+  }
+
+  async function togglePathMode(newMode: "relative" | "absolute") {
+    const currentPath = settings.autoExportPath;
+    const isAbs = isPathAbsolute(currentPath);
+
+    // If already in the desired mode, do nothing
+    if ((newMode === "absolute" && isAbs) || (newMode === "relative" && !isAbs))
+      return;
+
+    const projectPath = $currentFilePath;
+
+    if (!projectPath && newMode === "relative") {
+      alert("Please save the project first to use relative paths.");
+      return;
+    }
+
+    // Since we are running in browser context, we rely on electronAPI for path manips
+    // Note: electronAPI is exposed in preload
+    const api = (window as any).electronAPI;
+    if (!api) return;
+
+    if (newMode === "absolute") {
+      // Convert relative to absolute
+      if (projectPath) {
+        const abs = await api.resolvePath(projectPath, currentPath);
+        settings.autoExportPath = abs;
+      }
+    } else {
+      // Convert absolute to relative
+      if (projectPath) {
+        const rel = await api.makeRelativePath(projectPath, currentPath);
+        settings.autoExportPath = rel;
+      }
+    }
+  }
+
+  async function handleBrowseExportPath() {
+    const api = (window as any).electronAPI;
+    if (!api) return;
+
+    // Open dialog
+    const result = await api.selectDirectory(settings.autoExportPath);
+
+    if (result) {
+      const isAbs = isPathAbsolute(settings.autoExportPath);
+      // If currently relative, try to keep it relative
+      // If currently absolute, keep absolute
+      if (!isAbs) {
+        const projectPath = $currentFilePath;
+        if (projectPath) {
+          const rel = await api.makeRelativePath(projectPath, result);
+          settings.autoExportPath = rel;
+        } else {
+          // If no project path, we can only use absolute
+          settings.autoExportPath = result;
+        }
+      } else {
+        settings.autoExportPath = result;
+      }
+    }
+  }
 </script>
 
 {#if isOpen && !isCustomFieldWizardOpen}
@@ -1309,23 +1379,69 @@
                   <div transition:fade>
                     <SettingsItem
                       label="Export Path"
-                      description="Directory to save exported code (relative to .pp file or absolute)"
+                      description="Directory to save exported code"
                       {searchQuery}
                       layout="col"
                     >
-                      <div class="flex gap-2">
-                        <input
-                          type="text"
-                          bind:value={settings.autoExportPath}
-                          class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                          placeholder="GeneratedCode"
-                        />
+                      <div class="flex flex-col gap-2">
+                        <!-- Path Mode Toggle -->
+                        <div class="flex items-center gap-2 mb-1">
+                          <span
+                            class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                            >Path Mode:</span
+                          >
+                          <div
+                            class="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1 border border-neutral-200 dark:border-neutral-700"
+                          >
+                            <button
+                              class="px-3 py-1 text-xs font-medium rounded-md transition-colors {isPathAbsolute(
+                                settings.autoExportPath,
+                              )
+                                ? 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                                : 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm'}"
+                              on:click={() => togglePathMode("relative")}
+                            >
+                              Relative
+                            </button>
+                            <button
+                              class="px-3 py-1 text-xs font-medium rounded-md transition-colors {isPathAbsolute(
+                                settings.autoExportPath,
+                              )
+                                ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'}"
+                              on:click={() => togglePathMode("absolute")}
+                            >
+                              Absolute
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Path Input and Browse -->
+                        <div class="flex gap-2">
+                          <input
+                            type="text"
+                            bind:value={settings.autoExportPath}
+                            class="flex-1 px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                            placeholder="GeneratedCode"
+                          />
+                          <button
+                            on:click={handleBrowseExportPath}
+                            class="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm font-medium"
+                          >
+                            Browse...
+                          </button>
+                        </div>
                       </div>
                       <div
                         class="text-xs text-neutral-500 dark:text-neutral-400 mt-1"
                       >
-                        Default: 'GeneratedCode' folder in the same directory as
-                        the project file.
+                        {#if isPathAbsolute(settings.autoExportPath)}
+                          Using absolute path. Will always export to this exact
+                          location.
+                        {:else}
+                          Relative to project file. Default: 'GeneratedCode' in
+                          project folder.
+                        {/if}
                       </div>
                     </SettingsItem>
 
