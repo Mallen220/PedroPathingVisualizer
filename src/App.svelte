@@ -23,6 +23,7 @@
   import PluginManagerDialog from "./lib/components/dialogs/PluginManagerDialog.svelte";
   import KeyboardShortcutsDialog from "./lib/components/dialogs/KeyboardShortcutsDialog.svelte";
   import ExportCodeDialog from "./lib/components/dialogs/ExportCodeDialog.svelte";
+import StrategySheetPreview from "./lib/components/dialogs/StrategySheetPreview.svelte";
   import DialogHost from "./lib/components/DialogHost.svelte";
 
   // Stores
@@ -32,6 +33,7 @@
     showSettings,
     isPresentationMode,
     showExportGif,
+  showStrategySheet,
     showShortcuts,
     exportDialogState,
     selectedPointId,
@@ -1329,6 +1331,18 @@
       calculateRobotState(p, timePrediction.timeline, lines, startPoint, x, y)}
     {electronAPI}
     on:close={() => showExportGif.set(false)}
+  />
+{/if}
+
+{#if $showStrategySheet && fieldRenderer}
+  <StrategySheetPreview
+    bind:isOpen={$showStrategySheet}
+    twoInstance={fieldRenderer.getTwoInstance()}
+    startPoint={$startPointStore}
+    lines={$linesStore}
+    sequence={$sequenceStore}
+    settings={$settingsStore}
+    {timePrediction}
   />
 {/if}
 

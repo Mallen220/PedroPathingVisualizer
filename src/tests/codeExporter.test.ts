@@ -6,6 +6,10 @@ import {
   generateSequentialCommandCode,
 } from "../utils/codeExporter";
 import type { Point, Line, SequenceItem } from "../types";
+import { registerCoreUI } from "../lib/coreRegistrations";
+
+// Register actions for tests
+registerCoreUI();
 
 // Mock prettier to just return the code as-is or with simple modification
 vi.mock("prettier", () => ({
