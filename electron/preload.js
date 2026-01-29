@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getAppDataPath: () => ipcRenderer.invoke("app:get-app-data-path"),
   getDirectory: () => ipcRenderer.invoke("file:get-directory"),
   setDirectory: () => ipcRenderer.invoke("file:set-directory"),
+  selectDirectory: (defaultPath) => ipcRenderer.invoke("dialog:select-directory", defaultPath),
   listFiles: (directory) => ipcRenderer.invoke("file:list", directory),
   readFile: (filePath) => ipcRenderer.invoke("file:read", filePath),
   writeFile: (filePath, content) =>
