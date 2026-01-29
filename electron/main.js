@@ -816,6 +816,19 @@ ipcMain.handle("file:set-directory", async (event) => {
   return null;
 });
 
+ipcMain.handle("file:select-directory", async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const result = await dialog.showOpenDialog(win, {
+    properties: ["openDirectory"],
+    title: "Select Directory",
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0];
+  }
+  return null;
+});
+
 // Add new IPC handlers for directory settings
 ipcMain.handle("directory:get-settings", async () => {
   return await loadDirectorySettings();

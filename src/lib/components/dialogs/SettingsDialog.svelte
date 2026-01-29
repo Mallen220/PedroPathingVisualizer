@@ -17,6 +17,8 @@
     showPluginManager,
     showShortcuts,
     startTutorial,
+    currentFilePath,
+    currentDirectoryStore,
   } from "../../../stores";
 
   export let isOpen = false;
@@ -391,6 +393,63 @@
       }
       settings = { ...settings };
     }
+  }
+
+  function getBasePath(): string | null {
+    if ($currentFilePath) return $currentFilePath;
+    if ($currentDirectoryStore) return $currentDirectoryStore + "/placeholder.pp";
+    return null;
+  }
+
+  async function handleBrowse() {
+    const electronAPI = (window as any).electronAPI;
+    if (!electronAPI || !electronAPI.selectDirectory) return;
+
+    const path = await electronAPI.selectDirectory();
+    if (path) {
+      const base = getBasePath();
+      if (settings.autoExportPathMode === "relative" && base) {
+        settings.autoExportPath = await electronAPI.makeRelativePath(
+          base,
+          path,
+        );
+      } else {
+        settings.autoExportPath = path;
+      }
+    }
+  }
+
+  async function handleModeChange(newMode: "relative" | "absolute") {
+    const electronAPI = (window as any).electronAPI;
+    // Current mode defaults to 'relative' if undefined
+    const currentMode = settings.autoExportPathMode || "relative";
+
+    if (currentMode === newMode) return;
+
+    const base = getBasePath();
+
+    if (
+      electronAPI &&
+      base &&
+      settings.autoExportPath &&
+      settings.autoExportPath.trim() !== ""
+    ) {
+      if (newMode === "absolute") {
+        // Convert relative to absolute
+        settings.autoExportPath = await electronAPI.resolvePath(
+          base,
+          settings.autoExportPath,
+        );
+      } else if (newMode === "relative") {
+        // Convert absolute to relative
+        settings.autoExportPath = await electronAPI.makeRelativePath(
+          base,
+          settings.autoExportPath,
+        );
+      }
+    }
+
+    settings.autoExportPathMode = newMode;
   }
 
   $: availableMaps = [
@@ -1308,8 +1367,38 @@
                 {#if settings.autoExportCode}
                   <div transition:fade>
                     <SettingsItem
+                      label="Export Path Mode"
+                      description="How the path is stored relative to the project file"
+                      {searchQuery}
+                      layout="row"
+                    >
+                      <div
+                        class="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg border border-neutral-200 dark:border-neutral-700"
+                      >
+                        <button
+                          class="px-3 py-1 text-xs font-medium rounded-md transition-all {settings.autoExportPathMode ===
+                            'relative' || !settings.autoExportPathMode
+                            ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                            : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}"
+                          on:click={() => handleModeChange("relative")}
+                        >
+                          Relative
+                        </button>
+                        <button
+                          class="px-3 py-1 text-xs font-medium rounded-md transition-all {settings.autoExportPathMode ===
+                          'absolute'
+                            ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                            : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}"
+                          on:click={() => handleModeChange("absolute")}
+                        >
+                          Absolute
+                        </button>
+                      </div>
+                    </SettingsItem>
+
+                    <SettingsItem
                       label="Export Path"
-                      description="Directory to save exported code (relative to .pp file or absolute)"
+                      description="Directory to save exported code"
                       {searchQuery}
                       layout="col"
                     >
@@ -1320,12 +1409,37 @@
                           class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                           placeholder="GeneratedCode"
                         />
+                        <button
+                          on:click={handleBrowse}
+                          class="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md text-neutral-700 dark:text-neutral-300 transition-colors"
+                          title="Browse Directory"
+                        >
+                          <!-- Folder Icon -->
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width={1.5}
+                            stroke="currentColor"
+                            class="size-5"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
+                            />
+                          </svg>
+                        </button>
                       </div>
                       <div
                         class="text-xs text-neutral-500 dark:text-neutral-400 mt-1"
                       >
-                        Default: 'GeneratedCode' folder in the same directory as
-                        the project file.
+                        {#if settings.autoExportPathMode === "absolute"}
+                          Absolute path to the export directory.
+                        {:else}
+                          Relative to the project file location. Default:
+                          'GeneratedCode'.
+                        {/if}
                       </div>
                     </SettingsItem>
 
