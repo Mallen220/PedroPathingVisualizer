@@ -1139,6 +1139,39 @@ ipcMain.handle("file:make-relative-path", (event, base, target) => {
   }
 });
 
+// Print to PDF
+ipcMain.handle("app:print-to-pdf", async (event, options = {}) => {
+  try {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const { filePath } = await dialog.showSaveDialog(win, {
+      title: "Save Strategy Sheet as PDF",
+      defaultPath: "StrategySheet.pdf",
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+
+    if (!filePath) return null;
+
+    const data = await win.webContents.printToPDF({
+      printBackground: true,
+      landscape: false,
+      pageSize: "A4",
+      margins: {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+      },
+      ...options,
+    });
+
+    await fs.writeFile(filePath, data);
+    return filePath;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw error;
+  }
+});
+
 // Plugin System IPC Handlers
 const getPluginsDirectory = () => {
   return path.join(app.getPath("userData"), "plugins");

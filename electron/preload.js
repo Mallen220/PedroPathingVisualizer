@@ -78,6 +78,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getAppVersion: () => ipcRenderer.invoke("app:get-version"),
   // Open external URL in the user's default browser
   openExternal: (url) => ipcRenderer.invoke("app:open-external", url),
+  // Print to PDF
+  printToPDF: (options) => ipcRenderer.invoke("app:print-to-pdf", options),
 
   // Plugin System
   listPlugins: () => ipcRenderer.invoke("plugins:list"),

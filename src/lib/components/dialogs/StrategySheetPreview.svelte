@@ -68,6 +68,18 @@
     window.print();
   }
 
+  function handleDownloadPDF() {
+    if ((window as any).electronAPI && (window as any).electronAPI.printToPDF) {
+      (window as any).electronAPI.printToPDF({
+        landscape: false,
+        printBackground: true,
+      });
+    } else {
+      console.warn("PDF export not available");
+      alert("PDF export is not supported in this environment.");
+    }
+  }
+
   function handleClose() {
     isOpen = false;
   }
@@ -112,10 +124,21 @@
           const events = (line.eventMarkers || []).map(
             (e) => `${e.name} @ ${(e.position * 100).toFixed(0)}%`,
           );
+
+          let rotationStr = "";
+          const endPoint = line.endPoint;
+          if (endPoint.heading === "constant") {
+            rotationStr = ` @ ${endPoint.degrees?.toFixed(1)}°`;
+          } else if (endPoint.heading === "linear") {
+            rotationStr = ` @ ${endPoint.endDeg?.toFixed(1)}°`;
+          } else if (endPoint.heading === "tangential") {
+            rotationStr = " (Tangential)";
+          }
+
           items.push({
             type: "path",
             name: line.name || `Path ${lines.indexOf(line) + 1}`,
-            details: `-> (${line.endPoint.x.toFixed(1)}, ${line.endPoint.y.toFixed(1)})`,
+            details: `-> (${line.endPoint.x.toFixed(1)}, ${line.endPoint.y.toFixed(1)})${rotationStr}`,
             events,
             duration: undefined, // Could get from timePrediction if we map it
           });
@@ -177,6 +200,26 @@
           Strategy Sheet Preview
         </h2>
         <div class="flex items-center gap-2">
+          <button
+            on:click={handleDownloadPDF}
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="size-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+              />
+            </svg>
+            Download PDF
+          </button>
           <button
             on:click={handlePrint}
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
@@ -250,10 +293,10 @@
             <!-- Field Image -->
             <div class="w-1/2 flex flex-col gap-2">
               <div
-                class="aspect-square border border-gray-300 rounded overflow-hidden relative bg-white"
+                class="border border-gray-300 rounded overflow-hidden relative bg-white w-full"
               >
                 <!-- Field SVG Container -->
-                <div bind:this={fieldContainer} class="w-full h-full p-2"></div>
+                <div bind:this={fieldContainer} class="w-full p-2"></div>
               </div>
             </div>
 
@@ -274,8 +317,6 @@
                   </div>
                   <div class="text-gray-600">Path Segments:</div>
                   <div class="font-medium">{lines.length}</div>
-                  <div class="text-gray-600">Est. Voltage Usage:</div>
-                  <div class="font-medium text-gray-400 italic">N/A</div>
                 </div>
               </div>
 
