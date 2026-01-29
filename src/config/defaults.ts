@@ -155,6 +155,34 @@ export const DEFAULT_SETTINGS: Settings = {
   ],
   // Developer/debugging aids
   showDebugSequence: false,
+  // Physics & Simulation Defaults
+  mass: 10.65,
+  centripetalScaling: 0.0005,
+  forwardZeroPowerAcceleration: -34.627,
+  lateralZeroPowerAcceleration: -78.155,
+  brakingStrength: 1.0,
+  brakingStart: 1.0,
+
+  // PIDF Switch Thresholds
+  drivePIDFSwitch: 20.0,
+  headingPIDFSwitch: Math.PI / 20,
+  translationalPIDFSwitch: 3.0,
+
+  // Path Constraints
+  tValueConstraint: 0.995,
+  velocityConstraint: 0.1,
+  translationalConstraint: 0.1,
+  headingConstraint: 0.007,
+  timeoutConstraint: 100,
+
+  // PIDF Coefficients
+  drivePIDF: { p: 0.025, i: 0, d: 0.00001, f: 0.6 },
+  headingPIDF: { p: 1.0, i: 0, d: 0.01, f: 0 },
+  translationalPIDF: { p: 0.1, i: 0, d: 0.015, f: 0 },
+  secondaryDrivePIDF: { p: 0.02, i: 0, d: 0.000005, f: 0.6 },
+  secondaryHeadingPIDF: { p: 5.0, i: 0, d: 0.08, f: 0 },
+  secondaryTranslationalPIDF: { p: 0.3, i: 0, d: 0.01, f: 0 },
+
   // Auto Export
   autoExportCode: false,
   autoExportPath: "GeneratedCode",

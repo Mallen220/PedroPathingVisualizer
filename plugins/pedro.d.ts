@@ -198,6 +198,35 @@ interface Settings {
   gitIntegration?: boolean; // Enable/Disable Git integration
   obstaclePresets?: ObstaclePreset[]; // User-saved obstacle presets
   showDebugSequence?: boolean; // Developer/debugging aids
+
+  // Physics & Simulation Settings
+  mass: number;
+  centripetalScaling: number;
+  forwardZeroPowerAcceleration: number;
+  lateralZeroPowerAcceleration: number;
+  brakingStrength: number;
+  brakingStart: number;
+
+  // PIDF Switch Thresholds
+  drivePIDFSwitch: number;
+  headingPIDFSwitch: number;
+  translationalPIDFSwitch: number;
+
+  // Path Constraints
+  tValueConstraint: number;
+  velocityConstraint: number;
+  translationalConstraint: number;
+  headingConstraint: number;
+  timeoutConstraint: number;
+
+  // PIDF Coefficients
+  drivePIDF: PIDFCoefficients;
+  headingPIDF: PIDFCoefficients;
+  translationalPIDF: PIDFCoefficients;
+  secondaryDrivePIDF: PIDFCoefficients;
+  secondaryHeadingPIDF: PIDFCoefficients;
+  secondaryTranslationalPIDF: PIDFCoefficients;
+
   // Auto Export Settings
   autoExportCode?: boolean;
   autoExportPath?: string;

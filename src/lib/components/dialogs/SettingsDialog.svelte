@@ -28,6 +28,7 @@
     | "general"
     | "robot"
     | "motion"
+    | "simulation"
     | "interface"
     | "code-export"
     | "advanced"
@@ -65,6 +66,11 @@
       id: "motion",
       label: "Motion",
       icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
+    },
+    {
+      id: "simulation",
+      label: "Simulation",
+      icon: "M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5",
     },
     {
       id: "interface",
@@ -1177,6 +1183,167 @@
                     class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </SettingsItem>
+              </div>
+            {/if}
+
+            <!-- Simulation Section -->
+            {#if activeTab === "simulation" || searchQuery}
+              <div class="section-container mb-8">
+                {#if searchQuery}
+                  <h4
+                    class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4 border-b border-neutral-100 dark:border-neutral-800 pb-1"
+                  >
+                    Simulation
+                  </h4>
+                {/if}
+
+                <!-- Physical Properties -->
+                <div class="mb-6">
+                  <h5 class="text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-3">Physical Properties</h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <SettingsItem label="Mass (Unitless)" {searchQuery} forId="sim-mass">
+                      <input
+                        id="sim-mass"
+                        type="number"
+                        bind:value={settings.mass}
+                        step="0.01"
+                        class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </SettingsItem>
+                    <SettingsItem label="Centripetal Scaling" {searchQuery} forId="sim-centripetal">
+                      <input
+                        id="sim-centripetal"
+                        type="number"
+                        bind:value={settings.centripetalScaling}
+                        step="0.0001"
+                        class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </SettingsItem>
+                    <SettingsItem label="Forward Zero Power Accel" {searchQuery} forId="sim-fzpa">
+                      <input
+                        id="sim-fzpa"
+                        type="number"
+                        bind:value={settings.forwardZeroPowerAcceleration}
+                        step="0.1"
+                        class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </SettingsItem>
+                    <SettingsItem label="Lateral Zero Power Accel" {searchQuery} forId="sim-lzpa">
+                      <input
+                        id="sim-lzpa"
+                        type="number"
+                        bind:value={settings.lateralZeroPowerAcceleration}
+                        step="0.1"
+                        class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </SettingsItem>
+                  </div>
+                </div>
+
+                <!-- PIDF Settings -->
+                 <div class="mb-6">
+                  <h5 class="text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-3">Control Loop (PIDF)</h5>
+
+                  <div class="space-y-4">
+                    <!-- Drive PIDF -->
+                    <div class="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                        <div class="flex justify-between items-center mb-2">
+                             <span class="text-xs font-bold uppercase text-neutral-500">Drive Controller</span>
+                             <div class="flex items-center gap-2">
+                                <span class="text-xs text-neutral-500">Switch Threshold:</span>
+                                <input type="number" bind:value={settings.drivePIDFSwitch} class="w-16 px-1 py-0.5 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800" />
+                             </div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 mb-2">
+                            <div><label class="text-[10px] text-neutral-400 block">P</label><input type="number" bind:value={settings.drivePIDF.p} step="0.001" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">I</label><input type="number" bind:value={settings.drivePIDF.i} step="0.001" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">D</label><input type="number" bind:value={settings.drivePIDF.d} step="0.00001" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">F</label><input type="number" bind:value={settings.drivePIDF.f} step="0.01" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                        </div>
+                         <div class="text-[10px] text-neutral-400 mb-1">Secondary Coefficients (Active below threshold)</div>
+                         <div class="grid grid-cols-4 gap-2">
+                            <input type="number" bind:value={settings.secondaryDrivePIDF.p} step="0.001" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="P" />
+                            <input type="number" bind:value={settings.secondaryDrivePIDF.i} step="0.001" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="I" />
+                            <input type="number" bind:value={settings.secondaryDrivePIDF.d} step="0.00001" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="D" />
+                            <input type="number" bind:value={settings.secondaryDrivePIDF.f} step="0.01" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="F" />
+                        </div>
+                    </div>
+
+                    <!-- Heading PIDF -->
+                    <div class="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                        <div class="flex justify-between items-center mb-2">
+                             <span class="text-xs font-bold uppercase text-neutral-500">Heading Controller</span>
+                             <div class="flex items-center gap-2">
+                                <span class="text-xs text-neutral-500">Switch Threshold (rad):</span>
+                                <input type="number" bind:value={settings.headingPIDFSwitch} step="0.01" class="w-16 px-1 py-0.5 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800" />
+                             </div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 mb-2">
+                            <div><label class="text-[10px] text-neutral-400 block">P</label><input type="number" bind:value={settings.headingPIDF.p} step="0.1" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">I</label><input type="number" bind:value={settings.headingPIDF.i} step="0.01" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">D</label><input type="number" bind:value={settings.headingPIDF.d} step="0.01" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">F</label><input type="number" bind:value={settings.headingPIDF.f} step="0.01" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                        </div>
+                         <div class="text-[10px] text-neutral-400 mb-1">Secondary Coefficients (Active below threshold)</div>
+                         <div class="grid grid-cols-4 gap-2">
+                            <input type="number" bind:value={settings.secondaryHeadingPIDF.p} step="0.1" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="P" />
+                            <input type="number" bind:value={settings.secondaryHeadingPIDF.i} step="0.01" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="I" />
+                            <input type="number" bind:value={settings.secondaryHeadingPIDF.d} step="0.01" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="D" />
+                            <input type="number" bind:value={settings.secondaryHeadingPIDF.f} step="0.01" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="F" />
+                        </div>
+                    </div>
+
+                    <!-- Translational PIDF -->
+                    <div class="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                        <div class="flex justify-between items-center mb-2">
+                             <span class="text-xs font-bold uppercase text-neutral-500">Translational Controller</span>
+                             <div class="flex items-center gap-2">
+                                <span class="text-xs text-neutral-500">Switch Threshold:</span>
+                                <input type="number" bind:value={settings.translationalPIDFSwitch} class="w-16 px-1 py-0.5 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800" />
+                             </div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 mb-2">
+                            <div><label class="text-[10px] text-neutral-400 block">P</label><input type="number" bind:value={settings.translationalPIDF.p} step="0.1" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">I</label><input type="number" bind:value={settings.translationalPIDF.i} step="0.01" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">D</label><input type="number" bind:value={settings.translationalPIDF.d} step="0.01" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                            <div><label class="text-[10px] text-neutral-400 block">F</label><input type="number" bind:value={settings.translationalPIDF.f} step="0.01" class="w-full px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900" /></div>
+                        </div>
+                         <div class="text-[10px] text-neutral-400 mb-1">Secondary Coefficients (Active below threshold)</div>
+                         <div class="grid grid-cols-4 gap-2">
+                            <input type="number" bind:value={settings.secondaryTranslationalPIDF.p} step="0.1" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="P" />
+                            <input type="number" bind:value={settings.secondaryTranslationalPIDF.i} step="0.01" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="I" />
+                            <input type="number" bind:value={settings.secondaryTranslationalPIDF.d} step="0.01" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="D" />
+                            <input type="number" bind:value={settings.secondaryTranslationalPIDF.f} step="0.01" class="w-full px-2 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800" placeholder="F" />
+                        </div>
+                    </div>
+                  </div>
+                 </div>
+
+                 <!-- Constraints & Braking -->
+                 <div class="mb-6">
+                   <h5 class="text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-3">Constraints & Braking</h5>
+                   <div class="grid grid-cols-2 gap-4">
+                     <SettingsItem label="Braking Strength" {searchQuery} forId="sim-brake">
+                        <input id="sim-brake" type="number" bind:value={settings.brakingStrength} step="0.1" class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                     </SettingsItem>
+                      <SettingsItem label="Braking Start" {searchQuery} forId="sim-brake-start">
+                        <input id="sim-brake-start" type="number" bind:value={settings.brakingStart} step="0.1" class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                     </SettingsItem>
+                     <SettingsItem label="T-Value Constraint" {searchQuery} forId="sim-t-const">
+                        <input id="sim-t-const" type="number" bind:value={settings.tValueConstraint} step="0.001" max="1" class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                     </SettingsItem>
+                     <SettingsItem label="Velocity Constraint" {searchQuery} forId="sim-v-const">
+                        <input id="sim-v-const" type="number" bind:value={settings.velocityConstraint} step="0.1" class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                     </SettingsItem>
+                      <SettingsItem label="Translational Constraint" {searchQuery} forId="sim-tr-const">
+                        <input id="sim-tr-const" type="number" bind:value={settings.translationalConstraint} step="0.1" class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                     </SettingsItem>
+                      <SettingsItem label="Heading Constraint (rad)" {searchQuery} forId="sim-h-const">
+                        <input id="sim-h-const" type="number" bind:value={settings.headingConstraint} step="0.001" class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                     </SettingsItem>
+                   </div>
+                 </div>
+
               </div>
             {/if}
 
