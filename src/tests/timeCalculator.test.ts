@@ -150,17 +150,14 @@ describe("Time Calculator", () => {
     );
 
     // Check timeline for wait type without waitId (auto-generated rotation wait)
+    // NOTE: The new Physics Engine does NOT insert implicit Wait events for rotation.
+    // It handles heading correction continuously during motion.
     const rotationEvents = result.timeline.filter(
       (e) => e.type === "wait" && !e.waitId,
     );
 
-    expect(rotationEvents.length).toBeGreaterThan(0);
-    // With restored acceleration logic:
-    // maxAccel = 5, rWidth = 18 => maxAngAccel = 5 / 9 = 0.555 rad/s^2
-    // Angle = 90 deg = 1.57 rad.
-    // Triangle profile: t = 2 * sqrt(dist / a) = 2 * sqrt(1.57 / 0.555) = 2 * 1.68 = 3.36s.
-    // NOTE: This confirms we are back to physics-based logic (acceleration limited).
-    expect(rotationEvents[0].duration).toBeCloseTo(3.36, 1);
+    // Expect NO implicit rotation wait
+    expect(rotationEvents.length).toBe(0);
   });
 
   it("calculates rotation time with user-defined maxAngularAcceleration", () => {

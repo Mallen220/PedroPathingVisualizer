@@ -292,6 +292,7 @@ export function calculatePathTime(
   // 4. Execution Loop
   let cumulativeChainDist = 0; // Reset at start of each chain
   let lastChainId: ChainInfo | null = null;
+  let globalTargetHeading = currentPose.heading; // Track continuous target heading across segments
 
   for (let i = 0; i < queue.length; i++) {
       const item = queue[i];
@@ -330,10 +331,10 @@ export function calculatePathTime(
           const hStartDeg = getLineStartHeading(line, segmentStartPoint);
           const hEndDeg = getLineEndHeading(line, segmentStartPoint);
 
-          // Re-unwind relative to robot
+          // Re-unwind relative to the continuous global target tracker
           let hStartRad = hStartDeg * (Math.PI / 180);
           let hEndRad = hEndDeg * (Math.PI / 180);
-          hStartRad = unwrapAngle(hStartRad, currentPose.heading);
+          hStartRad = unwrapAngle(hStartRad, globalTargetHeading);
           hEndRad = unwrapAngle(hEndRad, hStartRad);
 
           // Simulation
@@ -351,14 +352,15 @@ export function calculatePathTime(
                    const deriv = curve.getDerivative(t).normalize();
                    targetHeading = Math.atan2(deriv.y, deriv.x);
                    if (line.endPoint.reverse) targetHeading += Math.PI;
-                   targetHeading = unwrapAngle(targetHeading, currentPose.heading);
-              } else if (line.endPoint.heading === "constant") {
-                   // Interpolate? Or hold?
-                   // If constant, we usually turn to it then hold.
-                   targetHeading = hStartRad + (hEndRad - hStartRad) * t;
+                   // Unwrap relative to LAST TARGET (smooth plan)
+                   targetHeading = unwrapAngle(targetHeading, globalTargetHeading);
               } else {
+                   // Linear/Constant: use pre-unwrapped interpolation
                    targetHeading = hStartRad + (hEndRad - hStartRad) * t;
               }
+
+              // Update global tracker
+              globalTargetHeading = targetHeading;
 
               // Distance Logic
               const distSeg = curve.getDistanceFromT(t);
@@ -519,6 +521,93 @@ export function calculatePathTime(
               startTime: startTime,
               endTime: globalTime,
               name: item.name,
+              waitId: item.id
+          });
+      } else if (item.kind === "rotate") {
+          // Rotate Logic: Simulate physics until heading is aligned
+          const targetDeg = (item as any).degrees || 0;
+          const targetRad = targetDeg * (Math.PI / 180);
+
+          const startTime = globalTime;
+          let isAligned = false;
+
+          // Create dummy curve for stationary hold
+          const dummyPoint = currentPose.toVector();
+          const dummyCurve = new BezierCurve([{x: dummyPoint.x, y: dummyPoint.y}, {x: dummyPoint.x, y: dummyPoint.y}]);
+
+          while (!isAligned && (globalTime - startTime) < 10.0) {
+              const inputs: DriveInputs = {
+                  path: dummyCurve,
+                  currentPose: currentPose,
+                  currentVelocity: currentVelocity,
+                  targetHeading: targetRad,
+                  t: 0.5,
+                  distanceToEndOfPath: 0,
+                  settings: settings,
+                  dt: dt
+              };
+
+              const output = algorithm.calculate(inputs);
+
+              // Integration
+              const accel = output.forceVector.times(1.0 / mass);
+              currentVelocity = currentVelocity.plus(accel.times(dt));
+
+               // Friction
+              if (currentVelocity.magnitude() > 0.001) {
+                 const heading = currentPose.heading;
+                 const vRobot = currentVelocity.rotate(-heading);
+                 const signX = Math.sign(vRobot.x);
+                 const signY = Math.sign(vRobot.y);
+                 let axDrag = Math.abs(settings.forwardZeroPowerAcceleration) * -signX;
+                 let ayDrag = Math.abs(settings.lateralZeroPowerAcceleration) * -signY;
+                 if (Math.abs(vRobot.x) < Math.abs(axDrag * dt)) { vRobot.x = 0; axDrag = 0; }
+                 if (Math.abs(vRobot.y) < Math.abs(ayDrag * dt)) { vRobot.y = 0; ayDrag = 0; }
+                 const aDragField = new Vector(axDrag, ayDrag).rotate(heading);
+                 currentVelocity = currentVelocity.plus(aDragField.times(dt));
+              }
+
+              currentPose.x += currentVelocity.x * dt;
+              currentPose.y += currentVelocity.y * dt;
+
+              // Heading Kinematic
+              // Use targetRad unwrapped relative to current to ensure shortest path?
+              // The physics engine input `targetHeading` is absolute.
+              // We should unwrap `targetRad` relative to `currentPose.heading`.
+              const unwrappedTarget = unwrapAngle(targetRad, currentPose.heading);
+
+              // Re-feed unwrapped target to algo?
+              // The algo uses `inputs.targetHeading`.
+              // Update inputs for next step? No, we calc manually here.
+              // Actually `algorithm` calculates forces.
+              // We need to update `currentPose.heading` manually as in the main loop.
+
+              const hError = getAngularDifference(currentPose.heading * 180 / Math.PI, unwrappedTarget * 180 / Math.PI) * (Math.PI / 180);
+              const maxAV = settings.aVelocity;
+              const reach = maxAV * dt;
+              if (Math.abs(hError) < reach) {
+                  currentPose.heading = unwrappedTarget;
+              } else {
+                  currentPose.heading += Math.sign(hError) * reach;
+              }
+
+              // Update global tracker
+              globalTargetHeading = unwrappedTarget;
+
+              // Check Alignment
+              const aligned = Math.abs(hError) < settings.headingConstraint;
+              const stopped = currentVelocity.magnitude() < settings.velocityConstraint;
+              if (aligned && stopped) isAligned = true;
+
+              globalTime += dt;
+          }
+
+          timeline.push({
+              type: "wait", // Rotate is visualized as a wait
+              duration: globalTime - startTime,
+              startTime: startTime,
+              endTime: globalTime,
+              name: item.name || "Rotate",
               waitId: item.id
           });
       }
