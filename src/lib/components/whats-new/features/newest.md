@@ -1,5 +1,5 @@
 ### What's New!
 
-## **Features:**
+## Features:
 
-## **Bug Fixes:**
+## Bug Fixes:
