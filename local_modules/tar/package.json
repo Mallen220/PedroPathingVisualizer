@@ -1,0 +1,30 @@
+{
+  "author": "GitHub Inc.",
+  "name": "tar",
+  "description": "tar for node",
+  "version": "6.2.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isaacs/node-tar.git"
+  },
+  "scripts": {
+    "test": "echo 'No tests needed for vendored dep'"
+  },
+  "dependencies": {
+    "chownr": "^2.0.0",
+    "fs-minipass": "^2.0.0",
+    "minipass": "^5.0.0",
+    "minizlib": "^2.1.1",
+    "mkdirp": "^1.0.3",
+    "yallist": "^4.0.0"
+  },
+  "license": "ISC",
+  "engines": {
+    "node": ">=10"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "index.js"
+  ]
+}

@@ -57,7 +57,8 @@
     "tailwindcss": "^3.4.9",
     "tslib": "^2.6.3",
     "vite": "^5.4.21",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "tar": "file:local_modules/tar"
   },
   "dependencies": {
     "@types/d3": "^7.4.3",
@@ -171,7 +172,7 @@
     }
   },
   "overrides": {
-    "tar": "7.5.4",
+    "tar": "file:local_modules/tar",
     "esbuild": "^0.25.0"
   }
 }
