@@ -19,6 +19,7 @@
     startTutorial,
     currentFilePath,
     currentDirectoryStore,
+    settingsActiveTab,
   } from "../../../stores";
 
   export let isOpen = false;
@@ -35,9 +36,14 @@
   let activeTab: TabId = "general";
   let searchQuery = "";
 
+  // Sync active tab from store when opening
+  $: if (isOpen) {
+    activeTab = $settingsActiveTab as TabId;
+  }
+
   // Reset tab when closed so it's fresh on next open
   $: if (!isOpen) {
-    activeTab = "general";
+    // We don't reset the store here to avoid loops, but we reset local state if needed
     searchQuery = "";
   }
 

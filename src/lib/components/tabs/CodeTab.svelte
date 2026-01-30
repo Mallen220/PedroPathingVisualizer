@@ -10,7 +10,11 @@
     generateJavaCode,
     generateSequentialCommandCode,
   } from "../../../utils/codeExporter";
-  import { notification, showSettings } from "../../../stores";
+  import {
+    notification,
+    showSettings,
+    settingsActiveTab,
+  } from "../../../stores";
   import { debounce } from "lodash";
   import { onMount } from "svelte";
   import { getButtonFilledClass } from "../../../utils/buttonStyles";
@@ -239,7 +243,10 @@
     <div class="flex-1"></div>
 
     <button
-      on:click={() => showSettings.set(true)}
+      on:click={() => {
+        settingsActiveTab.set("code-export");
+        showSettings.set(true);
+      }}
       class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-500"
       title="Open Settings"
     >

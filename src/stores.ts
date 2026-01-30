@@ -15,6 +15,7 @@ export const fieldZoom = writable(1.0);
 export const fieldPan = writable({ x: 0, y: 0 });
 export const showShortcuts = writable(false);
 export const showSettings = writable(false);
+export const settingsActiveTab = writable("general");
 export const showPluginManager = writable(false);
 export const showTelemetryDialog = writable(false);
 export const isPresentationMode = writable(false);
