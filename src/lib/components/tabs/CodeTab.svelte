@@ -14,6 +14,9 @@
   import { debounce } from "lodash";
   import { onMount } from "svelte";
   import { getButtonFilledClass } from "../../../utils/buttonStyles";
+  import Highlight from "svelte-highlight";
+  import { java } from "svelte-highlight/languages";
+  import codeStyle from "svelte-highlight/styles/androidstudio";
 
   export let startPoint: Point;
   export let lines: Line[];
