@@ -355,6 +355,20 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     action: "toggleVelocityHeatmap",
     category: "View",
   },
+  {
+    id: "toggle-loop",
+    key: "ctrl+l",
+    description: "Toggle Animation Loop",
+    action: "toggleLoop",
+    category: "Playback",
+  },
+  {
+    id: "toggle-visibility-selected",
+    key: "ctrl+h",
+    description: "Toggle Visibility of Selected Item",
+    action: "toggleVisibilitySelected",
+    category: "View",
+  },
 
   // Navigation
   {

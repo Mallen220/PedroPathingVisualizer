@@ -17,4 +17,19 @@ describe("Keybindings", () => {
     expect(selectPrev).toBeDefined();
     expect(selectPrev?.key).toBe("ctrl+up, cmd+up, shift+tab");
   });
+
+  it("should include new keybindings for loop and visibility", () => {
+    const loop = DEFAULT_KEY_BINDINGS.find((b) => b.id === "toggle-loop");
+    const vis = DEFAULT_KEY_BINDINGS.find(
+      (b) => b.id === "toggle-visibility-selected",
+    );
+
+    expect(loop).toBeDefined();
+    expect(loop?.key).toBe("ctrl+l");
+    expect(loop?.action).toBe("toggleLoop");
+
+    expect(vis).toBeDefined();
+    expect(vis?.key).toBe("ctrl+h");
+    expect(vis?.action).toBe("toggleVisibilitySelected");
+  });
 });

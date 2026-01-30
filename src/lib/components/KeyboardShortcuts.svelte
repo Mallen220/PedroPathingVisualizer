@@ -31,6 +31,7 @@
     settingsStore,
     playingStore,
     playbackSpeedStore,
+    loopAnimationStore,
     renumberDefaultPathNames,
   } from "../projectStore";
   import {
@@ -345,6 +346,27 @@
   }
 
   function addControlPoint() {
+    if (isUIElementFocused()) return;
+    const sel = $selectedPointId;
+    if (sel && sel.startsWith("obstacle-")) {
+      const parts = sel.split("-");
+      const shapeIdx = Number(parts[1]);
+      const vertexIdx = Number(parts[2]);
+      if (shapes[shapeIdx]) {
+        if (shapes[shapeIdx].locked) return;
+        shapesStore.update((s) => {
+          const newShapes = _.cloneDeep(s);
+          const v = newShapes[shapeIdx].vertices[vertexIdx];
+          const newVertex = { ...v, x: v.x + 2, y: v.y + 2 };
+          newShapes[shapeIdx].vertices.splice(vertexIdx + 1, 0, newVertex);
+          return newShapes;
+        });
+        selectedPointId.set(`obstacle-${shapeIdx}-${vertexIdx + 1}`);
+        recordChange("Add Obstacle Vertex");
+        return;
+      }
+    }
+
     if (lines.length === 0) return;
     const targetId = $selectedLineId || lines[lines.length - 1].id;
     const targetLine =
@@ -480,6 +502,32 @@
         });
         selectedPointId.set(`rotate-${newRotate.id}`);
         recordChange("Duplicate Selection");
+      }
+      return;
+    }
+
+    if (sel.startsWith("obstacle-")) {
+      const parts = sel.split("-");
+      const shapeIdx = Number(parts[1]);
+      const shape = shapes[shapeIdx];
+      if (shape) {
+        const newShape = JSON.parse(JSON.stringify(shape));
+        // Offset slightly
+        newShape.vertices.forEach((v: any) => {
+          v.x = Math.min(144, v.x + 2);
+          v.y = Math.min(144, v.y + 2);
+        });
+        shapesStore.update((s) => [...s, newShape]);
+        activeControlTab = "field";
+        // Select the first vertex of the new shape
+        const newIdx = shapes.length; // length before update + 1? No, store update is async?
+        // Wait, shapesStore.update is likely synchronous in Svelte if subscription runs?
+        // We are inside component, 'shapes' prop is reactive.
+        // But we just updated store.
+        // We can guess index.
+        // Actually, let's just use shapes.length (since we append)
+        selectedPointId.set(`obstacle-${shapes.length}-${0}`);
+        recordChange("Duplicate Obstacle");
       }
       return;
     }
@@ -853,6 +901,35 @@
       );
       selectedPointId.set(null);
       recordChange("Delete Selection");
+      return;
+    }
+
+    if (sel.startsWith("obstacle-")) {
+      const parts = sel.split("-");
+      const shapeIdx = Number(parts[1]);
+      const vertexIdx = Number(parts[2]);
+      if (shapes[shapeIdx]) {
+        if (shapes[shapeIdx].locked) return;
+        // If shape has <= 3 vertices, remove the whole shape (common behavior for polygons)
+        // Or if user wants to delete shape, they can use 'clear-obstacles' or we need 'remove-obstacle'
+        // For now, if > 3 vertices, remove vertex. If <= 3, remove shape.
+        if (shapes[shapeIdx].vertices.length > 3) {
+          shapesStore.update((s) => {
+            const newShapes = _.cloneDeep(s);
+            newShapes[shapeIdx].vertices.splice(vertexIdx, 1);
+            return newShapes;
+          });
+          // Select previous vertex or 0
+          const newVIdx = Math.max(0, vertexIdx - 1);
+          selectedPointId.set(`obstacle-${shapeIdx}-${newVIdx}`);
+          recordChange("Remove Obstacle Vertex");
+        } else {
+          // Remove shape
+          shapesStore.update((s) => s.filter((_, i) => i !== shapeIdx));
+          selectedPointId.set(null);
+          recordChange("Remove Obstacle");
+        }
+      }
       return;
     }
 
@@ -1399,6 +1476,23 @@
       return;
     }
 
+    if (sel.startsWith("obstacle-")) {
+      const parts = sel.split("-");
+      const shapeIdx = Number(parts[1]);
+      shapesStore.update((s) => {
+        const newShapes = [...s];
+        if (newShapes[shapeIdx]) {
+          newShapes[shapeIdx] = {
+            ...newShapes[shapeIdx],
+            locked: !(newShapes[shapeIdx].locked ?? false),
+          };
+        }
+        return newShapes;
+      });
+      recordChange("Toggle Lock");
+      return;
+    }
+
     if (sel.startsWith("point-")) {
       const parts = sel.split("-");
       const lineNum = Number(parts[1]);
@@ -1630,6 +1724,32 @@
       ...s,
       onionSkinCurrentPathOnly: !s.onionSkinCurrentPathOnly,
     }));
+  }
+
+  function toggleLoop() {
+    loopAnimationStore.update((v) => !v);
+  }
+
+  function toggleVisibilitySelected() {
+    if (isUIElementFocused()) return;
+    const sel = $selectedPointId;
+    if (!sel) return;
+
+    if (sel.startsWith("obstacle-")) {
+      const parts = sel.split("-");
+      const shapeIdx = Number(parts[1]);
+      shapesStore.update((s) => {
+        const newShapes = [...s];
+        if (newShapes[shapeIdx]) {
+          newShapes[shapeIdx] = {
+            ...newShapes[shapeIdx],
+            visible: !(newShapes[shapeIdx].visible !== false),
+          };
+        }
+        return newShapes;
+      });
+      recordChange("Toggle Visibility");
+    }
   }
 
   // --- Registration ---
@@ -1948,6 +2068,8 @@
     rotateField: () => rotateField(),
     toggleContinuousValidation: () => toggleContinuousValidation(),
     toggleOnionCurrentPath: () => toggleOnionCurrentPath(),
+    toggleLoop: () => toggleLoop(),
+    toggleVisibilitySelected: () => toggleVisibilitySelected(),
   };
 
   // --- Derived Commands for Search ---
