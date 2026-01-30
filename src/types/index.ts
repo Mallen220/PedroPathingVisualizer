@@ -191,7 +191,7 @@ export interface Settings {
   showDebugSequence?: boolean; // Developer/debugging aids
 
   // Physics & Simulation Settings
-  mass: number;
+  mass: number; // Mass in pounds (lbs)
   centripetalScaling: number;
   forwardZeroPowerAcceleration: number;
   lateralZeroPowerAcceleration: number;
