@@ -101,8 +101,13 @@
   }
 
   export async function openAndStartOptimization() {
-    if (activeTabInstance && activeTabInstance.openAndStartOptimization) {
-      return await activeTabInstance.openAndStartOptimization();
+    if (activeTab !== "field") {
+      activeTab = "field";
+      await tick();
+    }
+    const instance = tabInstances["field"];
+    if (instance && instance.openAndStartOptimization) {
+      return await instance.openAndStartOptimization();
     }
   }
 
