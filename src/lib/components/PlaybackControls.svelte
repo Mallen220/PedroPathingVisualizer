@@ -26,6 +26,7 @@
   import { cubicInOut } from "svelte/easing";
   import { menuNavigation } from "../actions/menuNavigation";
   import { formatTime, getShortcutFromSettings } from "../../utils";
+  import { followRobotStore } from "../projectStore";
 
   // Speed dropdown state & helpers
   let showSpeedMenu = false;
@@ -127,6 +128,32 @@
         stroke-linejoin="round"
         d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
       />
+    </svg>
+  </button>
+
+  <!-- Follow Robot Toggle Button -->
+  <button
+    title={$followRobotStore ? "Disable Follow Robot" : "Enable Follow Robot"}
+    aria-label="Follow robot"
+    aria-pressed={$followRobotStore}
+    on:click={() => {
+      followRobotStore.set(!$followRobotStore);
+    }}
+    class:opacity-100={$followRobotStore}
+    class:opacity-50={!$followRobotStore}
+    class="rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width="2"
+      stroke="currentColor"
+      class="size-6 stroke-purple-500"
+    >
+      <circle cx="12" cy="12" r="10" stroke-width="1.5" />
+      <line x1="12" y1="6" x2="12" y2="18" stroke-width="1.5" />
+      <line x1="6" y1="12" x2="18" y2="12" stroke-width="1.5" />
     </svg>
   </button>
 

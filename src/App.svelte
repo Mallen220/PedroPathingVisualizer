@@ -57,6 +57,7 @@
     playingStore,
     loopAnimationStore,
     playbackSpeedStore,
+    followRobotStore,
     ensureSequenceConsistency,
     macrosStore,
     refreshMacros,
@@ -965,6 +966,10 @@
   let committedRobotState: { x: number; y: number; heading: number } | null =
     null;
 
+  $: if ($followRobotStore && fieldRenderer) {
+    fieldRenderer.panToField($robotXYStore.x, $robotXYStore.y);
+  }
+
   $: {
     if (timePrediction && timePrediction.timeline && lines.length > 0) {
       // Calculate Global Time based on effective duration
@@ -1504,6 +1509,7 @@
           {committedRobotState}
           {previewOptimizedLines}
           {onRecordChange}
+          onUserInteraction={() => followRobotStore.set(false)}
         />
       </div>
     </div>

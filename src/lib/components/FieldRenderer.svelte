@@ -103,6 +103,7 @@
 
   // Callback props for interactions
   export let onRecordChange: (action?: string) => void;
+  export let onUserInteraction: () => void = () => {};
 
   // Local state
   let two: Two;
@@ -191,6 +192,7 @@
   function handleWheel(e: WheelEvent) {
     if (!wrapperDiv) return;
     if (e.ctrlKey || e.metaKey) {
+      onUserInteraction();
       e.preventDefault();
       const rect = wrapperDiv.getBoundingClientRect();
       const transformed = getTransformedCoordinates(
@@ -1875,6 +1877,7 @@
       } else {
         // Start Panning
         isPanning = true;
+        onUserInteraction();
         startPan = { x: evt.clientX, y: evt.clientY };
         two.renderer.domElement.style.cursor = "grabbing";
       }
@@ -1972,14 +1975,11 @@
   // Public method to pan the view to center on specific field coordinates (inches)
   export function panToField(fx: number, fy: number) {
     const factor = get(fieldZoom);
-    // Calculate required pan to center the point
-    // x(v) = center - halfW + pan + (v/SIZE)*W
-    // target x(v) = center => pan = halfW - (v/SIZE)*W = W * (0.5 - v/SIZE)
-    const px = width * factor * (0.5 - fx / FIELD_SIZE);
+    const base = Math.min(width, height);
 
-    // y(v) = center + halfH + pan - (v/SIZE)*H
-    // target y(v) = center => pan = (v/SIZE)*H - halfH = H * (v/SIZE - 0.5)
-    const py = height * factor * (fy / FIELD_SIZE - 0.5);
+    // Calculate required pan to center the point
+    const px = base * factor * (0.5 - fx / FIELD_SIZE);
+    const py = base * factor * (fy / FIELD_SIZE - 0.5);
 
     fieldPan.set({ x: px, y: py });
   }
