@@ -655,6 +655,41 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
   },
   // Extended Commands
   {
+    id: "mirror-path",
+    key: "alt+shift+m",
+    description: "Mirror Path (Horizontal)",
+    action: "mirrorPath",
+    category: "Editing",
+  },
+  {
+    id: "reverse-path",
+    key: "alt+shift+i",
+    description: "Reverse Path Direction",
+    action: "reversePath",
+    category: "Editing",
+  },
+  {
+    id: "open-robot-settings",
+    key: "alt+shift+b",
+    description: "Open Robot Settings",
+    action: "openRobotSettings",
+    category: "Settings",
+  },
+  {
+    id: "select-next-similar",
+    key: "ctrl+alt+down",
+    description: "Select Next Item of Same Type",
+    action: "selectNextSimilar",
+    category: "Navigation",
+  },
+  {
+    id: "select-prev-similar",
+    key: "ctrl+alt+up",
+    description: "Select Previous Item of Same Type",
+    action: "selectPrevSimilar",
+    category: "Navigation",
+  },
+  {
     id: "set-file-manager-directory",
     key: "",
     description: "Set File Manager Directory",

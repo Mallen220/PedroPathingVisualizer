@@ -10,6 +10,7 @@
     showProtractor,
     showShortcuts,
     showSettings,
+    settingsActiveTab,
     isPresentationMode,
     selectedPointId,
     selectedLineId,
@@ -38,6 +39,7 @@
     updateLinkedWaits,
     updateLinkedRotations,
   } from "../../utils/pointLinking";
+  import { mirrorPathData, reversePathData } from "../../utils/pathTransform";
   import { loadFile, loadRecentFile } from "../../utils/fileHandlers";
   import { validatePath } from "../../utils/validation";
   import type { Line, SequenceItem } from "../../types/index";
@@ -1632,6 +1634,123 @@
     }));
   }
 
+  function mirrorPath() {
+    if (isUIElementFocused()) return;
+    const data = {
+      startPoint,
+      lines,
+      shapes,
+    };
+    const mirrored = mirrorPathData(data);
+    startPointStore.set(mirrored.startPoint);
+    linesStore.set(mirrored.lines);
+    shapesStore.set(mirrored.shapes);
+    recordChange("Mirror Path");
+  }
+
+  function reversePath() {
+    if (isUIElementFocused()) return;
+    const data = {
+      startPoint,
+      lines,
+      sequence,
+      shapes,
+    };
+    const reversed = reversePathData(data);
+    startPointStore.set(reversed.startPoint);
+    linesStore.set(reversed.lines);
+    if (reversed.sequence) sequenceStore.set(reversed.sequence);
+    if (reversed.shapes) shapesStore.set(reversed.shapes);
+    recordChange("Reverse Path");
+  }
+
+  function openRobotSettings() {
+    showSettings.set(true);
+    settingsActiveTab.set("robot");
+  }
+
+  function cycleSimilarSelection(dir: number) {
+    if (isUIElementFocused()) return;
+    const current = $selectedPointId;
+    if (!current) return;
+
+    let items: string[] = [];
+
+    // Identify current type and gather similar items
+    if (current.startsWith("wait-")) {
+      items = sequence
+        .filter((s) => actionRegistry.get(s.kind)?.isWait)
+        .map((s) => `wait-${(s as any).id}`);
+    } else if (current.startsWith("rotate-")) {
+      items = sequence
+        .filter((s) => actionRegistry.get(s.kind)?.isRotate)
+        .map((s) => `rotate-${(s as any).id}`);
+    } else if (current.startsWith("point-")) {
+      // For paths, cycle through lines (Path segments)
+      const parts = current.split("-");
+      const currentLineNum = Number(parts[1]);
+
+      const maxLine = lines.length;
+      let nextLineNum = currentLineNum + dir;
+
+      // Wrap
+      if (nextLineNum > maxLine) nextLineNum = 0;
+      if (nextLineNum < 0) nextLineNum = maxLine;
+
+      selectedPointId.set(`point-${nextLineNum}-0`);
+      if (nextLineNum > 0) {
+        selectedLineId.set(lines[nextLineNum - 1].id!);
+      } else {
+        selectedLineId.set(null);
+      }
+      syncSelectionToUI();
+      return;
+    } else if (current.startsWith("obstacle-")) {
+      shapes.forEach((s, idx) => {
+        items.push(`obstacle-${idx}-0`);
+      });
+    } else if (current.startsWith("event-")) {
+      lines.forEach((l, lIdx) => {
+        if (l.eventMarkers) {
+          l.eventMarkers.forEach((m, mIdx) => {
+            items.push(`event-${lIdx}-${mIdx}`);
+          });
+        }
+      });
+    }
+
+    if (items.length === 0) return;
+
+    let idx = items.indexOf(current);
+
+    // If exact match not found (e.g. selected obstacle vertex 1), find logical match
+    if (idx === -1) {
+      if (current.startsWith("obstacle-")) {
+        const parts = current.split("-");
+        const shapeIdx = Number(parts[1]);
+        const match = `obstacle-${shapeIdx}-0`;
+        idx = items.indexOf(match);
+      }
+    }
+
+    if (idx === -1) idx = 0;
+    else idx = (idx + dir + items.length) % items.length;
+
+    const newId = items[idx];
+    selectedPointId.set(newId);
+
+    // Reset line ID if switching to non-path item
+    if (
+      newId.startsWith("wait-") ||
+      newId.startsWith("rotate-") ||
+      newId.startsWith("obstacle-")
+    ) {
+      selectedLineId.set(null);
+    }
+
+    syncSelectionToUI();
+  }
+
   // --- Registration ---
 
   // Create map of actionId -> handler
@@ -1948,6 +2067,11 @@
     rotateField: () => rotateField(),
     toggleContinuousValidation: () => toggleContinuousValidation(),
     toggleOnionCurrentPath: () => toggleOnionCurrentPath(),
+    mirrorPath: () => mirrorPath(),
+    reversePath: () => reversePath(),
+    openRobotSettings: () => openRobotSettings(),
+    selectNextSimilar: () => cycleSimilarSelection(1),
+    selectPrevSimilar: () => cycleSimilarSelection(-1),
   };
 
   // --- Derived Commands for Search ---
