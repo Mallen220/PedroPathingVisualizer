@@ -12,3 +12,8 @@ Action: Before optimizing empty states, verify they are actually reachable in th
 
 Learning: Removing default outlines (`focus:outline-none`) on range inputs (`<input type="range">`) to achieve a custom look creates a significant accessibility barrier. Keyboard users cannot see the focus state on the slider thumb.
 Action: Always add explicit `focus-visible` styles (e.g., `focus-visible:ring`) to the slider or its container when removing default outlines.
+
+## 2026-10-26 - Focus Management in Custom Dropdowns
+
+Learning: When implementing a custom dropdown (combobox), using `on:mousedown|preventDefault` on options is superior to relying on `setTimeout` in `on:blur` to handle selection. It prevents the input from losing focus entirely, maintaining the focus context and avoiding race conditions where the dropdown closes before the click registers.
+Action: Use `mousedown|preventDefault` for selection actions in custom dropdowns to keep focus on the input, while retaining `on:blur` solely for closing the dropdown when focus genuinely leaves the component.
