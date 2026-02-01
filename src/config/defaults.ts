@@ -161,6 +161,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoExportFormat: "java",
   autoExportTargetLibrary: "SolversLib",
   autoExportFullClass: true,
+  followRobot: false,
 };
 
 /**
