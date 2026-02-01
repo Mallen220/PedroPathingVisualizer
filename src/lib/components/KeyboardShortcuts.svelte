@@ -22,6 +22,8 @@
     fileManagerNewFileMode,
     showPluginManager,
     showRuler,
+    settingsActiveTab,
+    showStrategySheet,
   } from "../../stores";
   import {
     startPointStore,
@@ -1737,6 +1739,11 @@
     },
     toggleCommandPalette: () => {
       showCommandPalette = !showCommandPalette;
+    },
+    toggleStrategySheet: () => showStrategySheet.update((v) => !v),
+    manageRobotProfiles: () => {
+      showSettings.set(true);
+      settingsActiveTab.set("robot");
     },
     toggleStats: () => {
       if (toggleStats) toggleStats();

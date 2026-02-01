@@ -4,17 +4,33 @@ import { DEFAULT_KEY_BINDINGS } from "../config/keybindings";
 
 describe("Keybindings", () => {
   it("should include select-next-sequence and select-prev-sequence", () => {
-    const selectNext = DEFAULT_KEY_BINDINGS.find(
+    const selectNextSeq = DEFAULT_KEY_BINDINGS.find(
       (b) => b.id === "select-next-sequence",
     );
-    const selectPrev = DEFAULT_KEY_BINDINGS.find(
+    const selectPrevSeq = DEFAULT_KEY_BINDINGS.find(
       (b) => b.id === "select-prev-sequence",
     );
 
-    expect(selectNext).toBeDefined();
-    expect(selectNext?.key).toBe("ctrl+down, cmd+down, tab");
+    expect(selectNextSeq).toBeDefined();
+    expect(selectNextSeq?.key).toBe("ctrl+down, cmd+down, tab");
 
+    expect(selectPrevSeq).toBeDefined();
+    expect(selectPrevSeq?.key).toBe("ctrl+up, cmd+up, shift+tab");
+  });
+
+  it("should include new integrated commands", () => {
+    const selectNext = DEFAULT_KEY_BINDINGS.find((b) => b.id === "select-next");
+    const selectPrev = DEFAULT_KEY_BINDINGS.find((b) => b.id === "select-prev");
+    const toggleStrategySheet = DEFAULT_KEY_BINDINGS.find(
+      (b) => b.id === "toggle-strategy-sheet",
+    );
+    const manageRobotProfiles = DEFAULT_KEY_BINDINGS.find(
+      (b) => b.id === "manage-robot-profiles",
+    );
+
+    expect(selectNext).toBeDefined();
     expect(selectPrev).toBeDefined();
-    expect(selectPrev?.key).toBe("ctrl+up, cmd+up, shift+tab");
+    expect(toggleStrategySheet).toBeDefined();
+    expect(manageRobotProfiles).toBeDefined();
   });
 });

@@ -355,6 +355,13 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     action: "toggleVelocityHeatmap",
     category: "View",
   },
+  {
+    id: "toggle-strategy-sheet",
+    key: "",
+    description: "Toggle Strategy Sheet",
+    action: "toggleStrategySheet",
+    category: "View",
+  },
 
   // Navigation
   {
@@ -369,6 +376,20 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     key: "ctrl+up, cmd+up, shift+tab",
     description: "Select Previous Sequence Item",
     action: "selectPrevSequence",
+    category: "Navigation",
+  },
+  {
+    id: "select-next",
+    key: "",
+    description: "Select Next Item",
+    action: "selectNext",
+    category: "Navigation",
+  },
+  {
+    id: "select-prev",
+    key: "",
+    description: "Select Previous Item",
+    action: "selectPrev",
     category: "Navigation",
   },
   {
@@ -448,6 +469,13 @@ export const DEFAULT_KEY_BINDINGS: KeyBinding[] = [
     key: "cmd+, ctrl+,",
     description: "Open Settings",
     action: "openSettings",
+    category: "Settings",
+  },
+  {
+    id: "manage-robot-profiles",
+    key: "",
+    description: "Manage Robot Profiles",
+    action: "manageRobotProfiles",
     category: "Settings",
   },
   {
