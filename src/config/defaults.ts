@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   kFriction: 0.4,
   rLength: DEFAULT_ROBOT_LENGTH,
   rWidth: DEFAULT_ROBOT_WIDTH,
+  robotMass: 30, // lbs
   safetyMargin: 6,
   maxVelocity: 40,
   maxAcceleration: 30,

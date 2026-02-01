@@ -272,6 +272,11 @@
     handleNumberInput(target.value, "rWidth", 1, 36, true);
   }
 
+  function handleMassInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    handleNumberInput(target.value, "robotMass", 0, undefined, true);
+  }
+
   function handleImageError(e: Event) {
     const target = e.target as HTMLImageElement;
     target.src = "/robot.png";
@@ -835,6 +840,23 @@
                     />
                   </SettingsItem>
                 </div>
+
+                <SettingsItem
+                  label="Robot Mass (lbs)"
+                  description="Weight of the robot for physics calculations"
+                  {searchQuery}
+                  forId="robot-mass"
+                >
+                  <input
+                    id="robot-mass"
+                    type="number"
+                    bind:value={settings.robotMass}
+                    min="0"
+                    step="0.5"
+                    on:change={handleMassInput}
+                    class="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </SettingsItem>
 
                 <SettingsItem
                   label="Safety Margin (in)"

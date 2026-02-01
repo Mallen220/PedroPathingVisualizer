@@ -156,6 +156,7 @@ export interface Settings {
   kFriction: number;
   rLength: number;
   rWidth: number;
+  robotMass?: number; // lbs
   safetyMargin: number;
   maxVelocity: number; // inches/sec
   maxAcceleration: number; // inches/sec²
