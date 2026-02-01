@@ -25,5 +25,6 @@ dist-ssr
 .vercel
 ws_client.html
 /release
-digest.txtplaywright-report
+digest.txt
+playwright-report
 test-results

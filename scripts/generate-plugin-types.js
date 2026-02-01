@@ -22,6 +22,9 @@ function generate() {
     // Matches "export interface", "export type", "export const" etc.
     content = content.replace(/^export /gm, "");
 
+    // 3. Remove existing copyright headers to avoid duplication
+    content = content.replace(/^\/\/ Copyright .*$/gm, "");
+
     const finalContent = `// Copyright 2026 Matthew Allen. Licensed under the Apache License, Version 2.0.
 
 /**
